@@ -4,129 +4,280 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>通信テスト2</title>
+<title>タスク</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="タスク">
 <style>
-  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:20px 16px 48px;line-height:1.7}
-  h1{font-size:19px}h2{font-size:16px;margin:20px 0 8px}
-  .box{border:1px solid #ccc;border-radius:10px;padding:12px;margin:10px 0;font-size:14px;word-break:break-all}
-  .ok{background:#d1e7dd}.ng{background:#f8d7da}.wait{background:#fff3cd}
-  input{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border:1px solid #bbb;border-radius:10px;margin-bottom:6px}
-  button{font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2;margin:4px 4px 4px 0}
+  :root{color-scheme:light dark}
+  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:14px 14px 48px}
+  h2{font-size:16px;margin:20px 0 8px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:#666}
+  .row{display:flex;gap:8px;margin:10px 0}
+  input[type=text]{flex:1;min-width:0;font-size:16px;padding:12px;border:1px solid #bbb;border-radius:10px}
+  button{font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2}
   button.primary{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  ul{list-style:none;padding:0;margin:0}
+  li{background:#fff;border:1px solid #ddd;border-radius:10px;padding:14px 12px;margin:8px 0;font-size:16px;touch-action:pan-y}
+  li.dragging{opacity:.75;border-color:#1a73e8;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin-right:6px}
+  .p-wait{background:#fff3cd}.p-send{background:#cfe2ff}.p-ng{background:#f8d7da}.p-ok{background:#d1e7dd}
   .sub{font-size:12px;color:#666}
+  .warn{background:#fff3cd;padding:8px 10px;border-radius:8px;font-size:13px;margin:8px 0}
+  .foot{margin-top:26px;border-top:1px solid #ddd;padding-top:12px}
+  details{margin-top:10px}
+  summary{font-size:13px;color:#666}
 </style>
 </head>
 <body>
-<h1>通信テスト2（第2.5段階）</h1>
-<div class="box" id="env">状態：確認中</div>
 
-<h2>設定</h2>
-<input type="text" id="url" placeholder="https://script.google.com/macros/s/..../exec" autocapitalize="off" autocorrect="off" spellcheck="false">
-<input type="text" id="tok" placeholder="合い言葉（26文字）" autocapitalize="off" autocorrect="off" spellcheck="false">
-<button id="save">保存</button>
-<div class="sub">この端末の中だけに保存されます。URL は末尾が <b>/exec</b> であることを確認してください。</div>
+<div class="bar">
+  <b id="base">基準日：—</b><span id="net"></span><span id="ver"></span>
+</div>
 
-<h2>試験</h2>
-<button class="primary" id="t1">3-A：送る</button>
-<button id="t2">3-B：読み取る</button>
-<button id="t3">3-C：合い言葉なしで読む</button>
-<button id="t4">3-D：同じ番号で2回送る</button>
-<div class="box" id="r1">3-A：未実施</div>
-<div class="box" id="r2">3-B：未実施</div>
-<div class="box" id="r3">3-C：未実施</div>
-<div class="box" id="r4">3-D：未実施</div>
+<h2>件名だけ追加</h2>
+<div class="row">
+  <input type="text" id="title" placeholder="件名を入力" enterkeyhint="done" autocapitalize="sentences">
+  <button class="primary" id="add">追加</button>
+</div>
+<div class="bar"><b id="pcount">未送信 0 件</b><button id="send">いま送る</button></div>
+<ul id="outbox"></ul>
 
-<button id="copy">結果をコピー</button>
+<h2>今日やること（長押しで並べ替え）</h2>
+<div id="lwarn"></div>
+<ul id="list"></ul>
+<div class="sub" id="lnote"></div>
+
+<div class="foot">
+  <div class="row">
+    <button id="reload">最新を取得</button>
+    <button id="copy">状態をコピー</button>
+  </div>
+  <details>
+    <summary>設定（URL・合い言葉）</summary>
+    <div class="row"><input type="text" id="url" placeholder="https://script.google.com/.../exec" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="row"><input type="text" id="tok" placeholder="合い言葉" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="row"><button id="save">保存</button><button id="purge">この端末のデータを消す</button></div>
+    <div class="sub">この端末の中だけに保存されます。</div>
+  </details>
+</div>
 
 <script>
-var KU='gasUrl_v1', KT='gasTok_v1';
+var KU='gasUrl_v1', KT='gasTok_v1', KB='lastBase_v1';
+var DB='taskapp', ST='outbox', useIdb=true;
 function $(i){return document.getElementById(i);}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
 function uuid(){ if(crypto.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});}
-function set(el,c,t){el.className='box '+c;el.textContent=t;}
 
+/* ---------- 端末保存 ---------- */
+function openDb(){return new Promise(function(res,rej){
+  var r=indexedDB.open(DB,1);
+  r.onupgradeneeded=function(){var d=r.result; if(!d.objectStoreNames.contains(ST)) d.createObjectStore(ST,{keyPath:'id'});};
+  r.onsuccess=function(){res(r.result);}; r.onerror=function(){rej(r.error);};});}
+function lsAll(){try{return JSON.parse(localStorage.getItem('outbox_v1')||'[]');}catch(e){return [];}}
+function lsSave(a){localStorage.setItem('outbox_v1',JSON.stringify(a));}
+function putItem(it){
+  if(!useIdb){var a=lsAll().filter(function(x){return x.id!==it.id;}); a.push(it); lsSave(a); return Promise.resolve(true);}
+  return openDb().then(function(d){return new Promise(function(res,rej){
+    var t=d.transaction(ST,'readwrite'); t.objectStore(ST).put(it);
+    t.oncomplete=function(){res(true);}; t.onerror=function(){rej(t.error);};});})
+    .catch(function(){useIdb=false; return putItem(it);});}
+function allItems(){
+  if(!useIdb) return Promise.resolve(lsAll());
+  return openDb().then(function(d){return new Promise(function(res,rej){
+    var t=d.transaction(ST,'readonly'), q=t.objectStore(ST).getAll();
+    q.onsuccess=function(){res(q.result||[]);}; q.onerror=function(){rej(q.error);};});})
+    .catch(function(){useIdb=false; return lsAll();});}
+function delItem(id){
+  if(!useIdb){lsSave(lsAll().filter(function(x){return x.id!==id;})); return Promise.resolve(true);}
+  return openDb().then(function(d){return new Promise(function(res,rej){
+    var t=d.transaction(ST,'readwrite'); t.objectStore(ST).delete(id);
+    t.oncomplete=function(){res(true);}; t.onerror=function(){rej(t.error);};});})
+    .catch(function(){useIdb=false; lsSave(lsAll().filter(function(x){return x.id!==id;})); return true;});}
+
+/* ---------- 通信 ---------- */
+function conf(){ return {u:localStorage.getItem(KU)||'', t:localStorage.getItem(KT)||''}; }
+function post(body, ms){
+  var c=conf();
+  if(!c.u) return Promise.reject({kind:'noconf'});
+  var ctl = (window.AbortController)? new AbortController() : null;
+  var to = setTimeout(function(){ if(ctl) ctl.abort(); }, ms||30000);
+  return fetch(c.u,{method:'POST',body:JSON.stringify(Object.assign({token:c.t},body)),
+      headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow',signal:ctl?ctl.signal:undefined})
+    .then(function(r){return r.text();})
+    .then(function(t){ clearTimeout(to);
+      if(/^\s*</.test(t)) throw {kind:'login'};
+      var o; try{o=JSON.parse(t);}catch(e){ throw {kind:'unreadable'}; }
+      return o; })
+    .catch(function(e){ clearTimeout(to); throw (e&&e.kind)?e:{kind:'network',message:String(e&&e.message||e)}; });
+}
+
+/* ---------- 送信箱 ---------- */
+var results=[], sending=false, fails=0, nextTry=0;
+function label(s){
+  if(s==='saved') return '<span class="pill p-wait">送信待ち</span>';
+  if(s==='unknown') return '<span class="pill p-send">確認中</span>';
+  if(s==='blocked') return '<span class="pill p-ng">PCで要確認</span>';
+  return '<span class="pill">'+esc(s)+'</span>';
+}
+function renderOutbox(){
+  return allItems().then(function(list){
+    list.sort(function(a,b){return a.createdAt-b.createdAt;});
+    $('pcount').textContent='未送信 '+list.length+' 件';
+    var h=list.map(function(it){
+      var del=(it.state==='saved')?'<button data-del="'+it.id+'" style="float:right;padding:6px 10px;">破棄</button>':'';
+      return '<li>'+label(it.state)+esc(it.title)+del+(it.note?'<div class="sub">'+esc(it.note)+'</div>':'')+'</li>';}).join('');
+    var r=results.slice(-5).reverse().map(function(x){
+      return '<li><span class="pill p-ok">登録済み</span>'+esc(x.title)+'<div class="sub">'+esc(x.note)+'</div></li>';}).join('');
+    $('outbox').innerHTML=h+r;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-del]'),function(b){
+      b.onclick=function(){ delItem(b.getAttribute('data-del')).then(renderOutbox); };});
+  });
+}
+function addTask(){
+  var el=$('title'), v=el.value;
+  if(!v.trim()) return;
+  $('add').disabled=true;
+  putItem({id:uuid(),title:v,state:'saved',createdAt:Date.now(),note:''}).then(function(){
+    el.value=''; $('add').disabled=false; return renderOutbox();
+  }).then(function(){ trySend(true); })
+   .catch(function(){ $('add').disabled=false; alert('この端末に保存できませんでした。入力はそのまま残します。'); });
+}
+function trySend(force){
+  if(sending) return;
+  if(!force && Date.now()<nextTry) return;
+  if(!conf().u) return;
+  sending=true;
+  allItems().then(function(list){
+    var t=list.filter(function(x){return x.state==='saved'||x.state==='unknown';})
+              .sort(function(a,b){return a.createdAt-b.createdAt;})[0];
+    if(!t){ sending=false; fails=0; return; }
+    return putItem(Object.assign({},t,{state:'unknown'})).then(renderOutbox).then(function(){
+      return post({mode:'add',requestId:t.id,title:t.title});
+    }).then(function(o){
+      if(o&&o.ok&&(o.status==='committed'||o.status==='duplicate'||o.status==='recovered')){
+        results.push({title:t.title,note:(o.status==='committed'?'新規登録':'再送でも1件のまま')});
+        return delItem(t.id).then(function(){ loadToday(); });
+      }
+      if(o&&o.status==='indeterminate')
+        return putItem(Object.assign({},t,{state:'blocked',note:'登録されたか判定できません。PCで確認してください。'}));
+      if(o&&o.status==='denied')
+        return putItem(Object.assign({},t,{state:'saved',note:'合い言葉が一致しません。設定を確認してください。'}));
+      return putItem(Object.assign({},t,{state:'unknown',note:(o&&o.message)||'混雑・エラーのため後で再試行します'}));
+    }).then(function(){ fails=0; sending=false; return renderOutbox(); })
+     .catch(function(e){
+       fails++; nextTry=Date.now()+Math.min(300000,5000*Math.pow(3,Math.min(fails,4))); sending=false;
+       var n = e.kind==='login' ? '公開設定を確認してください' :
+               e.kind==='noconf' ? 'URL が未設定です' : '通信できませんでした（未登録とは限りません）';
+       return putItem(Object.assign({},t,{state:'unknown',note:n})).then(renderOutbox);
+     });
+  }).catch(function(){ sending=false; });
+}
+
+/* ---------- 今日の一覧 ---------- */
+var base=null, current=[];
+function oKey(d){return 'order_v1_'+d;}
+function cKey(d){return 'cache_v1_'+d;}
+function loadToday(){
+  $('lwarn').innerHTML='';
+  if(!conf().u){ $('lnote').textContent='設定から URL と合い言葉を保存してください。'; return Promise.resolve(); }
+  return post({mode:'list'}).then(function(o){
+    if(!o||!o.ok) throw {kind:'ng'};
+    base=o.baseDate; localStorage.setItem(KB,base);
+    $('base').textContent='基準日：'+base;
+    localStorage.setItem(cKey(base),JSON.stringify(o.tasks));
+    current=merge(base,o.tasks); render();
+    $('lnote').textContent='順番はこの iPhone の中だけに保存され、PC 側の並び順は変わりません。'
+      +(o.noIdCount?('／表示できない行が'+o.noIdCount+'件あります（PCで確認）。'):'');
+  }).catch(function(){
+    var d=base||localStorage.getItem(KB);
+    $('lwarn').innerHTML='<div class="warn">最新を取得できませんでした。前回取得分と保存済みの順番を表示しています。</div>';
+    if(d){
+      base=d; $('base').textContent='基準日：'+d+'（前回取得時点）';
+      var c=[]; try{c=JSON.parse(localStorage.getItem(cKey(d))||'[]');}catch(e){}
+      current=merge(d,c); render();
+    }
+  });
+}
+function merge(d,tasks){
+  var saved=[]; try{saved=JSON.parse(localStorage.getItem(oKey(d))||'[]');}catch(e){}
+  var ids=tasks.map(function(t){return t.taskId;});
+  var kept=saved.filter(function(i){return ids.indexOf(i)>=0;});
+  var add=ids.filter(function(i){return kept.indexOf(i)<0;});
+  var order=kept.concat(add);
+  localStorage.setItem(oKey(d),JSON.stringify(order));
+  return order.map(function(i){return tasks.filter(function(t){return t.taskId===i;})[0];}).filter(Boolean);
+}
+function render(){
+  $('list').innerHTML=current.map(function(t){
+    return '<li data-id="'+t.taskId+'">'+esc(t.title)+'</li>';}).join('')
+    || '<li class="sub">今日の実行日が入った未完了タスクはありません。</li>';
+}
+function saveOrder(){
+  if(!base) return;
+  var ids=Array.prototype.map.call(document.querySelectorAll('#list li[data-id]'),function(li){return li.getAttribute('data-id');});
+  localStorage.setItem(oKey(base),JSON.stringify(ids));
+  current=ids.map(function(i){return current.filter(function(t){return t.taskId===i;})[0];}).filter(Boolean);
+}
+
+var L=$('list'), drag=null, hold=null, sy=0;
+L.addEventListener('pointerdown',function(e){
+  var li=e.target.closest('li[data-id]'); if(!li) return;
+  sy=e.clientY;
+  hold=setTimeout(function(){drag=li; li.classList.add('dragging'); if(navigator.vibrate)navigator.vibrate(15);},450);});
+L.addEventListener('pointermove',function(e){
+  if(!drag){ if(hold&&Math.abs(e.clientY-sy)>8){clearTimeout(hold);hold=null;} return; }
+  var o=document.elementFromPoint(e.clientX,e.clientY);
+  o=(o&&o.closest)?o.closest('li[data-id]'):null;
+  if(o&&o!==drag&&o.parentNode===L){
+    var rc=o.getBoundingClientRect();
+    L.insertBefore(drag,(e.clientY>rc.top+rc.height/2)?o.nextSibling:o);
+  }});
+document.addEventListener('touchmove',function(e){if(drag)e.preventDefault();},{passive:false});
+['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+  L.addEventListener(ev,function(){
+    if(hold){clearTimeout(hold);hold=null;}
+    if(drag){drag.classList.remove('dragging');drag=null;saveOrder();}});});
+
+/* ---------- 操作 ---------- */
+function net(){ $('net').textContent='／通信'+(navigator.onLine?'あり':'なし'); }
 $('url').value=localStorage.getItem(KU)||'';
 $('tok').value=localStorage.getItem(KT)||'';
 $('save').onclick=function(){
   localStorage.setItem(KU,$('url').value.trim());
   localStorage.setItem(KT,$('tok').value.trim());
-  alert('保存しました。');
-};
-
-var standalone=(window.navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
-$('env').textContent='状態：通信'+(navigator.onLine?'あり':'なし')+'／起動＝'+(standalone?'ホーム画面アイコン':'Safari のタブ')+'／版=test2';
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-
-function conf(){ var u=localStorage.getItem(KU)||'', t=localStorage.getItem(KT)||'';
-  if(!u){alert('URL を保存してください。');return null;} return {u:u,t:t}; }
-
-/* 返ってきた中身を検証して区別する */
-function judge(text){
-  var head=text.slice(0,60).replace(/\s+/g,' ');
-  if(/^\s*</.test(text) || /Sign in|ログイン|accounts\.google/i.test(text))
-    return {kind:'login', note:'ログイン画面が返っています／'+head};
-  var o=null; try{o=JSON.parse(text);}catch(e){ return {kind:'other', note:'読めない内容／'+head}; }
-  if(o&&o.ok===true) return {kind:'ok', obj:o, note:JSON.stringify(o).slice(0,300)};
-  if(o&&o.status==='denied') return {kind:'denied', note:'拒否されました（期待どおり）／'+JSON.stringify(o)};
-  return {kind:'ng', note:JSON.stringify(o).slice(0,300)};
-}
-
-function post(u, body){
-  return fetch(u,{method:'POST',body:JSON.stringify(body),
-    headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow'})
-    .then(function(r){return r.text();});
-}
-
-$('t1').onclick=function(){ var c=conf(); if(!c)return;
-  var title='試験A '+new Date().toLocaleTimeString('ja-JP');
-  set($('r1'),'wait','3-A：送信中…');
-  post(c.u,{token:c.t,mode:'add',requestId:uuid(),title:title}).then(function(t){
-    var j=judge(t);
-    set($('r1'), j.kind==='ok'?'ok':'ng', '3-A：'+(j.kind==='ok'?'成功':'失敗（'+j.kind+'）')+'／'+j.note);
-  }).catch(function(e){ set($('r1'),'ng','3-A：通信失敗／'+(e&&e.message||e)); });
-};
-
-$('t2').onclick=function(){ var c=conf(); if(!c)return;
-  set($('r2'),'wait','3-B：取得中…');
-  post(c.u,{token:c.t,mode:'list'}).then(function(t){
-    var j=judge(t);
-    var n=(j.obj&&j.obj.rows)?j.obj.rows.length:'-';
-    set($('r2'), j.kind==='ok'?'ok':'ng', '3-B：'+(j.kind==='ok'?('成功 '+n+'件'):'失敗（'+j.kind+'）')+'／'+j.note);
-  }).catch(function(e){ set($('r2'),'ng','3-B：通信失敗／'+(e&&e.message||e)); });
-};
-
-$('t3').onclick=function(){ var c=conf(); if(!c)return;
-  set($('r3'),'wait','3-C：確認中…');
-  post(c.u,{token:'wrong-passphrase-test',mode:'list'}).then(function(t){
-    var j=judge(t);
-    if(j.kind==='denied') set($('r3'),'ok','3-C：拒否された（期待どおり）／'+j.note);
-    else if(j.kind==='ok') set($('r3'),'ng','3-C：【問題】合い言葉なしで読めてしまいました／'+j.note);
-    else set($('r3'),'wait','3-C：判断保留（'+j.kind+'）／'+j.note);
-  }).catch(function(e){ set($('r3'),'wait','3-C：通信失敗／'+(e&&e.message||e)); });
-};
-
-$('t4').onclick=function(){ var c=conf(); if(!c)return;
-  var id=uuid(), title='試験D '+new Date().toLocaleTimeString('ja-JP');
-  set($('r4'),'wait','3-D：1回目…');
-  post(c.u,{token:c.t,mode:'add',requestId:id,title:title}).then(function(t1){
-    var j1=judge(t1);
-    return post(c.u,{token:c.t,mode:'add',requestId:id,title:title}).then(function(t2){
-      var j2=judge(t2);
-      var s1=j1.obj&&j1.obj.status, s2=j2.obj&&j2.obj.status;
-      var good=(s1==='committed'&&s2==='duplicate');
-      set($('r4'), good?'ok':'ng', '3-D：'+(good?'成功（2回目は重複扱い）':'期待と違う')+'／1回目='+s1+' 2回目='+s2);
-    });
-  }).catch(function(e){ set($('r4'),'ng','3-D：通信失敗／'+(e&&e.message||e)); });
-};
-
+  alert('保存しました。'); nextTry=0; loadToday(); trySend(true);};
+$('add').onclick=addTask;
+$('title').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
+$('send').onclick=function(){nextTry=0;trySend(true);};
+$('reload').onclick=function(){loadToday();nextTry=0;trySend(true);};
+$('purge').onclick=function(){
+  if(!confirm('この端末に保存した内容（未送信の件名・並び順・URL・合い言葉）を消します。よろしいですか。')) return;
+  Object.keys(localStorage).forEach(function(k){
+    if(k.indexOf('order_v1_')===0||k.indexOf('cache_v1_')===0||k==='outbox_v1'||k===KU||k===KT||k===KB) localStorage.removeItem(k);});
+  if(window.indexedDB) indexedDB.deleteDatabase(DB);
+  alert('消しました。Safari 全体のデータは消していません。'); location.reload();};
 $('copy').onclick=function(){
-  var txt='【第2.5段階の結果】\n'+$('env').textContent+'\n'+$('r1').textContent+'\n'+$('r2').textContent+'\n'+$('r3').textContent+'\n'+$('r4').textContent;
-  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){alert('コピーしました。');});
-  else prompt('この内容をコピーしてください', txt);
-};
+  allItems().then(function(list){
+    var txt='【状態】版=app-1.0\n基準日:'+base+'\n保存方式:'+(useIdb?'端末内':'簡易')
+      +'\n未送信:'+list.length+'件 '+JSON.stringify(list.map(function(x){return {t:x.title,s:x.state,n:x.note};}))
+      +'\n今日の順番:'+JSON.stringify(current.map(function(t){return t.title;}))
+      +'\n直近結果:'+JSON.stringify(results.slice(-10))
+      +'\n通信:'+(navigator.onLine?'あり':'なし');
+    if(navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){alert('コピーしました。');});
+    else prompt('この内容をコピーしてください',txt);});};
+
+window.addEventListener('online',function(){net();nextTry=0;trySend(true);loadToday();});
+window.addEventListener('offline',net);
+document.addEventListener('visibilitychange',function(){if(!document.hidden){net();nextTry=0;trySend(true);}});
+setInterval(function(){trySend();},20000);
+
+net();
+$('ver').textContent='／版 app-1.0';
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+renderOutbox();
+loadToday();
 </script>
 </body>
 </html>
