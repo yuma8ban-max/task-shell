@@ -4,89 +4,126 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>通信テスト</title>
+<title>通信テスト2</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="通信テスト">
+<meta name="apple-mobile-web-app-title" content="タスク">
 <style>
   body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:20px 16px 48px;line-height:1.7}
   h1{font-size:19px}h2{font-size:16px;margin:20px 0 8px}
   .box{border:1px solid #ccc;border-radius:10px;padding:12px;margin:10px 0;font-size:14px;word-break:break-all}
   .ok{background:#d1e7dd}.ng{background:#f8d7da}.wait{background:#fff3cd}
-  input{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border:1px solid #bbb;border-radius:10px}
+  input{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border:1px solid #bbb;border-radius:10px;margin-bottom:6px}
   button{font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2;margin:4px 4px 4px 0}
   button.primary{background:#1a73e8;color:#fff;border-color:#1a73e8}
   .sub{font-size:12px;color:#666}
 </style>
 </head>
 <body>
-<h1>通信テスト（第2段階）</h1>
+<h1>通信テスト2（第2.5段階）</h1>
 <div class="box" id="env">状態：確認中</div>
 
-<h2>送り先の URL</h2>
-<input type="text" id="url" placeholder="https://script.google.com/macros/s/..../exec">
-<div class="sub">1度入力すればこの端末に保存されます。末尾が <b>/exec</b> であることを確認してください。</div>
-<button id="save">URL を保存</button>
+<h2>設定</h2>
+<input type="text" id="url" placeholder="https://script.google.com/macros/s/..../exec" autocapitalize="off" autocorrect="off" spellcheck="false">
+<input type="text" id="tok" placeholder="合い言葉（26文字）" autocapitalize="off" autocorrect="off" spellcheck="false">
+<button id="save">保存</button>
+<div class="sub">この端末の中だけに保存されます。URL は末尾が <b>/exec</b> であることを確認してください。</div>
 
 <h2>試験</h2>
-<button class="primary" id="t1">2-A：送って返事を待つ</button>
-<button id="t2">2-B：送りっぱなしで送る</button>
-<button id="t3">2-C：シートを読み取る</button>
-<div class="box" id="r1">2-A：未実施</div>
-<div class="box" id="r2">2-B：未実施</div>
-<div class="box" id="r3">2-C：未実施</div>
+<button class="primary" id="t1">3-A：送る</button>
+<button id="t2">3-B：読み取る</button>
+<button id="t3">3-C：合い言葉なしで読む</button>
+<button id="t4">3-D：同じ番号で2回送る</button>
+<div class="box" id="r1">3-A：未実施</div>
+<div class="box" id="r2">3-B：未実施</div>
+<div class="box" id="r3">3-C：未実施</div>
+<div class="box" id="r4">3-D：未実施</div>
 
 <button id="copy">結果をコピー</button>
 
 <script>
-var KEY='gasUrl_v1';
-function $(id){return document.getElementById(id);}
+var KU='gasUrl_v1', KT='gasTok_v1';
+function $(i){return document.getElementById(i);}
 function uuid(){ if(crypto.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});}
+function set(el,c,t){el.className='box '+c;el.textContent=t;}
 
-$('url').value = localStorage.getItem(KEY) || '';
-$('save').onclick=function(){ localStorage.setItem(KEY, $('url').value.trim()); alert('保存しました。'); };
+$('url').value=localStorage.getItem(KU)||'';
+$('tok').value=localStorage.getItem(KT)||'';
+$('save').onclick=function(){
+  localStorage.setItem(KU,$('url').value.trim());
+  localStorage.setItem(KT,$('tok').value.trim());
+  alert('保存しました。');
+};
 
 var standalone=(window.navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
-$('env').textContent='状態：通信'+(navigator.onLine?'あり':'なし')+'／起動＝'+(standalone?'ホーム画面アイコン':'Safari のタブ');
-
+$('env').textContent='状態：通信'+(navigator.onLine?'あり':'なし')+'／起動＝'+(standalone?'ホーム画面アイコン':'Safari のタブ')+'／版=test2';
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 
-function url(){ var u=localStorage.getItem(KEY)||$('url').value.trim(); if(!u){alert('先に URL を保存してください。');return null;} return u; }
-function set(el,cls,txt){ el.className='box '+cls; el.textContent=txt; }
+function conf(){ var u=localStorage.getItem(KU)||'', t=localStorage.getItem(KT)||'';
+  if(!u){alert('URL を保存してください。');return null;} return {u:u,t:t}; }
 
-$('t1').onclick=function(){
-  var u=url(); if(!u) return;
-  var id=uuid(), title='試験A '+new Date().toLocaleTimeString('ja-JP');
-  set($('r1'),'wait','2-A：送信中…');
-  fetch(u,{method:'POST',body:JSON.stringify({requestId:id,title:title}),
-           headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow'})
-    .then(function(res){ return res.text(); })
-    .then(function(t){ set($('r1'),'ok','2-A：成功（返事を読めました）／'+t.slice(0,200)); })
-    .catch(function(e){ set($('r1'),'ng','2-A：失敗／'+(e&&e.message||e)); });
+/* 返ってきた中身を検証して区別する */
+function judge(text){
+  var head=text.slice(0,60).replace(/\s+/g,' ');
+  if(/^\s*</.test(text) || /Sign in|ログイン|accounts\.google/i.test(text))
+    return {kind:'login', note:'ログイン画面が返っています／'+head};
+  var o=null; try{o=JSON.parse(text);}catch(e){ return {kind:'other', note:'読めない内容／'+head}; }
+  if(o&&o.ok===true) return {kind:'ok', obj:o, note:JSON.stringify(o).slice(0,300)};
+  if(o&&o.status==='denied') return {kind:'denied', note:'拒否されました（期待どおり）／'+JSON.stringify(o)};
+  return {kind:'ng', note:JSON.stringify(o).slice(0,300)};
+}
+
+function post(u, body){
+  return fetch(u,{method:'POST',body:JSON.stringify(body),
+    headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow'})
+    .then(function(r){return r.text();});
+}
+
+$('t1').onclick=function(){ var c=conf(); if(!c)return;
+  var title='試験A '+new Date().toLocaleTimeString('ja-JP');
+  set($('r1'),'wait','3-A：送信中…');
+  post(c.u,{token:c.t,mode:'add',requestId:uuid(),title:title}).then(function(t){
+    var j=judge(t);
+    set($('r1'), j.kind==='ok'?'ok':'ng', '3-A：'+(j.kind==='ok'?'成功':'失敗（'+j.kind+'）')+'／'+j.note);
+  }).catch(function(e){ set($('r1'),'ng','3-A：通信失敗／'+(e&&e.message||e)); });
 };
 
-$('t2').onclick=function(){
-  var u=url(); if(!u) return;
-  var id=uuid(), title='試験B '+new Date().toLocaleTimeString('ja-JP');
-  set($('r2'),'wait','2-B：送信中…');
-  fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({requestId:id,title:title}),
-           headers:{'Content-Type':'text/plain;charset=utf-8'}})
-    .then(function(){ set($('r2'),'wait','2-B：送信しました（返事は読めません）。件名「'+title+'」がシートにあるか PC で確認してください。'); })
-    .catch(function(e){ set($('r2'),'ng','2-B：失敗／'+(e&&e.message||e)); });
+$('t2').onclick=function(){ var c=conf(); if(!c)return;
+  set($('r2'),'wait','3-B：取得中…');
+  post(c.u,{token:c.t,mode:'list'}).then(function(t){
+    var j=judge(t);
+    var n=(j.obj&&j.obj.rows)?j.obj.rows.length:'-';
+    set($('r2'), j.kind==='ok'?'ok':'ng', '3-B：'+(j.kind==='ok'?('成功 '+n+'件'):'失敗（'+j.kind+'）')+'／'+j.note);
+  }).catch(function(e){ set($('r2'),'ng','3-B：通信失敗／'+(e&&e.message||e)); });
 };
 
-$('t3').onclick=function(){
-  var u=url(); if(!u) return;
-  set($('r3'),'wait','2-C：取得中…');
-  fetch(u+(u.indexOf('?')>=0?'&':'?')+'mode=list',{method:'GET',redirect:'follow'})
-    .then(function(res){ return res.text(); })
-    .then(function(t){ set($('r3'),'ok','2-C：成功（読み取れました）／'+t.slice(0,300)); })
-    .catch(function(e){ set($('r3'),'ng','2-C：失敗／'+(e&&e.message||e)); });
+$('t3').onclick=function(){ var c=conf(); if(!c)return;
+  set($('r3'),'wait','3-C：確認中…');
+  post(c.u,{token:'wrong-passphrase-test',mode:'list'}).then(function(t){
+    var j=judge(t);
+    if(j.kind==='denied') set($('r3'),'ok','3-C：拒否された（期待どおり）／'+j.note);
+    else if(j.kind==='ok') set($('r3'),'ng','3-C：【問題】合い言葉なしで読めてしまいました／'+j.note);
+    else set($('r3'),'wait','3-C：判断保留（'+j.kind+'）／'+j.note);
+  }).catch(function(e){ set($('r3'),'wait','3-C：通信失敗／'+(e&&e.message||e)); });
+};
+
+$('t4').onclick=function(){ var c=conf(); if(!c)return;
+  var id=uuid(), title='試験D '+new Date().toLocaleTimeString('ja-JP');
+  set($('r4'),'wait','3-D：1回目…');
+  post(c.u,{token:c.t,mode:'add',requestId:id,title:title}).then(function(t1){
+    var j1=judge(t1);
+    return post(c.u,{token:c.t,mode:'add',requestId:id,title:title}).then(function(t2){
+      var j2=judge(t2);
+      var s1=j1.obj&&j1.obj.status, s2=j2.obj&&j2.obj.status;
+      var good=(s1==='committed'&&s2==='duplicate');
+      set($('r4'), good?'ok':'ng', '3-D：'+(good?'成功（2回目は重複扱い）':'期待と違う')+'／1回目='+s1+' 2回目='+s2);
+    });
+  }).catch(function(e){ set($('r4'),'ng','3-D：通信失敗／'+(e&&e.message||e)); });
 };
 
 $('copy').onclick=function(){
-  var txt='【第2段階の結果】\n'+$('env').textContent+'\n'+$('r1').textContent+'\n'+$('r2').textContent+'\n'+$('r3').textContent;
+  var txt='【第2.5段階の結果】\n'+$('env').textContent+'\n'+$('r1').textContent+'\n'+$('r2').textContent+'\n'+$('r3').textContent+'\n'+$('r4').textContent;
   if(navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){alert('コピーしました。');});
   else prompt('この内容をコピーしてください', txt);
 };
