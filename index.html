@@ -4,60 +4,92 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>起動テスト</title>
+<title>通信テスト</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="起動テスト">
+<meta name="apple-mobile-web-app-title" content="通信テスト">
 <style>
-  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:24px;line-height:1.7}
-  h1{font-size:20px}
-  .box{border:1px solid #ccc;border-radius:10px;padding:14px;margin:14px 0;font-size:15px}
-  .ok{background:#d1e7dd}.ng{background:#f8d7da}
-  button{font-size:16px;padding:12px 16px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2}
+  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:20px 16px 48px;line-height:1.7}
+  h1{font-size:19px}h2{font-size:16px;margin:20px 0 8px}
+  .box{border:1px solid #ccc;border-radius:10px;padding:12px;margin:10px 0;font-size:14px;word-break:break-all}
+  .ok{background:#d1e7dd}.ng{background:#f8d7da}.wait{background:#fff3cd}
+  input{width:100%;box-sizing:border-box;font-size:16px;padding:12px;border:1px solid #bbb;border-radius:10px}
+  button{font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2;margin:4px 4px 4px 0}
+  button.primary{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  .sub{font-size:12px;color:#666}
 </style>
 </head>
 <body>
-<h1>起動テスト（第1段階）</h1>
-<div class="box ok">この文字が見えていれば、画面の読み込みは成功しています。</div>
-<div class="box" id="net">通信状態：確認中</div>
-<div class="box" id="sw">端末内保持：確認中</div>
-<div class="box" id="mode">起動方法：確認中</div>
-<div class="box">開いた時刻：<span id="t"></span></div>
+<h1>通信テスト（第2段階）</h1>
+<div class="box" id="env">状態：確認中</div>
+
+<h2>送り先の URL</h2>
+<input type="text" id="url" placeholder="https://script.google.com/macros/s/..../exec">
+<div class="sub">1度入力すればこの端末に保存されます。末尾が <b>/exec</b> であることを確認してください。</div>
+<button id="save">URL を保存</button>
+
+<h2>試験</h2>
+<button class="primary" id="t1">2-A：送って返事を待つ</button>
+<button id="t2">2-B：送りっぱなしで送る</button>
+<button id="t3">2-C：シートを読み取る</button>
+<div class="box" id="r1">2-A：未実施</div>
+<div class="box" id="r2">2-B：未実施</div>
+<div class="box" id="r3">2-C：未実施</div>
+
 <button id="copy">結果をコピー</button>
+
 <script>
-  document.getElementById('t').textContent = new Date().toLocaleString('ja-JP');
-  function net(){ document.getElementById('net').textContent = '通信状態：' + (navigator.onLine ? 'あり' : 'なし（オフライン）'); }
-  net();
-  window.addEventListener('online', net);
-  window.addEventListener('offline', net);
+var KEY='gasUrl_v1';
+function $(id){return document.getElementById(id);}
+function uuid(){ if(crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});}
 
-  var standalone = (window.navigator.standalone === true) ||
-                   (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-  document.getElementById('mode').textContent = '起動方法：' + (standalone ? 'ホーム画面アイコン' : 'Safari のタブ');
+$('url').value = localStorage.getItem(KEY) || '';
+$('save').onclick=function(){ localStorage.setItem(KEY, $('url').value.trim()); alert('保存しました。'); };
 
-  var swEl = document.getElementById('sw');
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(function(){
-      swEl.textContent = '端末内保持：登録できました';
-      swEl.className = 'box ok';
-    }).catch(function(e){
-      swEl.textContent = '端末内保持：登録できませんでした（' + e.message + '）';
-      swEl.className = 'box ng';
-    });
-  } else {
-    swEl.textContent = '端末内保持：この環境では使えません';
-    swEl.className = 'box ng';
-  }
+var standalone=(window.navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+$('env').textContent='状態：通信'+(navigator.onLine?'あり':'なし')+'／起動＝'+(standalone?'ホーム画面アイコン':'Safari のタブ');
 
-  document.getElementById('copy').onclick = function(){
-    var txt = '【第1段階の結果】\n' +
-      document.getElementById('net').textContent + '\n' +
-      document.getElementById('sw').textContent + '\n' +
-      document.getElementById('mode').textContent + '\n' +
-      '開いた時刻：' + document.getElementById('t').textContent;
-    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ alert('コピーしました。'); });
-    else prompt('この内容をコピーしてください', txt);
-  };
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+function url(){ var u=localStorage.getItem(KEY)||$('url').value.trim(); if(!u){alert('先に URL を保存してください。');return null;} return u; }
+function set(el,cls,txt){ el.className='box '+cls; el.textContent=txt; }
+
+$('t1').onclick=function(){
+  var u=url(); if(!u) return;
+  var id=uuid(), title='試験A '+new Date().toLocaleTimeString('ja-JP');
+  set($('r1'),'wait','2-A：送信中…');
+  fetch(u,{method:'POST',body:JSON.stringify({requestId:id,title:title}),
+           headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow'})
+    .then(function(res){ return res.text(); })
+    .then(function(t){ set($('r1'),'ok','2-A：成功（返事を読めました）／'+t.slice(0,200)); })
+    .catch(function(e){ set($('r1'),'ng','2-A：失敗／'+(e&&e.message||e)); });
+};
+
+$('t2').onclick=function(){
+  var u=url(); if(!u) return;
+  var id=uuid(), title='試験B '+new Date().toLocaleTimeString('ja-JP');
+  set($('r2'),'wait','2-B：送信中…');
+  fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({requestId:id,title:title}),
+           headers:{'Content-Type':'text/plain;charset=utf-8'}})
+    .then(function(){ set($('r2'),'wait','2-B：送信しました（返事は読めません）。件名「'+title+'」がシートにあるか PC で確認してください。'); })
+    .catch(function(e){ set($('r2'),'ng','2-B：失敗／'+(e&&e.message||e)); });
+};
+
+$('t3').onclick=function(){
+  var u=url(); if(!u) return;
+  set($('r3'),'wait','2-C：取得中…');
+  fetch(u+(u.indexOf('?')>=0?'&':'?')+'mode=list',{method:'GET',redirect:'follow'})
+    .then(function(res){ return res.text(); })
+    .then(function(t){ set($('r3'),'ok','2-C：成功（読み取れました）／'+t.slice(0,300)); })
+    .catch(function(e){ set($('r3'),'ng','2-C：失敗／'+(e&&e.message||e)); });
+};
+
+$('copy').onclick=function(){
+  var txt='【第2段階の結果】\n'+$('env').textContent+'\n'+$('r1').textContent+'\n'+$('r2').textContent+'\n'+$('r3').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){alert('コピーしました。');});
+  else prompt('この内容をコピーしてください', txt);
+};
 </script>
 </body>
 </html>
