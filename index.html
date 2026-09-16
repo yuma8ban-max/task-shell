@@ -168,8 +168,10 @@ function trySend(force){
     }).then(function(){ fails=0; sending=false; return renderOutbox(); })
      .catch(function(e){
        fails++; nextTry=Date.now()+Math.min(300000,5000*Math.pow(3,Math.min(fails,4))); sending=false;
-       var n = e.kind==='login' ? '公開設定を確認してください' :
-               e.kind==='noconf' ? 'URL が未設定です' : '通信できませんでした（未登録とは限りません）';
+              var n = e.kind==='login' ? '公開設定を確認してください' :
+               e.kind==='noconf' ? 'URL が未設定です' :
+               e.kind==='servererror' ? 'サーバー側で処理が中断しました（未登録とは限りません）' :
+               '通信できませんでした（未登録とは限りません）';
        return putItem(Object.assign({},t,{state:'unknown',note:n})).then(renderOutbox);
      });
   }).catch(function(){ sending=false; });
