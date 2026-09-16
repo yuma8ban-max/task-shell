@@ -126,7 +126,7 @@ function renderOutbox(){
     list.sort(function(a,b){return a.createdAt-b.createdAt;});
     $('pcount').textContent='未送信 '+list.length+' 件';
     var h=list.map(function(it){
-      var del=(it.state==='saved')?'<button data-del="'+it.id+'" style="float:right;padding:6px 10px;">破棄</button>':'';
+      var del=(it.state==='saved'||it.state==='blocked')?'<button data-del="'+it.id+'" style="float:right;padding:6px 10px;">破棄</button>':'';
       return '<li>'+label(it.state)+esc(it.title)+del+(it.note?'<div class="sub">'+esc(it.note)+'</div>':'')+'</li>';}).join('');
     var r=results.slice(-5).reverse().map(function(x){
       return '<li><span class="pill p-ok">登録済み</span>'+esc(x.title)+'<div class="sub">'+esc(x.note)+'</div></li>';}).join('');
