@@ -1,6 +1,6 @@
 {
-  "name": "起動テスト",
-  "short_name": "起動テスト",
+  "name": "タスク追加",
+  "short_name": "タスク",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
