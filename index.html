@@ -107,7 +107,7 @@ function post(body, ms){
       headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow',signal:ctl?ctl.signal:undefined})
     .then(function(r){return r.text();})
     .then(function(t){ clearTimeout(to);
-      if(/^\s*</.test(t)) throw {kind:'login'};
+    if(/^\s*</.test(t)) throw {kind:(/Sign in|ログイン|accounts\.google/i.test(t))?'login':'servererror'};
       var o; try{o=JSON.parse(t);}catch(e){ throw {kind:'unreadable'}; }
       return o; })
     .catch(function(e){ clearTimeout(to); throw (e&&e.kind)?e:{kind:'network',message:String(e&&e.message||e)}; });
