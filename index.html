@@ -1,0 +1,63 @@
+<!-- Output: html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>起動テスト</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="起動テスト">
+<style>
+  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:24px;line-height:1.7}
+  h1{font-size:20px}
+  .box{border:1px solid #ccc;border-radius:10px;padding:14px;margin:14px 0;font-size:15px}
+  .ok{background:#d1e7dd}.ng{background:#f8d7da}
+  button{font-size:16px;padding:12px 16px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2}
+</style>
+</head>
+<body>
+<h1>起動テスト（第1段階）</h1>
+<div class="box ok">この文字が見えていれば、画面の読み込みは成功しています。</div>
+<div class="box" id="net">通信状態：確認中</div>
+<div class="box" id="sw">端末内保持：確認中</div>
+<div class="box" id="mode">起動方法：確認中</div>
+<div class="box">開いた時刻：<span id="t"></span></div>
+<button id="copy">結果をコピー</button>
+<script>
+  document.getElementById('t').textContent = new Date().toLocaleString('ja-JP');
+  function net(){ document.getElementById('net').textContent = '通信状態：' + (navigator.onLine ? 'あり' : 'なし（オフライン）'); }
+  net();
+  window.addEventListener('online', net);
+  window.addEventListener('offline', net);
+
+  var standalone = (window.navigator.standalone === true) ||
+                   (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  document.getElementById('mode').textContent = '起動方法：' + (standalone ? 'ホーム画面アイコン' : 'Safari のタブ');
+
+  var swEl = document.getElementById('sw');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(function(){
+      swEl.textContent = '端末内保持：登録できました';
+      swEl.className = 'box ok';
+    }).catch(function(e){
+      swEl.textContent = '端末内保持：登録できませんでした（' + e.message + '）';
+      swEl.className = 'box ng';
+    });
+  } else {
+    swEl.textContent = '端末内保持：この環境では使えません';
+    swEl.className = 'box ng';
+  }
+
+  document.getElementById('copy').onclick = function(){
+    var txt = '【第1段階の結果】\n' +
+      document.getElementById('net').textContent + '\n' +
+      document.getElementById('sw').textContent + '\n' +
+      document.getElementById('mode').textContent + '\n' +
+      '開いた時刻：' + document.getElementById('t').textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ alert('コピーしました。'); });
+    else prompt('この内容をコピーしてください', txt);
+  };
+</script>
+</body>
+</html>
