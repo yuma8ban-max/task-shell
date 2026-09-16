@@ -1,5 +1,5 @@
-/* 第2.5段階 */
-var CACHE = 'boot-test-v3';
+/* app-1.0 */
+var CACHE = 'boot-test-v4';
 var FILES = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
