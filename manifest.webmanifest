@@ -1,0 +1,9 @@
+{
+  "name": "起動テスト",
+  "short_name": "起動テスト",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8"
+}
