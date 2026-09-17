@@ -1,5 +1,5 @@
 /* app-1.0 */
-var CACHE = 'boot-test-v5';
+var CACHE = 'boot-test-v6';
 var FILES = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
