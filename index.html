@@ -18,11 +18,14 @@
   button{font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2}
   button.primary{background:#1a73e8;color:#fff;border-color:#1a73e8}
   ul{list-style:none;padding:0;margin:0}
-  li{background:#fff;border:1px solid #ddd;border-radius:10px;padding:14px 12px;margin:8px 0;font-size:16px;touch-action:pan-y}
-    li{transition:box-shadow .15s ease, transform .15s ease}
+  li{background:#fff;border:1px solid #ddd;border-radius:10px;padding:14px 12px;margin:8px 0;
+     font-size:16px;touch-action:pan-y;transition:box-shadow .15s ease, transform .15s ease}
   li.dragging{opacity:.96;border-color:#1a73e8;background:#f7faff;
     transform:scale(1.035) rotate(-.5deg);box-shadow:0 10px 24px rgba(0,0,0,.22),0 2px 6px rgba(0,0,0,.12);
     position:relative;z-index:10;will-change:transform}
+  li.done{opacity:.4;text-decoration:line-through}
+  .chk{display:inline-block;width:22px;height:22px;border:2px solid #bbb;border-radius:50%;
+       margin-right:10px;vertical-align:-5px}
   .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin-right:6px}
   .p-wait{background:#fff3cd}.p-send{background:#cfe2ff}.p-ng{background:#f8d7da}.p-ok{background:#d1e7dd}
   .sub{font-size:12px;color:#666}
@@ -46,7 +49,7 @@
 <div class="bar"><b id="pcount">未送信 0 件</b><button id="send">いま送る</button></div>
 <ul id="outbox"></ul>
 
-<h2>今日やること（長押しで並べ替え）</h2>
+<h2>今日やること（長押しで並べ替え／タップで完了）</h2>
 <div id="lwarn"></div>
 <ul id="list"></ul>
 <div class="sub" id="lnote"></div>
@@ -110,7 +113,7 @@ function post(body, ms){
       headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow',signal:ctl?ctl.signal:undefined})
     .then(function(r){return r.text();})
     .then(function(t){ clearTimeout(to);
-    if(/^\s*</.test(t)) throw {kind:(/Sign in|ログイン|accounts\.google/i.test(t))?'login':'servererror'};
+      if(/^\s*</.test(t)) throw {kind:(/Sign in|ログイン|accounts\.google/i.test(t))?'login':'servererror'};
       var o; try{o=JSON.parse(t);}catch(e){ throw {kind:'unreadable'}; }
       return o; })
     .catch(function(e){ clearTimeout(to); throw (e&&e.kind)?e:{kind:'network',message:String(e&&e.message||e)}; });
@@ -132,7 +135,7 @@ function renderOutbox(){
       var del=(it.state==='saved'||it.state==='blocked')?'<button data-del="'+it.id+'" style="float:right;padding:6px 10px;">破棄</button>':'';
       return '<li>'+label(it.state)+esc(it.title)+del+(it.note?'<div class="sub">'+esc(it.note)+'</div>':'')+'</li>';}).join('');
     var r=results.slice(-5).reverse().map(function(x){
-      return '<li><span class="pill p-ok">登録済み</span>'+esc(x.title)+'<div class="sub">'+esc(x.note)+'</div></li>';}).join('');
+      return '<li><span class="pill p-ok">完了</span>'+esc(x.title)+'<div class="sub">'+esc(x.note)+'</div></li>';}).join('');
     $('outbox').innerHTML=h+r;
     Array.prototype.forEach.call(document.querySelectorAll('[data-del]'),function(b){
       b.onclick=function(){ delItem(b.getAttribute('data-del')).then(renderOutbox); };});
@@ -142,11 +145,19 @@ function addTask(){
   var el=$('title'), v=el.value;
   if(!v.trim()) return;
   $('add').disabled=true;
-  putItem({id:uuid(),title:v,state:'saved',createdAt:Date.now(),note:''}).then(function(){
+  putItem({id:uuid(),kind:'add',title:v,state:'saved',createdAt:Date.now(),note:''}).then(function(){
     el.value=''; $('add').disabled=false; return renderOutbox();
   }).then(function(){ trySend(true); })
    .catch(function(){ $('add').disabled=false; alert('この端末に保存できませんでした。入力はそのまま残します。'); });
 }
+
+/* ---------- 送信待ちに積む（並び順・完了） ---------- */
+function queue(job){
+  job.id = uuid(); job.createdAt = Date.now(); job.state = 'saved'; job.note = '';
+  job.title = (job.kind==='order') ? '並び順の更新' : '完了の反映';
+  putItem(job).then(renderOutbox).then(function(){ trySend(true); });
+}
+
 function trySend(force){
   if(sending) return;
   if(!force && Date.now()<nextTry) return;
@@ -157,11 +168,14 @@ function trySend(force){
               .sort(function(a,b){return a.createdAt-b.createdAt;})[0];
     if(!t){ sending=false; fails=0; return; }
     return putItem(Object.assign({},t,{state:'unknown'})).then(renderOutbox).then(function(){
+      if(t.kind==='order') return post({mode:'order', ids:t.ids});
+      if(t.kind==='done')  return post({mode:'done', taskId:t.taskId});
       return post({mode:'add',requestId:t.id,title:t.title});
     }).then(function(o){
-      if(o&&o.ok&&(o.status==='committed'||o.status==='duplicate'||o.status==='recovered')){
-        results.push({title:t.title,note:(o.status==='committed'?'新規登録':'再送でも1件のまま')});
-        return delItem(t.id).then(function(){ loadToday(); });
+      if(o&&o.ok&&(o.status==='committed'||o.status==='duplicate'||o.status==='recovered'
+                   ||o.status==='saved'||o.status==='done'||o.status==='already')){
+        if(t.kind==='add') results.push({title:t.title,note:(o.status==='committed'?'新規登録':'再送でも1件のまま')});
+        return delItem(t.id).then(function(){ if(t.kind!=='order') loadToday(); });
       }
       if(o&&o.status==='indeterminate')
         return putItem(Object.assign({},t,{state:'blocked',note:'登録されたか判定できません。PCで確認してください。'}));
@@ -171,7 +185,7 @@ function trySend(force){
     }).then(function(){ fails=0; sending=false; return renderOutbox(); })
      .catch(function(e){
        fails++; nextTry=Date.now()+Math.min(300000,5000*Math.pow(3,Math.min(fails,4))); sending=false;
-              var n = e.kind==='login' ? '公開設定を確認してください' :
+       var n = e.kind==='login' ? '公開設定を確認してください' :
                e.kind==='noconf' ? 'URL が未設定です' :
                e.kind==='servererror' ? 'サーバー側で処理が中断しました（未登録とは限りません）' :
                '通信できませんでした（未登録とは限りません）';
@@ -182,8 +196,8 @@ function trySend(force){
 
 /* ---------- 今日の一覧 ---------- */
 var base=null, current=[];
-function oKey(d){return 'order_v1_'+d;}
-function cKey(d){return 'cache_v1_'+d;}
+function cacheKey(d){return 'cache_v2_'+d;}
+
 function loadToday(){
   $('lwarn').innerHTML='';
   if(!conf().u){ $('lnote').textContent='設定から URL と合い言葉を保存してください。'; return Promise.resolve(); }
@@ -191,48 +205,53 @@ function loadToday(){
     if(!o||!o.ok) throw {kind:'ng'};
     base=o.baseDate; localStorage.setItem(KB,base);
     $('base').textContent='基準日：'+base;
-    localStorage.setItem(cKey(base),JSON.stringify(o.tasks));
-    current=merge(base,o.tasks); render();
-    $('lnote').textContent='順番はこの iPhone の中だけに保存され、PC 側の並び順は変わりません。'
-      +(o.noIdCount?('／表示できない行が'+o.noIdCount+'件あります（PCで確認）。'):'');
+    current=o.tasks||[];
+    localStorage.setItem(cacheKey(base), JSON.stringify(current));
+    render();
+    $('lnote').textContent='並び順と完了はパソコンと共有されます。';
   }).catch(function(){
     var d=base||localStorage.getItem(KB);
-    $('lwarn').innerHTML='<div class="warn">最新を取得できませんでした。前回取得分と保存済みの順番を表示しています。</div>';
+    $('lwarn').innerHTML='<div class="warn">最新を取得できませんでした。前回取得分を表示しています。</div>';
     if(d){
       base=d; $('base').textContent='基準日：'+d+'（前回取得時点）';
-      var c=[]; try{c=JSON.parse(localStorage.getItem(cKey(d))||'[]');}catch(e){}
-      current=merge(d,c); render();
+      try{ current=JSON.parse(localStorage.getItem(cacheKey(d))||'[]'); }catch(e){ current=[]; }
+      render();
     }
   });
 }
-function merge(d,tasks){
-  var saved=[]; try{saved=JSON.parse(localStorage.getItem(oKey(d))||'[]');}catch(e){}
-  var ids=tasks.map(function(t){return t.taskId;});
-  var kept=saved.filter(function(i){return ids.indexOf(i)>=0;});
-  var add=ids.filter(function(i){return kept.indexOf(i)<0;});
-  var order=kept.concat(add);
-  localStorage.setItem(oKey(d),JSON.stringify(order));
-  return order.map(function(i){return tasks.filter(function(t){return t.taskId===i;})[0];}).filter(Boolean);
-}
+
 function render(){
   $('list').innerHTML=current.map(function(t){
-    return '<li data-id="'+t.taskId+'">'+esc(t.title)+'</li>';}).join('')
-    || '<li class="sub">今日の実行日が入った未完了タスクはありません。</li>';
-}
-function saveOrder(){
-  if(!base) return;
-  var ids=Array.prototype.map.call(document.querySelectorAll('#list li[data-id]'),function(li){return li.getAttribute('data-id');});
-  localStorage.setItem(oKey(base),JSON.stringify(ids));
-  current=ids.map(function(i){return current.filter(function(t){return t.taskId===i;})[0];}).filter(Boolean);
+    return '<li data-id="'+t.taskId+'"><span class="chk"></span>'+esc(t.title)+'</li>';
+  }).join('') || '<li class="sub">今日の実行日が入った未完了タスクはありません。</li>';
 }
 
-var L=$('list'), drag=null, hold=null, sy=0;
+function saveOrder(){
+  if(!base) return;
+  var ids=Array.prototype.map.call(document.querySelectorAll('#list li[data-id]'),
+    function(li){return li.getAttribute('data-id');});
+  current = ids.map(function(id){
+    return current.filter(function(t){return t.taskId===id;})[0]; }).filter(Boolean);
+  localStorage.setItem(cacheKey(base), JSON.stringify(current));
+  queue({kind:'order', ids:ids});
+}
+
+function completeTask(li, id){
+  li.classList.add('done');
+  current = current.filter(function(t){return t.taskId!==id;});
+  if(base) localStorage.setItem(cacheKey(base), JSON.stringify(current));
+  queue({kind:'done', taskId:id});
+  setTimeout(function(){ render(); }, 250);
+}
+
+/* ---------- 長押し並べ替え・タップで完了 ---------- */
+var L=$('list'), drag=null, hold=null, sy=0, moved=false;
 L.addEventListener('pointerdown',function(e){
   var li=e.target.closest('li[data-id]'); if(!li) return;
-  sy=e.clientY;
+  sy=e.clientY; moved=false;
   hold=setTimeout(function(){drag=li; li.classList.add('dragging'); if(navigator.vibrate)navigator.vibrate(15);},450);});
 L.addEventListener('pointermove',function(e){
-  if(!drag){ if(hold&&Math.abs(e.clientY-sy)>8){clearTimeout(hold);hold=null;} return; }
+  if(!drag){ if(hold&&Math.abs(e.clientY-sy)>8){clearTimeout(hold);hold=null;moved=true;} return; }
   var o=document.elementFromPoint(e.clientX,e.clientY);
   o=(o&&o.closest)?o.closest('li[data-id]'):null;
   if(o&&o!==drag&&o.parentNode===L){
@@ -243,7 +262,17 @@ document.addEventListener('touchmove',function(e){if(drag)e.preventDefault();},{
 ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
   L.addEventListener(ev,function(){
     if(hold){clearTimeout(hold);hold=null;}
-    if(drag){drag.classList.remove('dragging');drag=null;saveOrder();}});});
+    if(drag){drag.classList.remove('dragging');drag=null;saveOrder();moved=true;}});});
+
+L.addEventListener('click', function(e){
+  if(moved){ moved=false; return; }
+  var li=e.target.closest('li[data-id]'); if(!li) return;
+  if(li.classList.contains('done')) return;
+  var id=li.getAttribute('data-id');
+  var t=current.filter(function(x){return x.taskId===id;})[0];
+  if(!t) return;
+  if(confirm('「'+t.title+'」を完了にしますか。')) completeTask(li, id);
+});
 
 /* ---------- 操作 ---------- */
 function net(){ $('net').textContent='／通信'+(navigator.onLine?'あり':'なし'); }
@@ -258,17 +287,17 @@ $('title').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();}
 $('send').onclick=function(){nextTry=0;trySend(true);};
 $('reload').onclick=function(){loadToday();nextTry=0;trySend(true);};
 $('purge').onclick=function(){
-  if(!confirm('この端末に保存した内容（未送信の件名・並び順・URL・合い言葉）を消します。よろしいですか。')) return;
+  if(!confirm('この端末に保存した内容（未送信・キャッシュ・URL・合い言葉）を消します。よろしいですか。')) return;
   Object.keys(localStorage).forEach(function(k){
-    if(k.indexOf('order_v1_')===0||k.indexOf('cache_v1_')===0||k==='outbox_v1'||k===KU||k===KT||k===KB) localStorage.removeItem(k);});
+    if(k.indexOf('order_v1_')===0||k.indexOf('cache_v1_')===0||k.indexOf('cache_v2_')===0
+       ||k==='outbox_v1'||k===KU||k===KT||k===KB) localStorage.removeItem(k);});
   if(window.indexedDB) indexedDB.deleteDatabase(DB);
   alert('消しました。Safari 全体のデータは消していません。'); location.reload();};
 $('copy').onclick=function(){
   allItems().then(function(list){
-    var txt='【状態】版=app-1.0\n基準日:'+base+'\n保存方式:'+(useIdb?'端末内':'簡易')
-      +'\n未送信:'+list.length+'件 '+JSON.stringify(list.map(function(x){return {t:x.title,s:x.state,n:x.note};}))
+    var txt='【状態】版=v2.1\n基準日:'+base+'\n保存方式:'+(useIdb?'端末内':'簡易')
+      +'\n未送信:'+list.length+'件 '+JSON.stringify(list.map(function(x){return {k:x.kind,t:x.title,s:x.state,n:x.note};}))
       +'\n今日の順番:'+JSON.stringify(current.map(function(t){return t.title;}))
-      +'\n直近結果:'+JSON.stringify(results.slice(-10))
       +'\n通信:'+(navigator.onLine?'あり':'なし');
     if(navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){alert('コピーしました。');});
     else prompt('この内容をコピーしてください',txt);});};
@@ -279,7 +308,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden){net
 setInterval(function(){trySend();},20000);
 
 net();
-$('ver').textContent='／版 app-1.0';
+$('ver').textContent='／版 v2.1';
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 renderOutbox();
 loadToday();
