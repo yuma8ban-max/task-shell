@@ -1,12 +1,12 @@
-/* v2.2 — 画面を直したら、この1行目の数字も必ず変えること */
-var CACHE = 'task-v2.2-1';
-var FILES = ['./index.html', './manifest.webmanifest'];
+/* v2.3 — 画面を直したら、この1行目の数字も必ず変えること */
+var CACHE = 'task-v2.3-1';
+var FILES = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(CACHE).then(function (c) {
       return Promise.all(FILES.map(function (f) {
-        return c.add(f).catch(function () { return null; });
+        return c.add(new Request(f, { cache: 'reload' })).catch(function () { return null; });
       }));
     }).then(function () { return self.skipWaiting(); })
   );
@@ -19,6 +19,23 @@ self.addEventListener('activate', function (e) {
     }));
   }).then(function () { return self.clients.claim(); }));
 });
+
+function offlinePage() {
+  return caches.match('./index.html').then(function (hit) {
+    if (hit) return hit;
+    return caches.match('./').then(function (h2) {
+      if (h2) return h2;
+      return new Response(
+        '<!doctype html><meta charset="utf-8">' +
+        '<body style="font-family:-apple-system,sans-serif;padding:24px">' +
+        '<h3>まだ準備ができていません</h3>' +
+        '<p>通信できる場所で一度このアプリを開いてください。' +
+        'それ以降はオフラインでも開けるようになります。</p></body>',
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
+    });
+  });
+}
 
 self.addEventListener('fetch', function (e) {
   var u = new URL(e.request.url);
@@ -33,14 +50,19 @@ self.addEventListener('fetch', function (e) {
     e.respondWith(
       fetch(e.request).then(function (r) {
         var copy = r.clone();
-        caches.open(CACHE).then(function (c) { c.put('./index.html', copy); });
+        caches.open(CACHE).then(function (c) {
+          c.put('./index.html', copy.clone());
+          c.put('./', copy);
+        });
         return r;
-      }).catch(function () { return caches.match('./index.html'); })
+      }).catch(offlinePage)
     );
     return;
   }
 
   e.respondWith(
-    caches.match(e.request).then(function (hit) { return hit || fetch(e.request); })
+    caches.match(e.request).then(function (hit) {
+      return hit || fetch(e.request).catch(function () { return Response.error(); });
+    })
   );
 });
