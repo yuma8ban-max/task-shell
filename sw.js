@@ -1,6 +1,6 @@
-/* v2.3 — 画面を直したら、この1行目の数字も必ず変えること */
-var CACHE = 'task-v2.3-1';
-var FILES = ['./', './index.html', './manifest.webmanifest'];
+/* v2.4 — 画面を直したら、この1行目の数字も必ず変えること */
+var CACHE = 'task-v2.4-1';
+var FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
