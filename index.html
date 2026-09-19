@@ -1,4 +1,4 @@
-<!-- Output: html -->
+<!-- Output: html --><!-- Filename: index -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -10,7 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="タスク">
 <style>
   :root{color-scheme:light dark}
-  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:14px 14px 48px}
+  body{font-family:-apple-system,system-ui,sans-serif;margin:0;padding:14px 14px 48px;
+       -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  input,textarea{-webkit-user-select:text;user-select:text}
   h2{font-size:16px;margin:20px 0 8px}
   .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:#666}
   .row{display:flex;gap:8px;margin:10px 0}
@@ -18,14 +20,21 @@
   button{font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #bbb;background:#f2f2f2}
   button.primary{background:#1a73e8;color:#fff;border-color:#1a73e8}
   ul{list-style:none;padding:0;margin:0}
-  li{background:#fff;border:1px solid #ddd;border-radius:10px;padding:14px 12px;margin:8px 0;
+  li{background:#fff;border:1px solid #ddd;border-radius:10px;padding:12px;margin:8px 0;
      font-size:16px;touch-action:pan-y;transition:box-shadow .15s ease, transform .15s ease}
+  #list li[data-id]{display:flex;align-items:center;gap:8px}
   li.dragging{opacity:.96;border-color:#1a73e8;background:#f7faff;
     transform:scale(1.035) rotate(-.5deg);box-shadow:0 10px 24px rgba(0,0,0,.22),0 2px 6px rgba(0,0,0,.12);
     position:relative;z-index:10;will-change:transform}
-  li.done{opacity:.4;text-decoration:line-through}
-  .chk{display:inline-block;width:22px;height:22px;border:2px solid #bbb;border-radius:50%;
-       margin-right:10px;vertical-align:-5px}
+  li.done{opacity:.4}
+  li.done .ttl{text-decoration:line-through}
+  .hit{flex:none;padding:10px 6px 10px 2px;margin:-10px 0;display:flex;align-items:center}
+  .chk{display:block;width:24px;height:24px;border:2px solid #bbb;border-radius:50%;box-sizing:border-box}
+  li.done .chk{background:#1a73e8;border-color:#1a73e8}
+  .ttl{flex:1;min-width:0;line-height:1.45}
+  .grip{flex:none;width:36px;text-align:center;color:#c2c8ce;font-size:22px;line-height:1;
+        padding:10px 0;margin:-10px 0;touch-action:none;cursor:grab}
+  li.dragging .grip{color:#1a73e8}
   .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin-right:6px}
   .p-wait{background:#fff3cd}.p-send{background:#cfe2ff}.p-ng{background:#f8d7da}.p-ok{background:#d1e7dd}
   .sub{font-size:12px;color:#666}
@@ -49,7 +58,8 @@
 <div class="bar"><b id="pcount">未送信 0 件</b><button id="send">いま送る</button></div>
 <ul id="outbox"></ul>
 
-<h2>今日やること（長押しで並べ替え／タップで完了）</h2>
+<h2>今日やること</h2>
+<div class="sub">左の丸＝完了／右の ≡ をつまんで上下に動かす＝並べ替え</div>
 <div id="lwarn"></div>
 <ul id="list"></ul>
 <div class="sub" id="lnote"></div>
@@ -69,6 +79,7 @@
 </div>
 
 <script>
+var VER='v2.2';
 var KU='gasUrl_v1', KT='gasTok_v1', KB='lastBase_v1';
 var DB='taskapp', ST='outbox', useIdb=true;
 function $(i){return document.getElementById(i);}
@@ -151,7 +162,7 @@ function addTask(){
    .catch(function(){ $('add').disabled=false; alert('この端末に保存できませんでした。入力はそのまま残します。'); });
 }
 
-/* ---------- 送信待ちに積む（並び順・完了） ---------- */
+/* ---------- 送信待ちに積む ---------- */
 function queue(job){
   job.id = uuid(); job.createdAt = Date.now(); job.state = 'saved'; job.note = '';
   job.title = (job.kind==='order') ? '並び順の更新' : '完了の反映';
@@ -222,7 +233,11 @@ function loadToday(){
 
 function render(){
   $('list').innerHTML=current.map(function(t){
-    return '<li data-id="'+t.taskId+'"><span class="chk"></span>'+esc(t.title)+'</li>';
+    return '<li data-id="'+t.taskId+'">'
+         + '<span class="hit" data-act="done"><span class="chk"></span></span>'
+         + '<span class="ttl">'+esc(t.title)+'</span>'
+         + '<span class="grip" data-act="grip">&#8801;</span>'
+         + '</li>';
   }).join('') || '<li class="sub">今日の実行日が入った未完了タスクはありません。</li>';
 }
 
@@ -244,29 +259,68 @@ function completeTask(li, id){
   setTimeout(function(){ render(); }, 250);
 }
 
-/* ---------- 長押し並べ替え・タップで完了 ---------- */
-var L=$('list'), drag=null, hold=null, sy=0, moved=false;
+/* ---------- つまみで並べ替え ---------- */
+var L=$('list'), drag=null, hold=null, sy=0, moved=false, auto=null, dir=0;
+
+function startDrag(li){
+  drag=li; li.classList.add('dragging');
+  if(navigator.vibrate) navigator.vibrate(15);
+}
+function endDrag(){
+  if(!drag) return;
+  drag.classList.remove('dragging'); drag=null;
+  stopAuto(); saveOrder();
+}
+function autoScroll(y){
+  dir = (y<90) ? -10 : ((y>window.innerHeight-90) ? 10 : 0);
+  if(dir && !auto){ auto=setInterval(function(){ window.scrollBy(0,dir); },16); }
+  if(!dir) stopAuto();
+}
+function stopAuto(){ if(auto){ clearInterval(auto); auto=null; } dir=0; }
+
 L.addEventListener('pointerdown',function(e){
   var li=e.target.closest('li[data-id]'); if(!li) return;
+  var act=e.target.closest('[data-act]');
+  var kind=act?act.getAttribute('data-act'):'';
+  if(kind==='done') return;
   sy=e.clientY; moved=false;
-  hold=setTimeout(function(){drag=li; li.classList.add('dragging'); if(navigator.vibrate)navigator.vibrate(15);},450);});
+  if(kind==='grip'){
+    e.preventDefault();
+    try{ act.setPointerCapture(e.pointerId); }catch(err){}
+    startDrag(li);
+    return;
+  }
+  hold=setTimeout(function(){ startDrag(li); }, 600);
+});
+
 L.addEventListener('pointermove',function(e){
-  if(!drag){ if(hold&&Math.abs(e.clientY-sy)>8){clearTimeout(hold);hold=null;moved=true;} return; }
+  if(!drag){
+    if(hold && Math.abs(e.clientY-sy)>8){ clearTimeout(hold); hold=null; moved=true; }
+    return;
+  }
+  autoScroll(e.clientY);
   var o=document.elementFromPoint(e.clientX,e.clientY);
   o=(o&&o.closest)?o.closest('li[data-id]'):null;
   if(o&&o!==drag&&o.parentNode===L){
     var rc=o.getBoundingClientRect();
     L.insertBefore(drag,(e.clientY>rc.top+rc.height/2)?o.nextSibling:o);
-  }});
-document.addEventListener('touchmove',function(e){if(drag)e.preventDefault();},{passive:false});
-['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+  }
+});
+
+document.addEventListener('touchmove',function(e){ if(drag) e.preventDefault(); },{passive:false});
+
+['pointerup','pointercancel'].forEach(function(ev){
   L.addEventListener(ev,function(){
-    if(hold){clearTimeout(hold);hold=null;}
-    if(drag){drag.classList.remove('dragging');drag=null;saveOrder();moved=true;}});});
+    if(hold){ clearTimeout(hold); hold=null; }
+    if(drag){ endDrag(); moved=true; }
+  });
+});
 
 L.addEventListener('click', function(e){
+  var act=e.target.closest('[data-act]');
+  if(!act || act.getAttribute('data-act')!=='done') return;
   if(moved){ moved=false; return; }
-  var li=e.target.closest('li[data-id]'); if(!li) return;
+  var li=act.closest('li[data-id]'); if(!li) return;
   if(li.classList.contains('done')) return;
   var id=li.getAttribute('data-id');
   var t=current.filter(function(x){return x.taskId===id;})[0];
@@ -295,7 +349,7 @@ $('purge').onclick=function(){
   alert('消しました。Safari 全体のデータは消していません。'); location.reload();};
 $('copy').onclick=function(){
   allItems().then(function(list){
-    var txt='【状態】版=v2.1\n基準日:'+base+'\n保存方式:'+(useIdb?'端末内':'簡易')
+    var txt='【状態】版='+VER+'\n基準日:'+base+'\n保存方式:'+(useIdb?'端末内':'簡易')
       +'\n未送信:'+list.length+'件 '+JSON.stringify(list.map(function(x){return {k:x.kind,t:x.title,s:x.state,n:x.note};}))
       +'\n今日の順番:'+JSON.stringify(current.map(function(t){return t.title;}))
       +'\n通信:'+(navigator.onLine?'あり':'なし');
@@ -308,7 +362,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden){net
 setInterval(function(){trySend();},20000);
 
 net();
-$('ver').textContent='／版 v2.1';
+$('ver').textContent='／版 '+VER;
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 renderOutbox();
 loadToday();
