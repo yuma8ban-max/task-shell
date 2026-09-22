@@ -4,14 +4,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>タスク</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./icon-180.png">
+  <meta name="theme-color" content="#1a73e8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="タスク">
+  <title>タスク</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-180.png">
   <style>
     :root {
       color-scheme: light;
+      --accent: #1a73e8;
+      --line: #d8dfe6;
+      --muted: #657383;
     }
 
     * {
@@ -20,13 +24,18 @@
 
     body {
       margin: 0;
-      padding: 14px 14px 48px;
-      color: #222;
-      background: #fff;
+      color: #202833;
+      background: #f6f8fb;
       font-family: -apple-system, system-ui, sans-serif;
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
     }
 
     input,
@@ -35,138 +44,232 @@
       user-select: text;
     }
 
-    h2 {
-      margin: 20px 0 8px;
-      font-size: 16px;
-    }
-
-    .bar {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      color: #666;
-      font-size: 12px;
-    }
-
-    #ver {
-      margin-left: auto;
-      white-space: nowrap;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-      margin: 10px 0;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      min-width: 0;
-      padding: 12px;
-      border: 1px solid #bbb;
-      border-radius: 10px;
-      font-size: 16px;
-    }
-
     button {
-      padding: 12px 14px;
-      border: 1px solid #bbb;
-      border-radius: 10px;
-      color: #222;
-      background: #f2f2f2;
-      font-size: 15px;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid #ccd4de;
+      border-radius: 9px;
+      color: #263445;
+      background: #fff;
       cursor: pointer;
     }
 
-    button.primary {
-      border-color: #1a73e8;
-      color: #fff;
-      background: #1a73e8;
-    }
-
     button:disabled {
-      opacity: .55;
+      opacity: .5;
       cursor: default;
     }
 
+    button.primary {
+      border-color: var(--accent);
+      color: #fff;
+      background: var(--accent);
+    }
+
+    button.danger {
+      color: #b3261e;
+    }
+
+    input,
+    select {
+      min-height: 42px;
+      max-width: 100%;
+      padding: 9px;
+      border: 1px solid #bcc7d4;
+      border-radius: 8px;
+      color: #202833;
+      background: #fff;
+      font-size: 16px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 0;
+      font-size: 21px;
+    }
+
+    h2 {
+      margin-bottom: 12px;
+      font-size: 19px;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100vh;
+      padding: 24px 12px;
+      border-right: 1px solid var(--line);
+      background: #fff;
+    }
+
+    nav button {
+      border-color: transparent;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    nav button.active {
+      color: #1559ad;
+      background: #eaf2ff;
+      font-weight: bold;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    .version,
     .sub {
-      color: #666;
+      color: var(--muted);
       font-size: 12px;
       line-height: 1.6;
     }
 
-    #outbox {
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
-    #outbox li {
-      margin: 8px 0;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      overflow-wrap: anywhere;
+    .status {
+      margin-bottom: 10px;
+      color: #326347;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .notice {
+      margin: 10px 0;
+      padding: 11px 13px;
+      border: 1px solid #ead49b;
+      border-radius: 9px;
+      background: #fff7df;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .error {
+      color: #a52620;
+    }
+
+    .panel {
+      padding: 18px;
+      border: 1px solid #e1e6ee;
+      border-radius: 13px;
       background: #fff;
+    }
+
+    #outbox {
+      margin: 12px 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    #outbox summary {
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .job {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #edf0f4;
+      overflow-wrap: anywhere;
+    }
+
+    .job-title {
+      margin-bottom: 5px;
       font-size: 14px;
     }
 
-    #outbox button {
-      float: right;
-      margin-left: 8px;
-      padding: 6px 10px;
-      font-size: 12px;
+    .cards {
+      display: grid;
+      gap: 9px;
     }
 
-    .pill {
-      display: inline-block;
-      margin-right: 6px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
+    .card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
     }
 
-    .p-wait {
-      background: #fff3cd;
-    }
-
-    .p-send {
-      background: #cfe2ff;
-    }
-
-    .p-ng {
-      background: #f8d7da;
-    }
-
-    .p-ok {
-      background: #d1e7dd;
-    }
-
-    .warn {
-      margin: 8px 0;
-      padding: 8px 10px;
-      border-radius: 8px;
-      background: #fff3cd;
-      font-size: 13px;
+    .card-main {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
       line-height: 1.5;
+    }
+
+    .card-title {
+      margin-bottom: 4px;
+    }
+
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      flex: none;
     }
 
     .timeline {
       position: relative;
-      margin-top: 12px;
+      max-width: 780px;
+      margin-top: 16px;
     }
 
     .slot {
       display: grid;
-      grid-template-columns: 52px minmax(0, 1fr);
+      grid-template-columns: 54px minmax(0, 1fr);
       min-height: 44px;
-      border-top: 1px solid #d8dfe6;
+      border-top: 1px solid var(--line);
     }
 
     .slot-label {
       padding: 12px 4px 0 0;
-      color: #697582;
+      color: var(--muted);
       font-size: 12px;
       line-height: 1.3;
     }
@@ -185,9 +288,8 @@
       gap: 8px;
       margin: 6px 0;
       padding: 12px 10px;
-      border: 1px solid #d8dfe6;
+      border: 1px solid var(--line);
       border-radius: 10px;
-      color: #222;
       background: #fff;
       font-size: 16px;
       touch-action: pan-y;
@@ -195,47 +297,30 @@
 
     .task.dragging {
       z-index: 10;
-      border-color: #1a73e8;
-      background: #f7faff;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, .2);
-      opacity: .94;
-    }
-
-    .task.done {
-      opacity: .4;
-    }
-
-    .task.done .ttl {
-      text-decoration: line-through;
+      border-color: var(--accent);
+      background: #f2f7ff;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+      opacity: .95;
     }
 
     .hit {
       display: flex;
-      flex: none;
       align-items: center;
       justify-content: center;
-      width: 32px;
+      flex: none;
+      width: 34px;
       min-height: 44px;
       margin: -10px 0 -10px -4px;
       padding: 0;
       border: 0;
       background: transparent;
-      cursor: pointer;
     }
 
-    .check {
-      display: block;
-      flex: none;
+    .circle {
       width: 24px;
       height: 24px;
-      border: 2px solid #b5bec7;
+      border: 2px solid #b4beca;
       border-radius: 50%;
-      background: #fff;
-    }
-
-    .task.done .check {
-      border-color: #1a73e8;
-      background: #1a73e8;
     }
 
     .ttl {
@@ -247,184 +332,301 @@
 
     .grip {
       display: flex;
-      flex: none;
       align-items: center;
       justify-content: center;
+      flex: none;
       width: 36px;
       min-height: 44px;
       margin: -10px 0;
       padding: 0;
       border: 0;
-      color: #aeb8c2;
+      color: #99a7b7;
       background: transparent;
       font-size: 24px;
-      line-height: 1;
       cursor: grab;
       touch-action: none;
     }
 
     .timeline-end {
-      min-height: 26px;
-      border-top: 1px solid #d8dfe6;
-      color: #697582;
-      font-size: 12px;
-    }
-
-    .timeline-end span {
-      display: inline-block;
+      min-height: 28px;
       padding-top: 7px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .now-line {
       position: absolute;
       right: 0;
-      left: 52px;
+      left: 54px;
       z-index: 8;
       height: 0;
-      border-top: 2px solid #e55353;
+      border-top: 2px solid #e45151;
       pointer-events: none;
     }
 
     .now-line span {
       position: absolute;
       top: -9px;
-      left: -52px;
-      width: 48px;
-      padding: 1px 0;
-      color: #d93636;
+      left: -54px;
+      width: 50px;
+      color: #cb3535;
       background: #fff;
       font-size: 11px;
       font-weight: bold;
     }
 
-    .foot {
-      margin-top: 26px;
-      padding-top: 12px;
-      border-top: 1px solid #ddd;
+    dialog {
+      width: min(620px, calc(100vw - 24px));
+      max-height: calc(100dvh - 36px);
+      padding: 22px;
+      border: 1px solid #d7dfeb;
+      border-radius: 14px;
+      color: #202833;
+      background: #fff;
+      overflow: auto;
     }
 
-    details {
-      margin-top: 10px;
+    dialog::backdrop {
+      background: rgba(20, 34, 52, .4);
     }
 
-    summary {
-      color: #666;
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .comparison section {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .comparison p {
+      margin-bottom: 8px;
       font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        display: block;
+      }
+
+      main {
+        padding: 14px 12px 100px;
+      }
+
+      nav {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 30;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2px;
+        height: auto;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--line);
+        border-right: 0;
+      }
+
+      nav button {
+        min-width: 0;
+        padding: 10px 3px;
+        text-align: center;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      .panel {
+        padding: 13px 10px;
+      }
+
+      .card {
+        align-items: flex-start;
+      }
+
+      .card-actions {
+        max-width: 100px;
+      }
+
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+
+      header button {
+        padding-right: 10px;
+        padding-left: 10px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="bar">
-    <b id="base">基準日：—</b>
-    <span id="net"></span>
-    <span id="ver">v3.0</span>
+  <div class="app">
+    <nav aria-label="画面の切り替え">
+      <button type="button" data-page="plan" class="active">1日の計画</button>
+      <button type="button" data-page="tasks">タスク一覧</button>
+      <button type="button" data-page="periodic">定期タスク</button>
+      <button type="button" data-page="history">完了済み</button>
+    </nav>
+
+    <main>
+      <header>
+        <h1>タスク</h1>
+        <span class="version">v4.0</span>
+        <span class="spacer"></span>
+        <button id="add" class="primary" type="button">タスクを追加</button>
+        <button id="reload" type="button">最新を取得</button>
+        <button id="settings" type="button">設定</button>
+      </header>
+
+      <div id="status" class="status" aria-live="polite">準備中…</div>
+      <div id="message" class="notice" hidden aria-live="polite"></div>
+
+      <details id="outbox" hidden>
+        <summary id="outbox-summary">未送信</summary>
+        <div id="outbox-items"></div>
+      </details>
+
+      <section id="content" class="panel"></section>
+    </main>
   </div>
 
-  <h2>件名だけ追加</h2>
-  <div class="row">
-    <input
-      type="text"
-      id="title"
-      placeholder="件名を入力"
-      enterkeyhint="done"
-      autocapitalize="sentences"
-      maxlength="200"
-    >
-    <button class="primary" id="add" type="button">追加</button>
-  </div>
+  <dialog id="editor">
+    <h2 id="editor-title"></h2>
+    <form id="editor-form">
+      <div id="editor-fields"></div>
+      <div id="editor-note" class="sub"></div>
+      <div class="dialog-actions">
+        <button type="button" id="editor-cancel">取り消す</button>
+        <button type="submit" class="primary" id="editor-submit">保存</button>
+      </div>
+    </form>
+  </dialog>
 
-  <div class="bar">
-    <b id="pcount">未送信 0 件</b>
-    <button id="send" type="button">いま送る</button>
-  </div>
-  <ul id="outbox"></ul>
+  <dialog id="settings-dialog">
+    <h2>設定</h2>
 
-  <h2>今日やること</h2>
-  <div class="sub">
-    左の丸＝完了／右の ≡ をつまんで動かす＝時間帯・並び順の変更<br>
-    時間帯は目安です。行の中央はスクロール、0.6秒の長押しでも移動できます。
-  </div>
+    <label class="field">
+      接続先
+      <input id="url" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
 
-  <div id="lwarn" aria-live="polite"></div>
-  <div id="list" class="timeline"></div>
-  <div class="sub" id="lnote"></div>
+    <label class="field">
+      合い言葉
+      <input id="token" type="password" autocomplete="off" autocapitalize="off">
+    </label>
 
-  <div class="foot">
-    <div class="row">
-      <button id="reload" type="button">最新を取得</button>
+    <p class="sub">
+      この端末の中だけに保存します。以前から使っている端末では、設定を引き継ぎます。
+    </p>
+
+    <div class="toolbar">
+      <button id="check" type="button">動作の点検</button>
       <button id="copy" type="button">状態をコピー</button>
     </div>
 
-    <details>
-      <summary>設定（URL・合い言葉）</summary>
+    <div class="dialog-actions">
+      <button id="settings-close" type="button">閉じる</button>
+      <button id="settings-save" class="primary" type="button">保存</button>
+    </div>
+  </dialog>
 
-      <div class="row">
-        <input
-          type="text"
-          id="url"
-          placeholder="接続先を貼り付ける"
-          autocapitalize="off"
-          autocorrect="off"
-          spellcheck="false"
-        >
-      </div>
-
-      <div class="row">
-        <input
-          type="text"
-          id="tok"
-          placeholder="合い言葉"
-          autocapitalize="off"
-          autocorrect="off"
-          spellcheck="false"
-        >
-      </div>
-
-      <div class="row">
-        <button id="save" type="button">保存</button>
-        <button id="purge" type="button">この端末のデータを消す</button>
-      </div>
-
-      <div class="sub">この端末の中だけに保存されます。</div>
-    </details>
-  </div>
+  <dialog id="conflict-dialog">
+    <h2>変更が重なっています</h2>
+    <p id="conflict-note" class="sub"></p>
+    <div class="comparison">
+      <section>
+        <h3>保存済み</h3>
+        <div id="conflict-server"></div>
+      </section>
+      <section>
+        <h3>この端末の変更</h3>
+        <div id="conflict-local"></div>
+      </section>
+    </div>
+    <div class="dialog-actions">
+      <button id="conflict-close" type="button">後で確認</button>
+      <button id="conflict-remote" type="button">保存済みを使う</button>
+      <button id="conflict-apply" class="primary" type="button">端末の変更を反映</button>
+    </div>
+  </dialog>
 
   <script>
-    var VER = 'v3.0';
-    var KU = 'gasUrl_v1';
-    var KT = 'gasTok_v1';
-    var KB = 'lastBase_v1';
-    var DB = 'taskapp';
-    var ST = 'outbox';
-    var useIdb = true;
+    'use strict';
 
-    var results = [];
-    var sending = false;
-    var fails = 0;
-    var nextTry = 0;
-    var adding = false;
-    var localSaving = false;
-    var lastCreatedAt = 0;
+    const VERSION = 'v4.0';
+    const DB_NAME = 'taskapp-unified';
+    const URL_KEY = 'gasUrl_v1';
+    const TOKEN_KEY = 'gasTok_v1';
+    const TAB_ID = uuid();
 
-    var base = null;
-    var current = [];
-    var revision = 0;
-    var loading = false;
-    var reloadRequested = false;
-    var cachedDisplay = false;
+    let db = null;
+    let state = emptyState();
+    let page = 'plan';
+    let selectedDate = japanDate();
+    let taskFilter = 'all';
+    let filterDate = selectedDate;
+    let historyData = {
+      items: [],
+      total: 0
+    };
 
-    var L = document.getElementById('list');
-    var drag = null;
-    var candidate = null;
-    var holdTimer = null;
-    var pointerId = null;
-    var startX = 0;
-    var startY = 0;
-    var pointerX = 0;
-    var pointerY = 0;
-    var autoTimer = null;
-    var autoDirection = 0;
-    var ignoreClickUntil = 0;
+    let storageReady = false;
+    let legacyBlocked = false;
+    let refreshing = false;
+    let pumping = false;
+    let nextTry = 0;
+    let failures = 0;
+    let editorContext = null;
+    let conflictId = null;
+    let readSequence = 0;
+    let channel = null;
+
+    let drag = null;
+    let candidate = null;
+    let holdTimer = null;
+    let pointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+    let autoTimer = null;
+    let autoDirection = 0;
+    let suppressClickUntil = 0;
+    let dragContext = null;
 
     function $(id) {
       return document.getElementById(id);
@@ -432,59 +634,107 @@
 
     function uuid() {
       if (window.crypto && window.crypto.randomUUID) {
-        return window.crypto.randomUUID();
+        return crypto.randomUUID();
       }
 
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
-        var number = Math.random() * 16 | 0;
+        const number = Math.random() * 16 | 0;
         return (character === 'x' ? number : number & 3 | 8).toString(16);
       });
     }
 
-    function hourValue(value) {
-      return typeof value === 'number' &&
-        Number.isInteger(value) &&
-        value >= 8 &&
-        value <= 22
-          ? value
-          : null;
+    function emptyState() {
+      return {
+        snapshot: null,
+        jobs: [],
+        sequence: 0,
+        transitions: [],
+        savedAt: 0
+      };
     }
 
-    function compareJobs(a, b) {
-      return Number(a.createdAt || 0) - Number(b.createdAt || 0) ||
-        String(a.id).localeCompare(String(b.id));
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
     }
 
-    function warn(message) {
-      $('lwarn').replaceChildren();
+    function make(tag, text, className) {
+      const element = document.createElement(tag);
 
-      if (message) {
-        var box = document.createElement('div');
-        box.className = 'warn';
-        box.textContent = message;
-        $('lwarn').appendChild(box);
+      if (text !== undefined && text !== null) {
+        element.textContent = text;
       }
+
+      if (className) {
+        element.className = className;
+      }
+
+      return element;
     }
 
-    /* ---------- 端末保存 ---------- */
+    function button(text, handler, className) {
+      const element = make('button', text, className);
+      element.type = 'button';
+      element.addEventListener('click', handler);
+      return element;
+    }
 
-    function openDb() {
+    function notify(text, error) {
+      $('message').textContent = text || '';
+      $('message').className = 'notice' + (error ? ' error' : '');
+      $('message').hidden = !text;
+    }
+
+    function japanDate() {
+      return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+    }
+
+    function dateShift(value, days) {
+      const date = new Date(value + 'T12:00:00Z');
+      date.setUTCDate(date.getUTCDate() + days);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function hourLabel(hour) {
+      return hour === null ? '時間未定' : hour + '時';
+    }
+
+    function compareTasks(a, b) {
+      const first = a.hour === null ? 7 : a.hour;
+      const second = b.hour === null ? 7 : b.hour;
+
+      if (first !== second) {
+        return first - second;
+      }
+
+      const orderA = a.order == null ? Infinity : a.order;
+      const orderB = b.order == null ? Infinity : b.order;
+
+      return orderA - orderB || a.row - b.row;
+    }
+
+    function dayVersion(snapshot, date) {
+      return snapshot.days[date] || snapshot.emptyDay;
+    }
+
+    function taskById(snapshot, id) {
+      return snapshot.tasks.find(function (task) {
+        return task.taskId === id;
+      }) || null;
+    }
+
+    /* ---------- 端末内への保存 ---------- */
+
+    function openDatabase() {
       return new Promise(function (resolve, reject) {
         if (!window.indexedDB) {
-          reject(new Error('端末保存を利用できません。'));
+          reject(new Error('この端末では保存を利用できません。'));
           return;
         }
 
-        var request = indexedDB.open(DB, 1);
+        const request = indexedDB.open(DB_NAME, 1);
 
         request.onupgradeneeded = function () {
-          var database = request.result;
-
-          if (!database.objectStoreNames.contains(ST)) {
-            database.createObjectStore(ST, {
-              keyPath: 'id'
-            });
-          }
+          request.result.createObjectStore('data');
         };
 
         request.onsuccess = function () {
@@ -497,938 +747,933 @@
       });
     }
 
-    function dbAction(mode, action) {
-      return openDb().then(function (database) {
-        return new Promise(function (resolve, reject) {
-          var transaction;
-          var request;
+    function readState() {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readonly');
+        const request = transaction.objectStore('data').get('main');
 
+        transaction.oncomplete = function () {
+          resolve(request.result || emptyState());
+        };
+
+        transaction.onerror = function () {
+          reject(transaction.error);
+        };
+      });
+    }
+
+    function updateState(change) {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readwrite');
+        const store = transaction.objectStore('data');
+        const request = store.get('main');
+        let next;
+        let output;
+        let caught;
+
+        request.onsuccess = function () {
           try {
-            transaction = database.transaction(ST, mode);
-            request = action(transaction.objectStore(ST));
+            next = request.result || emptyState();
+            output = change(next);
+            next.savedAt = Date.now();
+            store.put(next, 'main');
           } catch (error) {
-            database.close();
-            reject(error);
+            caught = error;
+            transaction.abort();
+          }
+        };
+
+        transaction.oncomplete = function () {
+          state = next;
+          render();
+
+          if (channel) {
+            channel.postMessage('changed');
+          }
+
+          resolve(output);
+        };
+
+        transaction.onerror = transaction.onabort = function () {
+          reject(caught || transaction.error || new Error('端末に保存できませんでした。'));
+        };
+      });
+    }
+
+    function lease(action) {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readwrite');
+        const store = transaction.objectStore('data');
+        const request = store.get('sender');
+        let accepted = false;
+
+        request.onsuccess = function () {
+          const saved = request.result;
+          const now = Date.now();
+
+          if (action === 'release') {
+            if (saved && saved.owner === TAB_ID) {
+              store.delete('sender');
+            }
+
+            accepted = true;
             return;
           }
 
-          transaction.oncomplete = function () {
-            database.close();
-            resolve(request ? request.result : true);
-          };
+          if (!saved || saved.owner === TAB_ID || saved.until < now) {
+            store.put({
+              owner: TAB_ID,
+              until: now + 60000
+            }, 'sender');
 
-          transaction.onerror = transaction.onabort = function () {
-            database.close();
-            reject(transaction.error || new Error('端末保存に失敗しました。'));
-          };
-        });
+            accepted = true;
+          }
+        };
+
+        transaction.oncomplete = function () {
+          resolve(accepted);
+        };
+
+        transaction.onerror = function () {
+          reject(transaction.error);
+        };
       });
     }
 
-    function lsAll() {
-      var value = JSON.parse(localStorage.getItem('outbox_v1') || '[]');
+    async function oldPendingCount() {
+      let fallback = [];
 
-      if (!Array.isArray(value)) {
-        throw new Error('未送信の保存内容を読み取れません。');
+      try {
+        fallback = JSON.parse(localStorage.getItem('outbox_v1') || '[]');
+      } catch (error) {
+        throw new Error('以前の未送信記録を読み取れません。端末データは消さないでください。');
       }
 
-      return value;
-    }
+      const old = await new Promise(function (resolve, reject) {
+        const request = indexedDB.open('taskapp');
+        let created = false;
 
-    function lsSave(list) {
-      localStorage.setItem('outbox_v1', JSON.stringify(list));
-    }
+        request.onupgradeneeded = function () {
+          created = true;
+          request.transaction.abort();
+        };
 
-    function mergeStored(first, second) {
-      var map = new Map();
+        request.onerror = function () {
+          if (created) {
+            resolve([]);
+          } else {
+            reject(request.error);
+          }
+        };
 
-      first.concat(second).forEach(function (item) {
-        var previous = map.get(item.id);
+        request.onsuccess = function () {
+          const oldDb = request.result;
 
-        if (
-          !previous ||
-          Number(item.updatedAt || item.createdAt || 0) >=
-          Number(previous.updatedAt || previous.createdAt || 0)
-        ) {
-          map.set(item.id, item);
-        }
-      });
-
-      return Array.from(map.values());
-    }
-
-    async function putItem(item) {
-      var saved = Object.assign({}, item, {
-        updatedAt: Date.now()
-      });
-
-      if (useIdb) {
-        try {
-          await dbAction('readwrite', function (store) {
-            return store.put(saved);
-          });
-
-          var leftovers = lsAll();
-
-          if (leftovers.some(function (entry) {
-            return entry.id === saved.id;
-          })) {
-            lsSave(leftovers.filter(function (entry) {
-              return entry.id !== saved.id;
-            }));
+          if (!oldDb.objectStoreNames.contains('outbox')) {
+            oldDb.close();
+            resolve([]);
+            return;
           }
 
-          return;
-        } catch (error) {
-          useIdb = false;
-        }
-      }
+          const transaction = oldDb.transaction('outbox', 'readonly');
+          const get = transaction.objectStore('outbox').getAll();
 
-      var list = lsAll().filter(function (entry) {
-        return entry.id !== saved.id;
-      });
-
-      list.push(saved);
-      lsSave(list);
-    }
-
-    async function allItems() {
-      var fallback = lsAll();
-
-      if (!useIdb) {
-        return fallback;
-      }
-
-      try {
-        var stored = await dbAction('readonly', function (store) {
-          return store.getAll();
-        });
-
-        return mergeStored(stored || [], fallback);
-      } catch (error) {
-        useIdb = false;
-        return fallback;
-      }
-    }
-
-    async function delItem(id) {
-      if (useIdb) {
-        await dbAction('readwrite', function (store) {
-          return store.delete(id);
-        });
-      }
-
-      var fallback = lsAll();
-
-      if (fallback.some(function (item) {
-        return item.id === id;
-      })) {
-        lsSave(fallback.filter(function (item) {
-          return item.id !== id;
-        }));
-      }
-    }
-
-    function cacheKey(date) {
-      return 'cache_v3_' + date;
-    }
-
-    function saveCache() {
-      if (!base) {
-        return;
-      }
-
-      try {
-        localStorage.setItem(KB, base);
-        localStorage.setItem(cacheKey(base), JSON.stringify(current));
-      } catch (error) {
-        warn('画面の控えを端末に保存できませんでした。未送信の件数を確認してください。');
-      }
-    }
-
-    function normalizeTasks(list) {
-      if (!Array.isArray(list)) {
-        return [];
-      }
-
-      return list.filter(function (task) {
-        return task && task.taskId;
-      }).map(function (task) {
-        return {
-          taskId: String(task.taskId),
-          title: String(task.title || ''),
-          hour: hourValue(task.hour)
-        };
-      });
-    }
-
-    function sortedByHour(list) {
-      return list.map(function (task, index) {
-        return {
-          task: task,
-          index: index
-        };
-      }).sort(function (a, b) {
-        var first = a.task.hour === null ? 7 : a.task.hour;
-        var second = b.task.hour === null ? 7 : b.task.hour;
-        return first - second || a.index - b.index;
-      }).map(function (item) {
-        return item.task;
-      });
-    }
-
-    function applyOrder(list, job) {
-      var changesHours = Array.isArray(job.items);
-
-      var items = changesHours
-        ? job.items
-        : (job.ids || []).map(function (id) {
-          return {
-            id: String(id)
+          transaction.oncomplete = function () {
+            oldDb.close();
+            resolve(get.result || []);
           };
-        });
 
-      var byId = new Map();
-      var used = new Set();
-      var output = [];
-
-      list.forEach(function (task) {
-        byId.set(task.taskId, task);
+          transaction.onerror = function () {
+            oldDb.close();
+            reject(transaction.error);
+          };
+        };
       });
 
-      items.forEach(function (item) {
-        var id = String(item.id);
-        var task = byId.get(id);
-
-        if (!task || used.has(id)) {
-          return;
-        }
-
-        used.add(id);
-
-        output.push({
-          taskId: task.taskId,
-          title: task.title,
-          hour: changesHours ? hourValue(item.hour) : task.hour
-        });
-      });
-
-      list.forEach(function (task) {
-        if (!used.has(task.taskId)) {
-          output.push(task);
-        }
-      });
-
-      return sortedByHour(output);
-    }
-
-    function applyPending(list, jobs, date) {
-      var output = normalizeTasks(list);
-
-      jobs.slice().sort(compareJobs).forEach(function (job) {
-        if (job.kind === 'done') {
-          output = output.filter(function (task) {
-            return task.taskId !== String(job.taskId);
-          });
-        }
-
-        if (
-          job.kind === 'order' &&
-          (!job.baseDate || job.baseDate === date)
-        ) {
-          output = applyOrder(output, job);
-        }
-      });
-
-      return sortedByHour(output);
-    }
-
-    async function restoreCache() {
-      try {
-        base = localStorage.getItem(KB);
-
-        if (!base) {
-          render();
-          return;
-        }
-
-        var text = localStorage.getItem(cacheKey(base));
-
-        if (!text) {
-          text = localStorage.getItem('cache_v2_' + base);
-        }
-
-        current = normalizeTasks(JSON.parse(text || '[]'));
-
-        var pending = await allItems();
-        current = applyPending(current, pending, base);
-        cachedDisplay = true;
-        updateBase();
-        render();
-      } catch (error) {
-        warn('前回の表示を読み取れませんでした。端末のデータは消さず、「最新を取得」を押してください。');
-        render();
-      }
+      return new Set(old.concat(fallback).map(function (job) {
+        return job.id;
+      })).size;
     }
 
     /* ---------- 通信 ---------- */
 
-    function conf() {
-      return {
-        u: localStorage.getItem(KU) || '',
-        t: localStorage.getItem(KT) || ''
-      };
+    function configured() {
+      return !!localStorage.getItem(URL_KEY) &&
+        !!localStorage.getItem(TOKEN_KEY);
     }
 
-    async function post(body, milliseconds) {
-      var settings = conf();
-
-      if (!settings.u) {
-        throw {
-          kind: 'noconf'
-        };
+    async function api(payload) {
+      if (!configured()) {
+        throw new Error('設定から接続先と合い言葉を保存してください。');
       }
 
-      var controller = window.AbortController
-        ? new AbortController()
-        : null;
-
-      var timer = setTimeout(function () {
-        if (controller) {
-          controller.abort();
-        }
-      }, milliseconds || 30000);
+      const controller = new AbortController();
+      const timer = setTimeout(function () {
+        controller.abort();
+      }, 30000);
 
       try {
-        var response = await fetch(settings.u, {
+        const response = await fetch(localStorage.getItem(URL_KEY), {
           method: 'POST',
-          body: JSON.stringify(Object.assign({
-            token: settings.t
-          }, body)),
           headers: {
             'Content-Type': 'text/plain;charset=utf-8'
           },
+          body: JSON.stringify(Object.assign({
+            mode: 'web',
+            token: localStorage.getItem(TOKEN_KEY)
+          }, payload)),
           redirect: 'follow',
-          signal: controller ? controller.signal : undefined
+          signal: controller.signal
         });
 
-        var text = await response.text();
-
-        if (/^\s*</.test(text)) {
-          throw {
-            kind: /Sign in|ログイン|accounts\.google/i.test(text)
-              ? 'login'
-              : 'servererror'
-          };
-        }
+        const text = await response.text();
+        let result;
 
         try {
-          return JSON.parse(text);
+          result = JSON.parse(text);
         } catch (error) {
-          throw {
-            kind: 'unreadable'
-          };
+          throw new Error('接続先から一覧を受け取れませんでした。公開中の内容と接続先を確認してください。');
         }
-      } catch (error) {
-        throw error && error.kind
-          ? error
-          : {
-            kind: 'network',
-            message: String((error && error.message) || error)
-          };
+
+        if (result.ok && result.app !== VERSION) {
+          throw new Error('PC側の公開中の版がv4.0ではありません。');
+        }
+
+        return result;
       } finally {
         clearTimeout(timer);
       }
     }
 
-    /* ---------- 送信箱 ---------- */
-
-    function stateLabel(state) {
-      if (state === 'saved') {
-        return {
-          text: '送信待ち',
-          className: 'p-wait'
-        };
+    async function acceptSnapshot(snapshot) {
+      if (!snapshot) {
+        return;
       }
 
-      if (state === 'unknown') {
-        return {
-          text: '確認中',
-          className: 'p-send'
-        };
+      await updateState(function (saved) {
+        saved.snapshot = snapshot;
+      });
+    }
+
+    async function refresh() {
+      if (
+        !storageReady ||
+        legacyBlocked ||
+        refreshing ||
+        drag ||
+        pumping ||
+        !navigator.onLine ||
+        !configured()
+      ) {
+        renderStatus();
+        return;
       }
 
-      if (state === 'blocked') {
-        return {
-          text: 'PCで要確認',
-          className: 'p-ng'
-        };
+      refreshing = true;
+      const sequence = ++readSequence;
+
+      try {
+        const result = await api({
+          action: 'load'
+        });
+
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+
+        if (sequence === readSequence && !pumping) {
+          await acceptSnapshot(result.snapshot);
+        }
+      } catch (error) {
+        notify(
+          String(error.message || error) +
+          (state.snapshot ? '\n取得済みの内容は端末に残っています。' : ''),
+          true
+        );
+      } finally {
+        refreshing = false;
+        renderStatus();
       }
+    }
+
+    /* ---------- 未送信の順序と食い違い ---------- */
+
+    function resources(payload, snapshot) {
+      const keys = [];
+
+      if (payload.action === 'order') {
+        keys.push('day:' + payload.date);
+      }
+
+      if (payload.taskId) {
+        keys.push('task:' + payload.taskId);
+
+        const task = taskById(snapshot, payload.taskId);
+
+        if (task && task.date) {
+          keys.push('day:' + task.date);
+        }
+
+        if (payload.action === 'edit' && payload.date) {
+          keys.push('day:' + payload.date);
+        }
+      }
+
+      if (
+        payload.action.indexOf('periodic') === 0 ||
+        payload.action === 'automatic'
+      ) {
+        keys.push('periodic');
+      }
+
+      if (payload.action === 'undo' || payload.action === 'done') {
+        keys.push('undo');
+      }
+
+      return keys;
+    }
+
+    function contextFor(payload, snapshot) {
+      const keys = resources(payload, snapshot);
 
       return {
-        text: state || '送信待ち',
-        className: 'p-wait'
+        keys: keys,
+        causes: state.jobs.filter(function (job) {
+          return job.keys.some(function (key) {
+            return keys.indexOf(key) >= 0;
+          });
+        }).map(function (job) {
+          return job.id;
+        })
       };
     }
 
-    function addOutboxRow(title, state, note, removableId) {
-      var row = document.createElement('li');
-      var label = document.createElement('span');
+    function advance(payload, transition) {
+      if (!transition) {
+        return;
+      }
 
-      label.className = 'pill ' + state.className;
-      label.textContent = state.text;
-      row.appendChild(label);
+      (transition.days || []).forEach(function (entry) {
+        if (
+          payload.action === 'order' &&
+          payload.date === entry.key &&
+          payload.expectedDay === entry.before
+        ) {
+          payload.expectedDay = entry.after;
+        }
+      });
 
-      var text = document.createElement('span');
-      text.textContent = title;
-      row.appendChild(text);
+      (transition.tasks || []).forEach(function (entry) {
+        if (
+          payload.taskId === entry.key &&
+          payload.expectedTask === entry.before
+        ) {
+          payload.expectedTask = entry.after;
+        }
+      });
 
-      if (removableId) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = '破棄';
+      if (
+        transition.periodic &&
+        payload.expectedPeriodic === transition.periodic.before
+      ) {
+        payload.expectedPeriodic = transition.periodic.after;
+      }
 
-        button.addEventListener('click', async function () {
-          button.disabled = true;
+      if (
+        transition.undo &&
+        payload.expectedUndo === transition.undo.before
+      ) {
+        payload.expectedUndo = transition.undo.after;
+      }
+    }
 
-          try {
-            await delItem(removableId);
-            revision++;
-            await renderOutbox();
-            loadToday();
-          } catch (error) {
-            button.disabled = false;
-            alert('端末の記録を変更できませんでした。データは消さずに、もう一度開いてください。');
+    function mergePlan(items, tasks, date) {
+      const available = tasks.filter(function (task) {
+        return task.date === date;
+      }).sort(compareTasks);
+
+      const byId = new Map(available.map(function (task) {
+        return [task.taskId, task];
+      }));
+
+      const used = new Set();
+      const output = [];
+
+      (items || []).forEach(function (item) {
+        if (byId.has(item.id) && !used.has(item.id)) {
+          used.add(item.id);
+
+          output.push({
+            id: item.id,
+            hour: item.hour
+          });
+        }
+      });
+
+      available.forEach(function (task) {
+        if (!used.has(task.taskId)) {
+          output.push({
+            id: task.taskId,
+            hour: task.hour
+          });
+        }
+      });
+
+      return output.map(function (item, index) {
+        return {
+          item: item,
+          index: index
+        };
+      }).sort(function (a, b) {
+        const first = a.item.hour === null ? 7 : a.item.hour;
+        const second = b.item.hour === null ? 7 : b.item.hour;
+
+        return first - second || a.index - b.index;
+      }).map(function (entry) {
+        return entry.item;
+      });
+    }
+
+    function effectiveTasks() {
+      if (!state.snapshot) {
+        return [];
+      }
+
+      let tasks = clone(state.snapshot.tasks);
+
+      state.jobs.slice().sort(function (a, b) {
+        return a.sequence - b.sequence;
+      }).forEach(function (job) {
+        const payload = job.payload;
+
+        if (payload.action === 'done') {
+          tasks = tasks.filter(function (task) {
+            return task.taskId !== payload.taskId;
+          });
+        }
+
+        if (payload.action === 'edit') {
+          const task = tasks.find(function (entry) {
+            return entry.taskId === payload.taskId;
+          });
+
+          if (task) {
+            task.title = payload.title;
+            task.due = payload.due;
+            task.date = payload.date;
+          }
+        }
+
+        if (payload.action === 'order') {
+          const merged = mergePlan(payload.items, tasks, payload.date);
+
+          merged.forEach(function (item, index) {
+            const task = tasks.find(function (entry) {
+              return entry.taskId === item.id;
+            });
+
+            task.hour = item.hour;
+            task.order = index + 1;
+          });
+        }
+      });
+
+      return tasks;
+    }
+
+    async function enqueue(payload, label, captured) {
+      if (!storageReady || legacyBlocked) {
+        throw new Error('端末への保存が準備できていません。');
+      }
+
+      const context = captured || contextFor(payload, state.snapshot);
+      const id = uuid();
+
+      await updateState(function (saved) {
+        const data = clone(payload);
+        data.requestId = id;
+
+        saved.transitions.forEach(function (entry) {
+          if (context.causes.indexOf(entry.id) >= 0) {
+            advance(data, entry.transition);
           }
         });
 
-        row.appendChild(button);
-      }
+        saved.sequence++;
 
-      if (note) {
-        var detail = document.createElement('div');
-        detail.className = 'sub';
-        detail.textContent = note;
-        row.appendChild(detail);
-      }
+        saved.jobs.push({
+          id: id,
+          sequence: saved.sequence,
+          payload: data,
+          label: label,
+          keys: context.keys,
+          causes: context.causes,
+          state: 'saved',
+          frozen: false,
+          note: ''
+        });
+      });
 
-      $('outbox').appendChild(row);
+      pump(true);
     }
 
-    async function renderOutbox() {
-      try {
-        var list = await allItems();
-        list.sort(compareJobs);
-        $('pcount').textContent = '未送信 ' + list.length + ' 件';
-        $('outbox').replaceChildren();
+    function readyJob(saved) {
+      const ids = new Set(saved.jobs.map(function (job) {
+        return job.id;
+      }));
 
-        list.forEach(function (item) {
-          lastCreatedAt = Math.max(lastCreatedAt, Number(item.createdAt || 0));
-
-          addOutboxRow(
-            item.title || (item.kind === 'order' ? '時間帯・並び順の更新' : '完了の反映'),
-            stateLabel(item.state),
-            item.note || '',
-            item.state === 'saved' || item.state === 'blocked' ? item.id : null
-          );
-        });
-
-        results.slice(-5).reverse().forEach(function (result) {
-          addOutboxRow(
-            result.title,
-            {
-              text: '完了',
-              className: 'p-ok'
-            },
-            result.note,
-            null
-          );
-        });
-      } catch (error) {
-        $('pcount').textContent = '未送信：読み取り不可';
-        warn('未送信の記録を読み取れません。端末のデータは消さずに、アプリを開き直してください。');
-      }
-    }
-
-    function makeJob(data) {
-      lastCreatedAt = Math.max(Date.now(), lastCreatedAt + 1);
-
-      return Object.assign({}, data, {
-        id: uuid(),
-        createdAt: lastCreatedAt,
-        state: 'saved',
-        note: ''
+      return saved.jobs.slice().sort(function (a, b) {
+        return a.sequence - b.sequence;
+      }).find(function (job) {
+        return ['saved', 'unknown', 'sending'].indexOf(job.state) >= 0 &&
+          !job.causes.some(function (id) {
+            return ids.has(id);
+          });
       });
     }
 
-    async function addTask() {
-      if (adding) {
-        return;
-      }
-
-      var text = $('title').value;
-
-      if (!text.trim()) {
-        return;
-      }
-
-      if (text.length > 200) {
-        alert('件名は200文字以内で入力してください。');
-        return;
-      }
-
-      adding = true;
-      $('add').disabled = true;
-
-      var job = makeJob({
-        kind: 'add',
-        title: text
-      });
-
-      try {
-        await putItem(job);
-        revision++;
-
-        if ($('title').value === text) {
-          $('title').value = '';
-        }
-
-        await renderOutbox();
-        trySend(true);
-      } catch (error) {
-        alert('この端末に保存できませんでした。入力はそのまま残します。');
-      } finally {
-        adding = false;
-        $('add').disabled = false;
-      }
-    }
-
-    function retryLater() {
-      fails++;
-
-      nextTry = Date.now() + Math.min(
-        300000,
-        5000 * Math.pow(3, Math.min(fails, 4))
-      );
-    }
-
-    function networkMessage(error) {
-      if (error.kind === 'login') {
-        return 'PC側の公開設定を確認してください。';
-      }
-
-      if (error.kind === 'noconf') {
-        return '接続先が未設定です。';
-      }
-
-      if (error.kind === 'servererror') {
-        return 'PC側で処理が中断しました。未登録とは限りません。';
-      }
-
-      return '通信できませんでした。未登録とは限りません。後で同じ受付番号で再送します。';
-    }
-
-    async function trySend(force) {
+    async function pump(force) {
       if (
-        sending ||
+        pumping ||
+        !storageReady ||
+        legacyBlocked ||
         !navigator.onLine ||
-        !conf().u ||
+        !configured() ||
         (!force && Date.now() < nextTry)
       ) {
         return;
       }
 
-      sending = true;
-      var updated = false;
+      pumping = true;
+      readSequence++;
+      let ownsLease = false;
+      let renewal = null;
+      let changed = false;
 
       try {
-        while (navigator.onLine) {
-          var list = await allItems();
+        ownsLease = await lease('claim');
 
-          var next = list.filter(function (item) {
-            return item.state === 'saved' || item.state === 'unknown';
-          }).sort(compareJobs)[0];
-
-          if (!next) {
-            fails = 0;
-            nextTry = 0;
-            break;
-          }
-
-          await putItem(Object.assign({}, next, {
-            state: 'unknown'
-          }));
-
-          await renderOutbox();
-
-          try {
-            var body;
-
-            if (next.kind === 'order') {
-              body = Array.isArray(next.items)
-                ? {
-                  mode: 'order',
-                  items: next.items
-                }
-                : {
-                  mode: 'order',
-                  ids: next.ids || []
-                };
-            } else if (next.kind === 'done') {
-              body = {
-                mode: 'done',
-                taskId: next.taskId
-              };
-            } else {
-              body = {
-                mode: 'add',
-                requestId: next.id,
-                title: next.title
-              };
-            }
-
-            var result = await post(body);
-
-            var accepted = result && result.ok && [
-              'committed',
-              'duplicate',
-              'recovered',
-              'saved',
-              'done',
-              'already'
-            ].indexOf(result.status) >= 0;
-
-            if (accepted) {
-              revision++;
-              await delItem(next.id);
-              updated = true;
-              fails = 0;
-              nextTry = 0;
-
-              if (!next.kind || next.kind === 'add') {
-                results.push({
-                  title: next.title,
-                  note: result.status === 'committed'
-                    ? '新規登録'
-                    : '再送でも1件のまま'
-                });
-              }
-
-              continue;
-            }
-
-            if (result && (
-              result.status === 'indeterminate' ||
-              result.status === 'invalid'
-            )) {
-              await putItem(Object.assign({}, next, {
-                state: 'blocked',
-                note: result.message ||
-                  '登録されたか判定できません。PCで確認してください。'
-              }));
-
-              continue;
-            }
-
-            var setupProblem = result && [
-              'denied',
-              'nosetup',
-              'needs_setup'
-            ].indexOf(result.status) >= 0;
-
-            await putItem(Object.assign({}, next, {
-              state: setupProblem ? 'saved' : 'unknown',
-              note: (result && result.message) ||
-                '混雑・エラーのため後で再試行します。'
-            }));
-
-            retryLater();
-            break;
-          } catch (error) {
-            retryLater();
-
-            await putItem(Object.assign({}, next, {
-              state: 'unknown',
-              note: networkMessage(error)
-            }));
-
-            break;
-          }
-        }
-      } catch (error) {
-        warn('未送信の記録を読み書きできませんでした。端末のデータは消さずに開き直してください。');
-      } finally {
-        sending = false;
-        await renderOutbox();
-
-        if (updated) {
-          loadToday();
-        }
-      }
-    }
-
-    /* ---------- 今日の一覧 ---------- */
-
-    function updateBase() {
-      $('base').textContent = base
-        ? '基準日：' + base + (cachedDisplay ? '（前回取得時点）' : '')
-        : '基準日：—';
-    }
-
-    async function loadToday() {
-      if (drag || localSaving) {
-        reloadRequested = true;
-        return;
-      }
-
-      if (loading) {
-        reloadRequested = true;
-        return;
-      }
-
-      if (!conf().u) {
-        $('lnote').textContent = '設定から接続先と合い言葉を保存してください。';
-        return;
-      }
-
-      loading = true;
-      reloadRequested = false;
-      var startedAtRevision = revision;
-
-      try {
-        var result = await post({
-          mode: 'list'
-        });
-
-        if (!result || !result.ok) {
-          throw {
-            kind: 'message',
-            message: (result && result.message) || '一覧を取得できませんでした。'
-          };
-        }
-
-        if (result.app !== VER) {
-          throw {
-            kind: 'message',
-            message: 'PC側の公開中の版がv3.0ではありません。差し替え手順の「公開中の内容を更新する」を確認してください。'
-          };
-        }
-
-        var pending = await allItems();
-
-        if (
-          startedAtRevision !== revision ||
-          drag ||
-          localSaving
-        ) {
-          reloadRequested = true;
+        if (!ownsLease) {
           return;
         }
 
-        base = result.baseDate;
-        current = applyPending(result.tasks, pending, base);
-        cachedDisplay = false;
-        updateBase();
-        warn('');
-        saveCache();
-        render();
+        renewal = setInterval(function () {
+          lease('claim').catch(function () {
+            // 次の送信前に再確認する。
+          });
+        }, 10000);
 
-        $('lnote').textContent = current.length
-          ? '時間帯・並び順・完了はパソコンと共有されます。'
-          : '今日の実行日が入った未完了タスクはありません。';
-      } catch (error) {
-        warn(
-          error.kind === 'message'
-            ? error.message
-            : '最新を取得できませんでした。端末に保存してある内容を表示しています。'
-        );
-      } finally {
-        loading = false;
+        while (navigator.onLine) {
+          if (!await lease('claim')) {
+            break;
+          }
 
-        if (reloadRequested && !drag && !localSaving) {
-          reloadRequested = false;
-          setTimeout(loadToday, 100);
+          state = await readState();
+          const candidateJob = readyJob(state);
+
+          if (!candidateJob) {
+            break;
+          }
+
+          let job;
+
+          await updateState(function (saved) {
+            const current = saved.jobs.find(function (entry) {
+              return entry.id === candidateJob.id;
+            });
+
+            if (!current) {
+              return;
+            }
+
+            if (
+              !current.frozen &&
+              current.payload.action === 'order' &&
+              saved.snapshot
+            ) {
+              current.payload.items = mergePlan(
+                current.payload.items,
+                saved.snapshot.tasks,
+                current.payload.date
+              );
+            }
+
+            current.frozen = true;
+            current.state = 'sending';
+            current.note = '送信結果を確認しています。';
+            job = clone(current);
+          });
+
+          if (!job) {
+            continue;
+          }
+
+          try {
+            const result = await api(job.payload);
+
+            if (result.ok) {
+              await updateState(function (saved) {
+                const exists = saved.jobs.some(function (entry) {
+                  return entry.id === job.id;
+                });
+
+                if (!exists) {
+                  return;
+                }
+
+                saved.jobs.forEach(function (entry) {
+                  if (
+                    entry.id !== job.id &&
+                    !entry.frozen &&
+                    entry.causes.indexOf(job.id) >= 0
+                  ) {
+                    advance(entry.payload, result.transition);
+                  }
+                });
+
+                saved.jobs = saved.jobs.filter(function (entry) {
+                  return entry.id !== job.id;
+                });
+
+                saved.transitions.push({
+                  id: job.id,
+                  transition: result.transition
+                });
+
+                saved.transitions = saved.transitions.slice(-100);
+                saved.snapshot = result.snapshot;
+              });
+
+              changed = true;
+              failures = 0;
+              nextTry = 0;
+              notify(result.message || '保存しました。');
+              continue;
+            }
+
+            const conflict = result.status === 'conflict';
+            const blocked = result.status === 'invalid' ||
+              result.status === 'indeterminate';
+
+            await updateState(function (saved) {
+              const current = saved.jobs.find(function (entry) {
+                return entry.id === job.id;
+              });
+
+              if (!current) {
+                return;
+              }
+
+              current.state = conflict ? 'conflict' : blocked ? 'blocked' : 'unknown';
+              current.note = result.message || '後で再試行します。';
+
+              if (result.snapshot) {
+                saved.snapshot = result.snapshot;
+              }
+            });
+
+            if (conflict || blocked) {
+              continue;
+            }
+
+            throw new Error(result.message || '送信を確認できませんでした。');
+          } catch (error) {
+            failures++;
+            nextTry = Date.now() + Math.min(
+              300000,
+              5000 * Math.pow(2, Math.min(failures, 6))
+            );
+
+            await updateState(function (saved) {
+              const current = saved.jobs.find(function (entry) {
+                return entry.id === job.id;
+              });
+
+              if (
+                current &&
+                current.state !== 'conflict' &&
+                current.state !== 'blocked'
+              ) {
+                current.state = 'unknown';
+                current.note =
+                  '通信を確認できません。未反映とは限りません。同じ受付番号で再確認します。';
+              }
+            });
+
+            break;
+          }
         }
+      } catch (error) {
+        notify('端末への保存を確認できません。データは消さずに、画面を開き直してください。', true);
+      } finally {
+        if (renewal) {
+          clearInterval(renewal);
+        }
+
+        if (ownsLease) {
+          await lease('release').catch(function () {
+            return null;
+          });
+        }
+
+        pumping = false;
+        renderStatus();
+
+        if (changed && page === 'history') {
+          loadHistory(false);
+        }
+      }
+    }
+
+    /* ---------- 共通表示 ---------- */
+
+    function renderStatus() {
+      const pending = state.jobs.length;
+      const conflict = state.jobs.some(function (job) {
+        return job.state === 'conflict' || job.state === 'blocked';
+      });
+
+      let text = navigator.onLine ? '通信あり' : '通信なし';
+
+      if (!storageReady) {
+        text += '／端末保存を準備中';
+      } else if (legacyBlocked) {
+        text += '／旧画面の未送信を先に確認してください';
+      } else if (conflict) {
+        text += '／確認が必要／未送信 ' + pending + ' 件';
+      } else if (pending) {
+        text += '／未送信 ' + pending + ' 件';
+      } else if (state.snapshot) {
+        text += '／保存済み';
+      } else {
+        text += '／未取得';
+      }
+
+      if (refreshing) {
+        text += '／読み込み中';
+      }
+
+      $('status').textContent = text;
+      $('add').disabled = !storageReady || legacyBlocked;
+      $('reload').disabled = !storageReady || legacyBlocked || refreshing;
+    }
+
+    function renderOutbox() {
+      const container = $('outbox-items');
+      container.replaceChildren();
+      $('outbox').hidden = !state.jobs.length;
+      $('outbox-summary').textContent = '未送信 ' + state.jobs.length + ' 件';
+
+      state.jobs.forEach(function (job) {
+        const row = make('div', null, 'job');
+        row.appendChild(make('div', job.label, 'job-title'));
+        row.appendChild(make('div', job.note || '端末に保存済みです。', 'sub'));
+
+        if (job.state === 'conflict') {
+          row.appendChild(button('確認する', function () {
+            openConflict(job.id);
+          }));
+        } else if (job.state !== 'blocked') {
+          row.appendChild(button('いま送る', function () {
+            nextTry = 0;
+            pump(true);
+          }));
+        } else {
+          row.appendChild(make(
+            'div',
+            'この操作は自動反映を止めています。状態をコピーして確認してください。',
+            'sub error'
+          ));
+        }
+
+        container.appendChild(row);
+      });
+
+      if (state.jobs.some(function (job) {
+        return job.state === 'conflict' || job.state === 'blocked';
+      })) {
+        $('outbox').open = true;
       }
     }
 
     function render() {
+      renderStatus();
+      renderOutbox();
+
       if (drag) {
         return;
       }
 
-      L.replaceChildren();
+      document.querySelectorAll('nav [data-page]').forEach(function (element) {
+        element.classList.toggle('active', element.dataset.page === page);
+      });
 
-      var hours = [null];
+      const content = $('content');
+      content.replaceChildren();
 
-      for (var hour = 8; hour <= 22; hour++) {
-        hours.push(hour);
+      if (!state.snapshot) {
+        content.appendChild(make('h2', '接続の準備'));
+        content.appendChild(make(
+          'p',
+          configured()
+            ? '通信できる状態で「最新を取得」を押してください。'
+            : '「設定」で接続先と合い言葉を保存してください。'
+        ));
+        return;
       }
 
-      hours.forEach(function (hour) {
-        var section = document.createElement('section');
-        section.className = 'slot';
+      if (page === 'plan') {
+        renderPlan(content);
+      } else if (page === 'tasks') {
+        renderTasks(content);
+      } else if (page === 'periodic') {
+        renderPeriodic(content);
+      } else {
+        renderHistory(content);
+      }
+    }
+
+    /* ---------- 1日の計画 ---------- */
+
+    function renderPlan(content) {
+      content.appendChild(make('h2', '1日の計画'));
+
+      const tools = make('div', null, 'toolbar');
+      const date = make('input');
+      date.type = 'date';
+      date.value = selectedDate;
+
+      date.addEventListener('change', function () {
+        if (date.value) {
+          selectedDate = date.value;
+          render();
+        }
+      });
+
+      tools.append(
+        button('前日', function () {
+          selectedDate = dateShift(selectedDate, -1);
+          render();
+        }),
+        date,
+        button('今日', function () {
+          selectedDate = japanDate();
+          render();
+        }),
+        button('翌日', function () {
+          selectedDate = dateShift(selectedDate, 1);
+          render();
+        })
+      );
+
+      content.appendChild(tools);
+      content.appendChild(make(
+        'p',
+        '左の丸＝完了／右の≡を動かす＝配置して自動保存。時間帯は目安です。',
+        'sub'
+      ));
+
+      if (!navigator.onLine) {
+        content.appendChild(make(
+          'p',
+          '前回取得した内容と、この端末の未送信を表示しています。',
+          'sub'
+        ));
+      }
+
+      const tasks = effectiveTasks().filter(function (task) {
+        return task.date === selectedDate;
+      }).sort(compareTasks);
+
+      content.appendChild(make(
+        'div',
+        tasks.length ? tasks.length + ' 件' : '取得済みの一覧に、この日のタスクはありません。',
+        'sub'
+      ));
+
+      const timeline = make('div', null, 'timeline');
+      timeline.id = 'timeline';
+
+      [null].concat(Array.from({
+        length: 15
+      }, function (_, index) {
+        return index + 8;
+      })).forEach(function (hour) {
+        const section = make('section', null, 'slot');
         section.dataset.hour = hour === null ? '' : String(hour);
+        section.appendChild(make('div', hourLabel(hour), 'slot-label'));
 
-        var label = document.createElement('div');
-        label.className = 'slot-label';
-        label.textContent = hour === null ? '時間未定' : hour + '時';
+        const list = make('ul', null, 'slot-list');
 
-        var list = document.createElement('ul');
-        list.className = 'slot-list';
-
-        current.filter(function (task) {
+        tasks.filter(function (task) {
           return task.hour === hour;
         }).forEach(function (task) {
-          var row = document.createElement('li');
-          row.className = 'task';
+          const row = make('li', null, 'task');
           row.dataset.id = task.taskId;
 
-          var hit = document.createElement('button');
-          hit.type = 'button';
-          hit.className = 'hit';
-          hit.dataset.act = 'done';
-          hit.setAttribute('aria-label', task.title + 'を完了');
+          const complete = button('', function () {
+            if (
+              drag ||
+              Date.now() < suppressClickUntil ||
+              !confirm('「' + task.title + '」を完了にしますか。')
+            ) {
+              return;
+            }
 
-          var circle = document.createElement('span');
-          circle.className = 'check';
-          circle.setAttribute('aria-hidden', 'true');
-          hit.appendChild(circle);
+            const original = taskById(state.snapshot, task.taskId);
 
-          var title = document.createElement('span');
-          title.className = 'ttl';
-          title.textContent = task.title;
+            if (!original) {
+              return;
+            }
 
-          var grip = document.createElement('button');
+            enqueue({
+              action: 'done',
+              taskId: task.taskId,
+              expectedTask: original.version
+            }, '完了：' + task.title).catch(function (error) {
+              notify(error.message, true);
+            });
+          }, 'hit');
+
+          complete.dataset.act = 'done';
+          complete.setAttribute('aria-label', task.title + 'を完了');
+          complete.appendChild(make('span', null, 'circle'));
+
+          const grip = make('button', '≡', 'grip');
           grip.type = 'button';
-          grip.className = 'grip';
           grip.dataset.act = 'grip';
-          grip.textContent = '≡';
           grip.setAttribute('aria-label', task.title + 'を移動');
 
-          row.append(hit, title, grip);
+          row.append(complete, make('span', task.title, 'ttl'), grip);
           list.appendChild(row);
         });
 
-        section.append(label, list);
-        L.appendChild(section);
+        section.appendChild(list);
+        timeline.appendChild(section);
       });
 
-      var end = document.createElement('div');
-      end.className = 'timeline-end';
+      timeline.appendChild(make('div', '23:00', 'timeline-end'));
 
-      var endLabel = document.createElement('span');
-      endLabel.textContent = '23:00';
-      end.appendChild(endLabel);
-      L.appendChild(end);
-
-      var line = document.createElement('div');
-      line.id = 'now';
-      line.className = 'now-line';
+      const line = make('div', null, 'now-line');
+      line.id = 'now-line';
       line.hidden = true;
-      line.appendChild(document.createElement('span'));
-      L.appendChild(line);
+      line.appendChild(make('span'));
+      timeline.appendChild(line);
 
+      content.appendChild(timeline);
       updateNow();
     }
 
-    function currentItems() {
-      return Array.from(L.querySelectorAll('.task[data-id]')).map(function (row) {
-        var hour = row.closest('.slot').dataset.hour;
+    function visibleItems() {
+      return Array.from(document.querySelectorAll('#timeline .task')).map(function (row) {
+        const value = row.closest('.slot').dataset.hour;
 
         return {
           id: row.dataset.id,
-          hour: hour === '' ? null : Number(hour)
+          hour: value === '' ? null : Number(value)
         };
       });
     }
-
-    async function saveOrder() {
-      if (!base || localSaving) {
-        render();
-        return;
-      }
-
-      var before = current;
-      var items = currentItems();
-
-      var job = makeJob({
-        kind: 'order',
-        title: '時間帯・並び順の更新',
-        baseDate: base,
-        items: items
-      });
-
-      localSaving = true;
-      revision++;
-      current = applyOrder(current, job);
-
-      try {
-        await putItem(job);
-        saveCache();
-        await renderOutbox();
-        trySend(true);
-      } catch (error) {
-        current = before;
-        revision++;
-        render();
-
-        alert(
-          'この端末に保存できなかったため、移動前に戻しました。' +
-          '端末のデータは消さずに、もう一度試してください。'
-        );
-      } finally {
-        localSaving = false;
-
-        if (reloadRequested) {
-          loadToday();
-        }
-      }
-    }
-
-    async function completeTask(row, id) {
-      if (localSaving) {
-        return;
-      }
-
-      var before = current;
-
-      var job = makeJob({
-        kind: 'done',
-        title: '完了の反映',
-        taskId: id,
-        baseDate: base
-      });
-
-      localSaving = true;
-      revision++;
-      row.classList.add('done');
-
-      current = current.filter(function (task) {
-        return task.taskId !== id;
-      });
-
-      try {
-        await putItem(job);
-        saveCache();
-        render();
-        await renderOutbox();
-        trySend(true);
-      } catch (error) {
-        current = before;
-        revision++;
-        render();
-        alert('この端末に保存できなかったため、完了前に戻しました。');
-      } finally {
-        localSaving = false;
-
-        if (reloadRequested) {
-          loadToday();
-        }
-      }
-    }
-
-    /* ---------- つまみ・長押しで移動 ---------- */
 
     function clearHold() {
       if (holdTimer) {
@@ -1440,20 +1685,31 @@
     }
 
     function startDrag(row, id) {
-      if (drag || localSaving || !base || !L.contains(row)) {
+      if (!state.snapshot || drag || !document.contains(row)) {
         return;
       }
 
       clearHold();
-      revision++;
+
+      const payload = {
+        action: 'order',
+        date: selectedDate,
+        expectedDay: dayVersion(state.snapshot, selectedDate)
+      };
+
+      dragContext = {
+        payload: payload,
+        context: contextFor(payload, state.snapshot)
+      };
+
       drag = row;
       pointerId = id;
       row.classList.add('dragging');
 
       try {
-        L.setPointerCapture(id);
+        $('content').setPointerCapture(id);
       } catch (error) {
-        // 画面全体の終了イベントでも移動を終了する。
+        // 終了は画面全体でも受け取る。
       }
 
       if (navigator.vibrate) {
@@ -1470,52 +1726,37 @@
       autoDirection = 0;
     }
 
-    function targetSlot(y) {
-      var slots = Array.from(L.querySelectorAll('.slot'));
-
-      for (var i = 0; i < slots.length; i++) {
-        var rect = slots[i].getBoundingClientRect();
-
-        if (y >= rect.top && y < rect.bottom) {
-          return slots[i];
-        }
-      }
-
-      return null;
-    }
-
     function placeDrag(x, y) {
-      if (!drag) {
+      const timeline = $('timeline');
+
+      if (!drag || !timeline) {
         return;
       }
 
-      var bounds = L.getBoundingClientRect();
+      const boundary = timeline.getBoundingClientRect();
 
-      if (x < bounds.left || x > bounds.right) {
+      if (x < boundary.left || x > boundary.right) {
         return;
       }
 
-      var slot = targetSlot(y);
+      const slot = Array.from(timeline.querySelectorAll('.slot')).find(function (section) {
+        const rect = section.getBoundingClientRect();
+        return y >= rect.top && y < rect.bottom;
+      });
 
       if (!slot) {
         return;
       }
 
-      var list = slot.querySelector('.slot-list');
-      var others = Array.from(list.querySelectorAll('.task')).filter(function (row) {
-        return row !== drag;
-      });
-
-      var before = null;
-
-      for (var i = 0; i < others.length; i++) {
-        var rect = others[i].getBoundingClientRect();
-
-        if (y < rect.top + rect.height / 2) {
-          before = others[i];
-          break;
+      const list = slot.querySelector('.slot-list');
+      const before = Array.from(list.querySelectorAll('.task')).find(function (row) {
+        if (row === drag) {
+          return false;
         }
-      }
+
+        const rect = row.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      }) || null;
 
       if (
         drag.parentNode !== list ||
@@ -1528,9 +1769,9 @@
     }
 
     function autoScroll(y) {
-      autoDirection = y < 80
+      autoDirection = y < 85
         ? -10
-        : y > window.innerHeight - 80
+        : y > window.innerHeight - 100
           ? 10
           : 0;
 
@@ -1547,7 +1788,7 @@
       }
     }
 
-    function finishDrag(cancelled) {
+    async function endDrag(cancelled) {
       clearHold();
 
       if (!drag) {
@@ -1555,73 +1796,76 @@
         return;
       }
 
-      var captured = pointerId;
+      const items = visibleItems();
+      const captured = dragContext;
+      const id = pointerId;
+
       drag.classList.remove('dragging');
       drag = null;
+      dragContext = null;
       pointerId = null;
+      suppressClickUntil = Date.now() + 500;
       stopAuto();
-      ignoreClickUntil = Date.now() + 500;
 
       try {
-        if (L.hasPointerCapture(captured)) {
-          L.releasePointerCapture(captured);
+        if ($('content').hasPointerCapture(id)) {
+          $('content').releasePointerCapture(id);
         }
       } catch (error) {
-        // 既に指が離れている場合は、そのまま終了する。
+        // 指が離れた後はそのまま終了する。
       }
 
       if (cancelled) {
         render();
-
-        if (reloadRequested) {
-          loadToday();
-        }
-      } else {
-        saveOrder();
+        return;
       }
 
-      updateNow();
+      try {
+        const payload = Object.assign({}, captured.payload, {
+          items: items
+        });
+
+        await enqueue(
+          payload,
+          payload.date + ' の時間帯・並び順',
+          captured.context
+        );
+      } catch (error) {
+        notify('保存できなかったため、移動前の表示に戻しました。', true);
+        render();
+      }
     }
 
-    L.addEventListener('pointerdown', function (event) {
+    $('content').addEventListener('pointerdown', function (event) {
       if (
-        drag ||
-        localSaving ||
-        !base ||
+        page !== 'plan' ||
         event.isPrimary === false ||
         (event.pointerType === 'mouse' && event.button !== 0)
       ) {
         return;
       }
 
-      var row = event.target.closest('.task[data-id]');
+      const row = event.target.closest('.task');
 
-      if (!row) {
-        return;
-      }
-
-      var action = event.target.closest('[data-act]');
-      var kind = action ? action.dataset.act : '';
-
-      if (kind === 'done') {
+      if (!row || event.target.closest('[data-act="done"]')) {
         return;
       }
 
       clearHold();
+      pointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
       pointerX = event.clientX;
       pointerY = event.clientY;
-      pointerId = event.pointerId;
 
-      if (kind === 'grip') {
+      if (event.target.closest('[data-act="grip"]')) {
         event.preventDefault();
         startDrag(row, event.pointerId);
         return;
       }
 
       candidate = row;
-      var heldId = event.pointerId;
+      const heldId = event.pointerId;
 
       holdTimer = setTimeout(function () {
         if (candidate === row) {
@@ -1639,8 +1883,8 @@
         if (
           holdTimer &&
           (
-            Math.abs(event.clientY - startY) > 8 ||
-            Math.abs(event.clientX - startX) > 8
+            Math.abs(event.clientX - startX) > 8 ||
+            Math.abs(event.clientY - startY) > 8
           )
         ) {
           clearHold();
@@ -1670,72 +1914,37 @@
     });
 
     document.addEventListener('pointerup', function (event) {
-      if (pointerId === null || event.pointerId === pointerId) {
-        finishDrag(false);
+      if (pointerId === null || pointerId === event.pointerId) {
+        endDrag(false);
       }
     });
 
     document.addEventListener('pointercancel', function (event) {
-      if (pointerId === null || event.pointerId === pointerId) {
-        finishDrag(true);
+      if (pointerId === null || pointerId === event.pointerId) {
+        endDrag(true);
       }
     });
-
-    L.addEventListener('click', function (event) {
-      var action = event.target.closest('[data-act]');
-
-      if (
-        !action ||
-        action.dataset.act !== 'done' ||
-        localSaving ||
-        drag ||
-        Date.now() < ignoreClickUntil
-      ) {
-        return;
-      }
-
-      var row = action.closest('.task[data-id]');
-      var task = row && current.find(function (item) {
-        return item.taskId === row.dataset.id;
-      });
-
-      if (!task) {
-        return;
-      }
-
-      if (confirm('「' + task.title + '」を完了にしますか。')) {
-        completeTask(row, task.taskId);
-      }
-    });
-
-    /* ---------- 現在時刻の線 ---------- */
-
-    function japanNow() {
-      var date = new Date(Date.now() + 9 * 60 * 60 * 1000);
-
-      return {
-        ymd: date.getUTCFullYear() + '-' +
-          String(date.getUTCMonth() + 1).padStart(2, '0') + '-' +
-          String(date.getUTCDate()).padStart(2, '0'),
-        hour: date.getUTCHours(),
-        minute: date.getUTCMinutes()
-      };
-    }
 
     function updateNow() {
-      var line = $('now');
+      const line = $('now-line');
+      const timeline = $('timeline');
 
-      if (!line) {
+      if (!line || !timeline) {
         return;
       }
 
-      var now = japanNow();
-      var slot = L.querySelector('.slot[data-hour="' + now.hour + '"]');
+      const now = new Date(Date.now() + 9 * 3600000);
+      const hour = now.getUTCHours();
+      const minute = now.getUTCMinutes();
+
+      const slot = timeline.querySelector(
+        '.slot[data-hour="' + hour + '"]'
+      );
 
       if (
-        base !== now.ymd ||
-        now.hour < 8 ||
-        now.hour >= 23 ||
+        selectedDate !== now.toISOString().slice(0, 10) ||
+        hour < 8 ||
+        hour >= 23 ||
         !slot
       ) {
         line.hidden = true;
@@ -1743,25 +1952,876 @@
       }
 
       line.style.top =
-        (slot.offsetTop + slot.offsetHeight * now.minute / 60) + 'px';
+        slot.offsetTop + slot.offsetHeight * minute / 60 + 'px';
 
       line.firstElementChild.textContent =
-        String(now.hour).padStart(2, '0') + ':' +
-        String(now.minute).padStart(2, '0');
+        String(hour).padStart(2, '0') + ':' +
+        String(minute).padStart(2, '0');
 
       line.hidden = false;
     }
 
-    /* ---------- 状態・設定 ---------- */
+    /* ---------- タスク一覧・編集 ---------- */
 
-    function net() {
-      $('net').textContent = '通信' + (navigator.onLine ? 'あり' : 'なし');
+    function filterTask(task) {
+      const today = japanDate();
+      const date = new Date(today + 'T12:00:00Z');
+      const weekEnd = dateShift(today, (7 - date.getUTCDay()) % 7);
+
+      switch (taskFilter) {
+        case 'today':
+          return task.date === today;
+        case 'date':
+          return task.date === filterDate;
+        case 'week':
+          return !!task.date && task.date >= today && task.date <= weekEnd;
+        case 'duesoon':
+          return !!task.due && task.due >= today && task.due <= dateShift(today, 3);
+        case 'overdue':
+          return !!task.due && task.due < today;
+        case 'nodate':
+          return !task.date;
+        case 'noboth':
+          return !task.date && !task.due;
+        default:
+          return true;
+      }
     }
+
+    function taskInfo(task) {
+      return '期限：' + (task.due || '未設定') +
+        ' ／ 実行日：' + (task.date || '未設定') +
+        ' ／ ' + hourLabel(task.hour);
+    }
+
+    function renderTasks(content) {
+      content.appendChild(make('h2', 'タスク一覧'));
+
+      const tools = make('div', null, 'toolbar');
+      const select = make('select');
+
+      [
+        ['all', 'すべて'],
+        ['nodate', '実行日未定'],
+        ['today', '今日の分'],
+        ['date', '日付を指定'],
+        ['week', '今週の分'],
+        ['duesoon', '期限が近い'],
+        ['overdue', '期限切れ'],
+        ['noboth', '日付なし']
+      ].forEach(function (entry) {
+        const option = make('option', entry[1]);
+        option.value = entry[0];
+        select.appendChild(option);
+      });
+
+      select.value = taskFilter;
+
+      select.addEventListener('change', function () {
+        taskFilter = select.value;
+        render();
+      });
+
+      tools.appendChild(select);
+
+      if (taskFilter === 'date') {
+        const input = make('input');
+        input.type = 'date';
+        input.value = filterDate;
+
+        input.addEventListener('change', function () {
+          filterDate = input.value;
+          render();
+        });
+
+        tools.appendChild(input);
+      }
+
+      content.appendChild(tools);
+
+      const tasks = effectiveTasks().filter(filterTask);
+      content.appendChild(make('p', tasks.length + ' 件', 'sub'));
+
+      const cards = make('div', null, 'cards');
+
+      tasks.forEach(function (task) {
+        const card = make('div', null, 'card');
+        const main = make('div', null, 'card-main');
+        main.append(
+          make('div', task.title, 'card-title'),
+          make('div', taskInfo(task), 'sub')
+        );
+
+        const edit = button('編集', function () {
+          openTaskEditor(task.taskId);
+        });
+
+        edit.disabled = !navigator.onLine;
+
+        card.append(main, edit);
+        cards.appendChild(card);
+      });
+
+      content.appendChild(cards);
+    }
+
+    function field(name, label, type, value, required) {
+      const wrapper = make('label', null, 'field');
+      wrapper.appendChild(make('span', label));
+
+      const input = make('input');
+      input.name = name;
+      input.type = type;
+      input.value = value || '';
+      input.required = !!required;
+
+      if (type === 'text') {
+        input.maxLength = 200;
+      }
+
+      wrapper.appendChild(input);
+      $('editor-fields').appendChild(wrapper);
+      return input;
+    }
+
+    function showEditor(title, note, handler) {
+      $('editor-title').textContent = title;
+      $('editor-fields').replaceChildren();
+      $('editor-note').textContent = note || '';
+      $('editor-submit').disabled = false;
+      editorContext = handler;
+      $('editor').showModal();
+    }
+
+    function openAdd() {
+      showEditor(
+        'タスクを追加',
+        '実行日は自動では入りません。追加後に「実行日未定」から設定できます。',
+        async function (form) {
+          const title = String(form.get('title') || '').trim();
+
+          if (!title) {
+            throw new Error('件名を入力してください。');
+          }
+
+          const context = {
+            keys: [],
+            causes: []
+          };
+
+          await enqueue({
+            action: 'add',
+            title: title
+          }, '追加：' + title, context);
+
+          page = 'tasks';
+          taskFilter = 'nodate';
+          notify('追加を端末に保存しました。登録後は「実行日未定」に表示されます。');
+          render();
+        }
+      );
+
+      field('title', '件名', 'text', '', true).focus();
+    }
+
+    function onlineRequired() {
+      if (!navigator.onLine) {
+        notify('この操作は通信できるときに行ってください。', true);
+        return false;
+      }
+
+      return true;
+    }
+
+    function openTaskEditor(id) {
+      if (!onlineRequired()) {
+        return;
+      }
+
+      const task = taskById(state.snapshot, id);
+
+      if (!task) {
+        notify('最新の一覧を取得してから編集してください。', true);
+        return;
+      }
+
+      const captured = clone(task);
+
+      const basePayload = {
+        action: 'edit',
+        taskId: id,
+        expectedTask: captured.version
+      };
+
+      const context = contextFor(basePayload, state.snapshot);
+
+      showEditor(
+        'タスクを編集',
+        '時間帯は「1日の計画」で動かします。実行日を変えても、設定済みの時間帯は残ります。',
+        async function (form) {
+          if (!navigator.onLine) {
+            throw new Error('通信が戻ってから保存してください。入力は残しています。');
+          }
+
+          await enqueue(Object.assign({}, basePayload, {
+            title: String(form.get('title') || '').trim(),
+            due: String(form.get('due') || ''),
+            date: String(form.get('date') || '')
+          }), '編集：' + captured.title, context);
+        }
+      );
+
+      field('title', '件名', 'text', captured.title, true);
+      field('due', '期限', 'date', captured.due, false);
+      field('date', '実行日', 'date', captured.date, false);
+    }
+
+    $('editor-form').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      if (!editorContext || $('editor-submit').disabled) {
+        return;
+      }
+
+      $('editor-submit').disabled = true;
+
+      try {
+        await editorContext(new FormData($('editor-form')));
+        $('editor').close();
+      } catch (error) {
+        $('editor-note').textContent = String(error.message || error);
+      } finally {
+        $('editor-submit').disabled = false;
+      }
+    });
+
+    $('editor-cancel').addEventListener('click', function () {
+      $('editor').close();
+    });
+
+    /* ---------- 定期タスク ---------- */
+
+    function renderPeriodic(content) {
+      const periodic = state.snapshot.periodic;
+      content.appendChild(make('h2', '定期タスク'));
+
+      const tools = make('div', null, 'toolbar');
+
+      const add = button('定期タスクを追加', function () {
+        openPeriodicEditor(null);
+      });
+
+      const preview = button('今日の分を下見', previewPeriodic);
+      const automatic = button(
+        '毎日の自動追加：' + (periodic.automatic ? '入' : '切'),
+        toggleAutomatic
+      );
+
+      [add, preview, automatic].forEach(function (element) {
+        element.disabled = !navigator.onLine;
+      });
+
+      tools.append(add, preview, automatic);
+      content.appendChild(tools);
+      content.appendChild(make(
+        'p',
+        '追加されたタスクは、その日の「時間未定」に入ります。',
+        'sub'
+      ));
+
+      const cards = make('div', null, 'cards');
+
+      periodic.items.forEach(function (item) {
+        const card = make('div', null, 'card');
+        const main = make('div', null, 'card-main');
+
+        main.append(
+          make('div', item.name, 'card-title'),
+          make(
+            'div',
+            (item.freq || '不定期') + ' ／ 次回：' + (item.next || '未設定'),
+            'sub'
+          )
+        );
+
+        const actions = make('div', null, 'card-actions');
+        const edit = button('編集', function () {
+          openPeriodicEditor(item);
+        });
+
+        const send = button('今すぐ1件追加', async function () {
+          if (
+            !onlineRequired() ||
+            !confirm('「' + item.name + '」を今日の時間未定に追加しますか。')
+          ) {
+            return;
+          }
+
+          try {
+            await enqueue({
+              action: 'periodicSend',
+              row: item.row,
+              expectedPeriodic: state.snapshot.periodic.version
+            }, '定期追加：' + item.name);
+          } catch (error) {
+            notify(error.message, true);
+          }
+        });
+
+        edit.disabled = !navigator.onLine;
+        send.disabled = !navigator.onLine;
+        actions.append(edit, send);
+        card.append(main, actions);
+        cards.appendChild(card);
+      });
+
+      content.appendChild(cards);
+    }
+
+    function openPeriodicEditor(item) {
+      if (!onlineRequired()) {
+        return;
+      }
+
+      const value = item || {
+        row: 0,
+        name: '',
+        freq: '毎日',
+        next: japanDate()
+      };
+
+      const payload = {
+        action: 'periodicSave',
+        row: value.row,
+        expectedPeriodic: state.snapshot.periodic.version
+      };
+
+      const captured = contextFor(payload, state.snapshot);
+
+      showEditor(
+        item ? '定期タスクを編集' : '定期タスクを追加',
+        '頻度の例：毎日、毎週月曜日、毎月、毎月15日、3日ごと。不定期にすると毎日の自動追加の対象から外れます。',
+        async function (form) {
+          if (!navigator.onLine) {
+            throw new Error('通信が戻ってから保存してください。');
+          }
+
+          await enqueue(Object.assign({}, payload, {
+            name: String(form.get('name') || '').trim(),
+            freq: String(form.get('freq') || '').trim(),
+            next: String(form.get('next') || '')
+          }), '定期設定：' + String(form.get('name') || ''), captured);
+        }
+      );
+
+      field('name', 'タスク名', 'text', value.name, true);
+      const freq = field('freq', '頻度', 'text', value.freq, true);
+      const options = make('datalist');
+      options.id = 'frequency-options';
+
+      [
+        '毎日',
+        '毎週月曜日',
+        '毎週火曜日',
+        '毎週水曜日',
+        '毎週木曜日',
+        '毎週金曜日',
+        '毎週土曜日',
+        '毎週日曜日',
+        '毎月',
+        '不定期'
+      ].forEach(function (text) {
+        const option = make('option');
+        option.value = text;
+        options.appendChild(option);
+      });
+
+      freq.setAttribute('list', options.id);
+      $('editor-fields').appendChild(options);
+      field('next', '次回実行日', 'date', value.next, false);
+    }
+
+    async function previewPeriodic() {
+      if (!onlineRequired()) {
+        return;
+      }
+
+      try {
+        const result = await api({
+          action: 'preview'
+        });
+
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+
+        await acceptSnapshot(result.snapshot);
+        const preview = result.preview;
+
+        const text = '【下見】まだ追加していません。\n\n' +
+          preview.items.length + ' 件\n' +
+          preview.items.map(function (item) {
+            return '・' + item.name;
+          }).join('\n') +
+          (preview.errors.length
+            ? '\n\n確認が必要：\n' + preview.errors.join('\n')
+            : '');
+
+        if (!preview.items.length) {
+          alert(text);
+          return;
+        }
+
+        if (confirm(text + '\n\nこの分を今すぐ追加しますか。')) {
+          await enqueue({
+            action: 'periodicRun',
+            expectedPeriodic: preview.version,
+            date: preview.date
+          }, '定期タスク ' + preview.items.length + ' 件を追加');
+        }
+      } catch (error) {
+        notify(error.message, true);
+      }
+    }
+
+    async function toggleAutomatic() {
+      if (!onlineRequired()) {
+        return;
+      }
+
+      const periodic = state.snapshot.periodic;
+      const enabled = !periodic.automatic;
+
+      if (!confirm('毎日の自動追加を「' + (enabled ? '入' : '切') + '」にしますか。')) {
+        return;
+      }
+
+      try {
+        await enqueue({
+          action: 'automatic',
+          expectedPeriodic: periodic.version,
+          enabled: enabled
+        }, '毎日の自動追加を' + (enabled ? '入' : '切') + 'にする');
+      } catch (error) {
+        notify(error.message, true);
+      }
+    }
+
+    /* ---------- 完了済み ---------- */
+
+    async function loadHistory(more) {
+      if (!onlineRequired() || !configured()) {
+        return;
+      }
+
+      try {
+        const result = await api({
+          action: 'history',
+          offset: more ? historyData.items.length : 0
+        });
+
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+
+        historyData = {
+          total: result.history.total,
+          items: more
+            ? historyData.items.concat(result.history.items)
+            : result.history.items
+        };
+
+        if (!pumping) {
+          await acceptSnapshot(result.snapshot);
+        } else {
+          render();
+        }
+      } catch (error) {
+        notify(error.message, true);
+      }
+    }
+
+    async function undoDone() {
+      if (!onlineRequired()) {
+        return;
+      }
+
+      if (state.jobs.length) {
+        notify('先に未送信を反映するか、確認が必要な変更を解決してください。', true);
+        return;
+      }
+
+      const undo = state.snapshot.undo;
+
+      if (!undo.count) {
+        notify('戻せる完了はありません。');
+        return;
+      }
+
+      if (!confirm(
+        undo.count + ' 件を戻します。\n\n' +
+        undo.titles.join('\n')
+      )) {
+        return;
+      }
+
+      try {
+        await enqueue({
+          action: 'undo',
+          expectedUndo: undo.version
+        }, '直前の完了を戻す');
+      } catch (error) {
+        notify(error.message, true);
+      }
+    }
+
+    function renderHistory(content) {
+      content.appendChild(make('h2', '完了済み'));
+      const tools = make('div', null, 'toolbar');
+
+      const undo = button('直前の完了を戻す', undoDone);
+      undo.disabled = !navigator.onLine || !state.snapshot.undo.count;
+
+      const reload = button('読み直す', function () {
+        loadHistory(false);
+      });
+
+      reload.disabled = !navigator.onLine;
+      tools.append(undo, reload);
+      content.appendChild(tools);
+
+      if (!navigator.onLine) {
+        content.appendChild(make(
+          'p',
+          '完了済みの取得と取り消しは、通信できるときに行います。',
+          'sub'
+        ));
+      }
+
+      const cards = make('div', null, 'cards');
+
+      historyData.items.forEach(function (item) {
+        const card = make('div', null, 'card');
+        const main = make('div', null, 'card-main');
+
+        main.append(
+          make('div', item.title, 'card-title'),
+          make('div', '完了日時：' + item.doneAt, 'sub')
+        );
+
+        card.appendChild(main);
+        cards.appendChild(card);
+      });
+
+      content.appendChild(cards);
+
+      if (historyData.items.length < historyData.total) {
+        const more = button('さらに表示', function () {
+          loadHistory(true);
+        });
+
+        more.disabled = !navigator.onLine;
+        content.appendChild(more);
+      }
+    }
+
+    /* ---------- 食い違いの確認 ---------- */
+
+    function relatedJobs(rootId) {
+      const ids = new Set([rootId]);
+      let changed = true;
+
+      while (changed) {
+        changed = false;
+
+        state.jobs.forEach(function (job) {
+          if (
+            !ids.has(job.id) &&
+            job.causes.some(function (id) {
+              return ids.has(id);
+            })
+          ) {
+            ids.add(job.id);
+            changed = true;
+          }
+        });
+      }
+
+      return state.jobs.filter(function (job) {
+        return ids.has(job.id);
+      }).sort(function (a, b) {
+        return a.sequence - b.sequence;
+      });
+    }
+
+    function describePayload(payload, local) {
+      const snapshot = state.snapshot;
+
+      if (payload.action === 'order') {
+        const tasks = local
+          ? effectiveTasks()
+          : snapshot.tasks;
+
+        return tasks.filter(function (task) {
+          return task.date === payload.date;
+        }).sort(compareTasks).map(function (task) {
+          return hourLabel(task.hour) + '：' + task.title;
+        }).join('\n') || 'この日のタスクはありません。';
+      }
+
+      if (payload.taskId) {
+        const task = taskById(snapshot, payload.taskId);
+
+        if (!local) {
+          return task
+            ? task.title + '\n' + taskInfo(task)
+            : '現在のタスク一覧にはありません。';
+        }
+
+        if (payload.action === 'done') {
+          return 'このタスクを完了にする';
+        }
+
+        return payload.title +
+          '\n期限：' + (payload.due || '未設定') +
+          '\n実行日：' + (payload.date || '未設定');
+      }
+
+      if (payload.action === 'periodicSave') {
+        const item = snapshot.periodic.items.find(function (entry) {
+          return entry.row === payload.row;
+        });
+
+        if (!local) {
+          return item
+            ? item.name + '\n' + item.freq + '\n次回：' + (item.next || '未設定')
+            : '既存の対象はありません。';
+        }
+
+        return payload.name + '\n' + payload.freq +
+          '\n次回：' + (payload.next || '未設定');
+      }
+
+      return local
+        ? '確認した操作を実行する'
+        : '最新の内容を確認してから、操作し直してください。';
+    }
+
+    async function openConflict(id) {
+      await refresh();
+
+      const job = state.jobs.find(function (entry) {
+        return entry.id === id;
+      });
+
+      if (!job || job.state !== 'conflict') {
+        return;
+      }
+
+      conflictId = id;
+      const related = relatedJobs(id);
+
+      $('conflict-note').textContent =
+        job.note + '\n関連する未送信 ' + related.length +
+        ' 件が対象です。保存済みを選ぶと、この端末の対象変更を取り消します。';
+
+      $('conflict-server').replaceChildren(
+        make('p', describePayload(job.payload, false))
+      );
+
+      $('conflict-local').replaceChildren(
+        make('p', describePayload(job.payload, true)),
+        make('p', related.map(function (entry) {
+          return '・' + entry.label;
+        }).join('\n'))
+      );
+
+      const canApply = ['order', 'edit', 'done', 'periodicSave']
+        .indexOf(job.payload.action) >= 0;
+
+      $('conflict-apply').hidden = !canApply;
+
+      if (!canApply) {
+        $('conflict-note').textContent +=
+          '\nこの操作は、保存済みを使った後で下見・確認からやり直してください。';
+      }
+
+      $('conflict-dialog').showModal();
+    }
+
+    async function resolveConflict(useLocal) {
+      const root = state.jobs.find(function (job) {
+        return job.id === conflictId;
+      });
+
+      if (!root || root.state !== 'conflict') {
+        $('conflict-dialog').close();
+        return;
+      }
+
+      const related = relatedJobs(root.id);
+      const ids = new Set(related.map(function (job) {
+        return job.id;
+      }));
+
+      if (related.some(function (job) {
+        return job.id !== root.id && job.frozen;
+      })) {
+        notify('関連する送信結果を先に確認しています。少し待って開き直してください。', true);
+        return;
+      }
+
+      try {
+        await updateState(function (saved) {
+          if (!saved.jobs.some(function (job) {
+            return job.id === root.id && job.state === 'conflict';
+          })) {
+            return;
+          }
+
+          if (!useLocal) {
+            saved.jobs = saved.jobs.filter(function (job) {
+              return !ids.has(job.id);
+            });
+
+            return;
+          }
+
+          const replacements = new Map();
+
+          related.forEach(function (job) {
+            replacements.set(job.id, uuid());
+          });
+
+          saved.jobs.forEach(function (job) {
+            if (!ids.has(job.id)) {
+              return;
+            }
+
+            const payload = job.payload;
+            const newId = replacements.get(job.id);
+            job.id = newId;
+            payload.requestId = newId;
+            job.frozen = false;
+            job.state = 'saved';
+            job.note = '';
+            job.causes = job.causes.map(function (id) {
+              return replacements.get(id) || id;
+            });
+
+            if (payload.action === 'order') {
+              payload.expectedDay = dayVersion(saved.snapshot, payload.date);
+              payload.items = mergePlan(
+                payload.items,
+                saved.snapshot.tasks,
+                payload.date
+              );
+            }
+
+            if (payload.taskId) {
+              const task = taskById(saved.snapshot, payload.taskId);
+              payload.expectedTask = task ? task.version : '';
+            }
+
+            if (payload.expectedPeriodic) {
+              payload.expectedPeriodic = saved.snapshot.periodic.version;
+            }
+
+            if (payload.expectedUndo) {
+              payload.expectedUndo = saved.snapshot.undo.version;
+            }
+          });
+        });
+
+        $('conflict-dialog').close();
+        notify(useLocal
+          ? '確認した変更を送信待ちに保存しました。'
+          : '保存済みの内容を使います。');
+
+        pump(true);
+      } catch (error) {
+        notify(error.message, true);
+      }
+    }
+
+    $('conflict-close').addEventListener('click', function () {
+      $('conflict-dialog').close();
+    });
+
+    $('conflict-remote').addEventListener('click', function () {
+      resolveConflict(false);
+    });
+
+    $('conflict-apply').addEventListener('click', function () {
+      resolveConflict(true);
+    });
+
+    /* ---------- 設定と点検 ---------- */
+
+    function openSettings() {
+      $('url').value = localStorage.getItem(URL_KEY) || '';
+      $('token').value = localStorage.getItem(TOKEN_KEY) || '';
+      $('settings-dialog').showModal();
+    }
+
+    $('settings-save').addEventListener('click', async function () {
+      const oldUrl = localStorage.getItem(URL_KEY) || '';
+      const newUrl = $('url').value.trim();
+
+      if (state.jobs.length && oldUrl && oldUrl !== newUrl) {
+        alert('未送信があるため、接続先は変更できません。先に未送信を解決してください。');
+        return;
+      }
+
+      try {
+        localStorage.setItem(URL_KEY, newUrl);
+        localStorage.setItem(TOKEN_KEY, $('token').value.trim());
+        $('settings-dialog').close();
+
+        if (oldUrl !== newUrl) {
+          await updateState(function (saved) {
+            saved.snapshot = null;
+            saved.transitions = [];
+          });
+        }
+
+        notify('設定を保存しました。');
+        await refresh();
+        pump(true);
+      } catch (error) {
+        notify('設定を保存できませんでした：' + error.message, true);
+      }
+    });
+
+    $('settings-close').addEventListener('click', function () {
+      $('settings-dialog').close();
+    });
+
+    $('check').addEventListener('click', async function () {
+      if (!onlineRequired()) {
+        return;
+      }
+
+      try {
+        const result = await api({
+          action: 'check'
+        });
+
+        if (!result.ok) {
+          throw new Error(result.message);
+        }
+
+        await acceptSnapshot(result.snapshot);
+        alert('版：' + result.app + '\n\n' + result.checks.join('\n'));
+      } catch (error) {
+        alert(String(error.message || error));
+      }
+    });
 
     function workerVersion() {
       return new Promise(function (resolve) {
         if (
-          !('serviceWorker' in navigator) ||
+          !navigator.serviceWorker ||
           !navigator.serviceWorker.controller ||
           !window.MessageChannel
         ) {
@@ -1769,211 +2829,171 @@
           return;
         }
 
-        var channel = new MessageChannel();
+        const message = new MessageChannel();
 
-        var timer = setTimeout(function () {
-          channel.port1.close();
+        const timer = setTimeout(function () {
+          message.port1.close();
           resolve('確認できません');
         }, 2000);
 
-        channel.port1.onmessage = function (event) {
+        message.port1.onmessage = function (event) {
           clearTimeout(timer);
-          channel.port1.close();
-
-          resolve(
-            event.data && event.data.cacheName
-              ? event.data.cacheName
-              : '確認できません'
-          );
+          message.port1.close();
+          resolve(event.data.cacheName || '確認できません');
         };
 
         navigator.serviceWorker.controller.postMessage({
           type: 'TASK_VERSION'
-        }, [channel.port2]);
+        }, [message.port2]);
       });
     }
 
-    $('url').value = localStorage.getItem(KU) || '';
-    $('tok').value = localStorage.getItem(KT) || '';
-
-    $('save').addEventListener('click', function () {
-      try {
-        localStorage.setItem(KU, $('url').value.trim());
-        localStorage.setItem(KT, $('tok').value.trim());
-        revision++;
-        nextTry = 0;
-        alert('保存しました。');
-        loadToday();
-        trySend(true);
-      } catch (error) {
-        alert('設定を端末に保存できませんでした。');
-      }
-    });
-
-    $('add').addEventListener('click', addTask);
-
-    $('title').addEventListener('keydown', function (event) {
-      if (event.key === 'Enter' && !event.isComposing) {
-        addTask();
-      }
-    });
-
-    $('send').addEventListener('click', function () {
-      nextTry = 0;
-      trySend(true);
-    });
-
-    $('reload').addEventListener('click', function () {
-      nextTry = 0;
-      loadToday();
-      trySend(true);
-    });
-
     $('copy').addEventListener('click', async function () {
+      const text = [
+        '画面：' + VERSION,
+        '保存先の版：' + (state.snapshot ? state.snapshot.app : '未取得'),
+        'オフライン保存：' + await workerVersion(),
+        '通信：' + (navigator.onLine ? 'あり' : 'なし'),
+        '未送信：' + state.jobs.length + ' 件',
+        '確認が必要：' + state.jobs.filter(function (job) {
+          return job.state === 'conflict' || job.state === 'blocked';
+        }).length + ' 件',
+        'タスク：' + (state.snapshot ? state.snapshot.tasks.length : 0) + ' 件',
+        '定期タスク：' + (state.snapshot ? state.snapshot.periodic.items.length : 0) + ' 件'
+      ].join('\n');
+
       try {
-        var list = await allItems();
-        var worker = await workerVersion();
-
-        var text = [
-          '画面：' + VER,
-          'オフライン保存：' + worker,
-          '基準日：' + (base || '未取得'),
-          '通信：' + (navigator.onLine ? 'あり' : 'なし'),
-          '保存方式：' + (useIdb ? '端末内' : '簡易'),
-          '未送信：' + list.length + ' 件',
-          '表示中：' + current.length + ' 件',
-          '送信中：' + (sending ? 'はい' : 'いいえ'),
-          '送信待ち：' + list.filter(function (item) {
-            return item.state === 'saved';
-          }).length + ' 件',
-          '確認中：' + list.filter(function (item) {
-            return item.state === 'unknown';
-          }).length + ' 件',
-          'PCで要確認：' + list.filter(function (item) {
-            return item.state === 'blocked';
-          }).length + ' 件'
-        ].join('\n');
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          try {
-            await navigator.clipboard.writeText(text);
-            alert('コピーしました。');
-            return;
-          } catch (error) {
-            // コピーできない場合は、文字を表示して手動でコピーする。
-          }
-        }
-
+        await navigator.clipboard.writeText(text);
+        alert('コピーしました。');
+      } catch (error) {
         prompt('この内容をコピーしてください。', text);
-      } catch (error) {
-        alert('状態を読み取れませんでした。端末のデータは消さないでください。');
       }
     });
 
-    $('purge').addEventListener('click', async function () {
-      if (sending || adding || localSaving || drag) {
-        alert('処理中です。終わってから操作してください。');
-        return;
-      }
+    /* ---------- 操作・起動 ---------- */
 
-      if (!confirm(
-        'この端末に保存した内容（未送信・前回の表示・接続先・合い言葉）を消します。よろしいですか。'
-      )) {
-        return;
-      }
-
-      try {
-        if (window.indexedDB) {
-          await new Promise(function (resolve, reject) {
-            var request = indexedDB.deleteDatabase(DB);
-
-            request.onsuccess = resolve;
-
-            request.onerror = function () {
-              reject(request.error);
-            };
-
-            request.onblocked = function () {
-              reject(new Error('別のタスク画面を閉じてから試してください。'));
-            };
-          });
+    document.querySelectorAll('nav [data-page]').forEach(function (element) {
+      element.addEventListener('click', function () {
+        if (drag) {
+          return;
         }
 
-        Object.keys(localStorage).forEach(function (key) {
-          if (
-            key.indexOf('order_v1_') === 0 ||
-            key.indexOf('cache_v1_') === 0 ||
-            key.indexOf('cache_v2_') === 0 ||
-            key.indexOf('cache_v3_') === 0 ||
-            key === 'outbox_v1' ||
-            key === KU ||
-            key === KT ||
-            key === KB
-          ) {
-            localStorage.removeItem(key);
-          }
-        });
+        page = element.dataset.page;
+        render();
 
-        alert('消しました。ブラウザー全体のデータは消していません。');
-        location.reload();
-      } catch (error) {
-        alert(String(error.message || error));
+        if (page === 'history') {
+          loadHistory(false);
+        }
+      });
+    });
+
+    $('add').addEventListener('click', openAdd);
+    $('settings').addEventListener('click', openSettings);
+
+    $('reload').addEventListener('click', async function () {
+      nextTry = 0;
+      await pump(true);
+      await refresh();
+
+      if (page === 'history') {
+        loadHistory(false);
       }
     });
 
-    window.addEventListener('online', function () {
-      net();
+    window.addEventListener('online', async function () {
+      renderStatus();
       nextTry = 0;
-      trySend(true);
-      loadToday();
+      await pump(true);
+      refresh();
     });
 
-    window.addEventListener('offline', net);
+    window.addEventListener('offline', render);
+
     window.addEventListener('resize', updateNow);
 
-    document.addEventListener('visibilitychange', function () {
+    document.addEventListener('visibilitychange', async function () {
       if (document.hidden) {
-        finishDrag(true);
+        if (drag || holdTimer) {
+          endDrag(true);
+        }
+
         return;
       }
 
-      net();
-      updateNow();
-      nextTry = 0;
-      trySend(true);
-      loadToday();
+      if (storageReady) {
+        state = await readState();
+        render();
+        await pump(true);
+        refresh();
+      }
     });
 
     window.addEventListener('blur', function () {
       if (drag || holdTimer) {
-        finishDrag(true);
+        endDrag(true);
       }
     });
 
     setInterval(function () {
-      trySend(false);
-    }, 20000);
+      pump(false);
+    }, 15000);
 
     setInterval(updateNow, 60000);
 
+    async function start() {
+      try {
+        db = await openDatabase();
+        state = await readState();
+        storageReady = true;
+
+        const oldCount = await oldPendingCount();
+
+        if (oldCount) {
+          legacyBlocked = true;
+
+          notify(
+            '以前の画面に未送信が ' + oldCount +
+            ' 件残っています。記録は消していません。旧版で送信を完了してから切り替えてください。',
+            true
+          );
+        }
+
+        if ('BroadcastChannel' in window) {
+          channel = new BroadcastChannel('task-unified-state');
+
+          channel.onmessage = async function () {
+            state = await readState();
+            render();
+          };
+        }
+
+        render();
+
+        if (!legacyBlocked && configured()) {
+          await pump(true);
+          await refresh();
+        } else if (!configured()) {
+          notify('PCで初めて開いた場合は、「設定」に接続先と合い言葉を保存してください。');
+        }
+      } catch (error) {
+        storageReady = false;
+        notify(
+          '端末への保存を準備できないため、変更操作を止めています。\n' +
+          String(error.message || error),
+          true
+        );
+        renderStatus();
+      }
+    }
+
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', {
+      navigator.serviceWorker.register('./sw.js', {
         updateViaCache: 'none'
       }).then(function (registration) {
         return registration.update();
       }).catch(function () {
-        warn('オフライン用の画面を更新できませんでした。通信できる場所でもう一度開いてください。');
+        notify('オフライン用の画面を更新できませんでした。通信できる状態で開き直してください。', true);
       });
-    }
-
-    async function start() {
-      net();
-      $('ver').textContent = VER;
-      render();
-      await restoreCache();
-      await renderOutbox();
-      loadToday();
-      trySend(true);
     }
 
     start();
