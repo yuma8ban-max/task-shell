@@ -353,6 +353,13 @@
       line-height: 1.45;
     }
 
+    .task-due {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     .grip {
       display: flex;
       align-items: center;
@@ -536,7 +543,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.1</span>
+        <span class="version">v4.2</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -618,7 +625,7 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.1';
+    const VERSION = 'v4.2';
     const SERVER_VERSION = 'v4.0';
     const DB_NAME = 'taskapp-unified';
     const URL_KEY = 'gasUrl_v1';
@@ -1671,12 +1678,23 @@
           complete.setAttribute('aria-label', task.title + 'を完了');
           complete.appendChild(make('span', null, 'circle'));
 
+          const text = make('div', null, 'ttl');
+          text.appendChild(make('div', task.title));
+
+          if (task.due) {
+            text.appendChild(make(
+              'div',
+              '期限：' + task.due,
+              'task-due'
+            ));
+          }
+
           const grip = make('button', '≡', 'grip');
           grip.type = 'button';
           grip.dataset.act = 'grip';
           grip.setAttribute('aria-label', task.title + 'を移動');
 
-          row.append(complete, make('span', task.title, 'ttl'), grip);
+          row.append(complete, text, grip);
           list.appendChild(row);
         });
 
