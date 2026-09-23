@@ -1,4 +1,5 @@
-<!-- Output: html --><!-- Filename: index --><!-- File: index.html -->
+<!-- Output: html -->
+<!-- File: index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -165,6 +166,28 @@
       flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 12px;
+    }
+
+    .task-filters {
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    .filter-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .filter-field input,
+    .filter-field select {
+      width: 100%;
+    }
+
+    .filter-field select {
+      min-width: 240px;
     }
 
     .status {
@@ -473,6 +496,14 @@
         padding: 13px 10px;
       }
 
+      .task-filters .filter-field {
+        width: 100%;
+      }
+
+      .task-filters .filter-field select {
+        min-width: 0;
+      }
+
       .card {
         align-items: flex-start;
       }
@@ -505,7 +536,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.0</span>
+        <span class="version">v4.1</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -587,7 +618,8 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.0';
+    const VERSION = 'v4.1';
+    const SERVER_VERSION = 'v4.0';
     const DB_NAME = 'taskapp-unified';
     const URL_KEY = 'gasUrl_v1';
     const TOKEN_KEY = 'gasTok_v1';
@@ -935,8 +967,8 @@
           throw new Error('接続先から一覧を受け取れませんでした。公開中の内容と接続先を確認してください。');
         }
 
-        if (result.ok && result.app !== VERSION) {
-          throw new Error('PC側の公開中の版がv4.0ではありません。');
+        if (result.ok && result.app !== SERVER_VERSION) {
+          throw new Error('保存先の版が' + SERVER_VERSION + 'ではありません。');
         }
 
         return result;
@@ -1975,8 +2007,8 @@
           return task.date === filterDate;
         case 'week':
           return !!task.date && task.date >= today && task.date <= weekEnd;
-        case 'duesoon':
-          return !!task.due && task.due >= today && task.due <= dateShift(today, 3);
+        case 'hasdue':
+          return !!task.due;
         case 'overdue':
           return !!task.due && task.due < today;
         case 'nodate':
@@ -1997,22 +2029,49 @@
     function renderTasks(content) {
       content.appendChild(make('h2', 'タスク一覧'));
 
-      const tools = make('div', null, 'toolbar');
+      const tools = make('div', null, 'toolbar task-filters');
+      const filterField = make('label', null, 'filter-field');
       const select = make('select');
+      select.id = 'task-filter';
+
+      const all = make('option', 'すべて');
+      all.value = 'all';
+      select.appendChild(all);
 
       [
-        ['all', 'すべて'],
-        ['nodate', '実行日未定'],
-        ['today', '今日の分'],
-        ['date', '日付を指定'],
-        ['week', '今週の分'],
-        ['duesoon', '期限が近い'],
-        ['overdue', '期限切れ'],
-        ['noboth', '日付なし']
-      ].forEach(function (entry) {
-        const option = make('option', entry[1]);
-        option.value = entry[0];
-        select.appendChild(option);
+        {
+          label: '期限',
+          items: [
+            ['hasdue', '期限あり（近い順）'],
+            ['overdue', '期限切れ']
+          ]
+        },
+        {
+          label: '実行日',
+          items: [
+            ['today', '今日の分'],
+            ['week', '今週の分'],
+            ['date', '日付を指定']
+          ]
+        },
+        {
+          label: '未設定',
+          items: [
+            ['nodate', '実行日未定'],
+            ['noboth', '期限・実行日なし']
+          ]
+        }
+      ].forEach(function (group) {
+        const optgroup = make('optgroup');
+        optgroup.label = group.label;
+
+        group.items.forEach(function (entry) {
+          const option = make('option', entry[1]);
+          option.value = entry[0];
+          optgroup.appendChild(option);
+        });
+
+        select.appendChild(optgroup);
       });
 
       select.value = taskFilter;
@@ -2022,9 +2081,15 @@
         render();
       });
 
-      tools.appendChild(select);
+      filterField.append(
+        make('span', '表示するタスク'),
+        select
+      );
+
+      tools.appendChild(filterField);
 
       if (taskFilter === 'date') {
+        const dateField = make('label', null, 'filter-field');
         const input = make('input');
         input.type = 'date';
         input.value = filterDate;
@@ -2034,13 +2099,30 @@
           render();
         });
 
-        tools.appendChild(input);
+        dateField.append(
+          make('span', '実行日'),
+          input
+        );
+
+        tools.appendChild(dateField);
       }
 
       content.appendChild(tools);
 
       const tasks = effectiveTasks().filter(filterTask);
-      content.appendChild(make('p', tasks.length + ' 件', 'sub'));
+
+      if (taskFilter === 'hasdue') {
+        tasks.sort(function (a, b) {
+          return a.due.localeCompare(b.due) || a.row - b.row;
+        });
+      }
+
+      const countText = tasks.length + ' 件' +
+        (taskFilter === 'hasdue'
+          ? ' ／ 期限切れを含め、期限が早い順'
+          : '');
+
+      content.appendChild(make('p', countText, 'sub'));
 
       const cards = make('div', null, 'cards');
 
