@@ -1,5 +1,5 @@
-/* File: sw.js — task-v4.1-1 */
-const CACHE = 'task-v4.1-1';
+/* File: sw.js — task-v4.2-1 */
+const CACHE = 'task-v4.2-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
