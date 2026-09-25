@@ -168,6 +168,23 @@
       margin-bottom: 12px;
     }
 
+    .view-switch {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .view-switch button {
+      min-width: 100px;
+    }
+
+    .view-switch button.active {
+      border-color: var(--accent);
+      color: #1559ad;
+      background: #eaf2ff;
+      font-weight: bold;
+    }
+
     .task-filters {
       align-items: flex-end;
       gap: 12px;
@@ -275,6 +292,85 @@
       flex-wrap: wrap;
       gap: 5px;
       flex: none;
+    }
+
+    .card .hit {
+      align-self: center;
+    }
+
+    .calendar {
+      max-width: 780px;
+    }
+
+    .calendar-month {
+      margin: 0;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .calendar-weekday {
+      padding: 5px 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .calendar-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+      min-width: 0;
+      min-height: 64px;
+      padding: 8px 2px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .calendar-day.is-selected {
+      border-color: var(--accent);
+      background: #eaf2ff;
+    }
+
+    .calendar-day.is-today .calendar-day-number {
+      font-weight: bold;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .calendar-day-number {
+      font-size: 14px;
+    }
+
+    .calendar-count {
+      min-height: 17px;
+      color: #1559ad;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .calendar-undated {
+      margin-top: 12px;
+    }
+
+    .calendar-undated.is-selected {
+      border-color: var(--accent);
+      color: #1559ad;
+      background: #eaf2ff;
+    }
+
+    .calendar-details {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
     }
 
     .timeline {
@@ -519,6 +615,14 @@
         max-width: 100px;
       }
 
+      .calendar-grid {
+        gap: 4px;
+      }
+
+      .calendar-day {
+        min-height: 58px;
+      }
+
       .comparison {
         grid-template-columns: 1fr;
       }
@@ -543,7 +647,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.2</span>
+        <span class="version">v4.3</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -568,7 +672,7 @@
       <div id="editor-fields"></div>
       <div id="editor-note" class="sub"></div>
       <div class="dialog-actions">
-        <button type="button" id="editor-cancel">取り消す</button>
+        <button type="button" id="editor-cancel">キャンセル</button>
         <button type="submit" class="primary" id="editor-submit">保存</button>
       </div>
     </form>
@@ -625,8 +729,8 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.2';
-    const SERVER_VERSION = 'v4.0';
+    const VERSION = 'v4.3';
+    const SERVER_VERSION = 'v4.3';
     const DB_NAME = 'taskapp-unified';
     const URL_KEY = 'gasUrl_v1';
     const TOKEN_KEY = 'gasTok_v1';
@@ -636,8 +740,15 @@
     let state = emptyState();
     let page = 'plan';
     let selectedDate = japanDate();
+
+    let taskView = 'list';
     let taskFilter = 'all';
     let filterDate = selectedDate;
+
+    let calendarMonth = selectedDate.slice(0, 7);
+    let calendarDate = selectedDate;
+    let calendarUndated = false;
+
     let historyData = {
       items: [],
       total: 0
@@ -653,6 +764,7 @@
     let conflictId = null;
     let readSequence = 0;
     let channel = null;
+    let verifiedConnection = '';
 
     let drag = null;
     let candidate = null;
@@ -733,6 +845,18 @@
       return date.toISOString().slice(0, 10);
     }
 
+    function monthShift(value, months) {
+      const date = new Date(value + '-01T12:00:00Z');
+      date.setUTCMonth(date.getUTCMonth() + months);
+      return date.toISOString().slice(0, 7);
+    }
+
+    function dateLabel(value) {
+      return Number(value.slice(0, 4)) + '年' +
+        Number(value.slice(5, 7)) + '月' +
+        Number(value.slice(8, 10)) + '日';
+    }
+
     function hourLabel(hour) {
       return hour === null ? '時間未定' : hour + '時';
     }
@@ -756,6 +880,10 @@
     }
 
     function taskById(snapshot, id) {
+      if (!snapshot) {
+        return null;
+      }
+
       return snapshot.tasks.find(function (task) {
         return task.taskId === id;
       }) || null;
@@ -946,20 +1074,41 @@
         throw new Error('設定から接続先と合い言葉を保存してください。');
       }
 
+      const url = localStorage.getItem(URL_KEY);
+      const token = localStorage.getItem(TOKEN_KEY);
+      const connection = url + '\n' + token;
+
+      const readOnly = [
+        'load',
+        'history',
+        'preview',
+        'check'
+      ].indexOf(payload.action) >= 0;
+
+      if (!readOnly && verifiedConnection !== connection) {
+        const checked = await api({
+          action: 'load'
+        });
+
+        if (!checked.ok) {
+          return checked;
+        }
+      }
+
       const controller = new AbortController();
       const timer = setTimeout(function () {
         controller.abort();
       }, 30000);
 
       try {
-        const response = await fetch(localStorage.getItem(URL_KEY), {
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'text/plain;charset=utf-8'
           },
           body: JSON.stringify(Object.assign({
             mode: 'web',
-            token: localStorage.getItem(TOKEN_KEY)
+            token: token
           }, payload)),
           redirect: 'follow',
           signal: controller.signal
@@ -975,7 +1124,17 @@
         }
 
         if (result.ok && result.app !== SERVER_VERSION) {
-          throw new Error('保存先の版が' + SERVER_VERSION + 'ではありません。');
+          verifiedConnection = '';
+
+          throw new Error(
+            '保存先の版が' + SERVER_VERSION + 'ではありません。' +
+            'Apps Scriptで「新バージョン」を選んで公開し直してから、' +
+            '画面の「最新を取得」を押してください。'
+          );
+        }
+
+        if (result.ok) {
+          verifiedConnection = connection;
         }
 
         return result;
@@ -1040,7 +1199,10 @@
     function resources(payload, snapshot) {
       const keys = [];
 
-      if (payload.action === 'order') {
+      if (
+        payload.action === 'order' ||
+        (payload.action === 'add' && payload.date)
+      ) {
         keys.push('day:' + payload.date);
       }
 
@@ -1069,7 +1231,7 @@
         keys.push('undo');
       }
 
-      return keys;
+      return Array.from(new Set(keys));
     }
 
     function contextFor(payload, snapshot) {
@@ -1225,7 +1387,19 @@
         throw new Error('端末への保存が準備できていません。');
       }
 
-      const context = captured || contextFor(payload, state.snapshot);
+      const currentContext = contextFor(payload, state.snapshot);
+
+      const context = captured
+        ? {
+          keys: Array.from(new Set(
+            captured.keys.concat(currentContext.keys)
+          )),
+          causes: Array.from(new Set(
+            captured.causes.concat(currentContext.causes)
+          ))
+        }
+        : currentContext;
+
       const id = uuid();
 
       await updateState(function (saved) {
@@ -1435,7 +1609,8 @@
               ) {
                 current.state = 'unknown';
                 current.note =
-                  '通信を確認できません。未反映とは限りません。同じ受付番号で再確認します。';
+                  String(error.message || error) +
+                  '\n未反映とは限りません。同じ受付番号で再確認します。';
               }
             });
 
@@ -1572,6 +1747,40 @@
       }
     }
 
+    function completeButton(task) {
+      const complete = button('', function () {
+        if (
+          drag ||
+          Date.now() < suppressClickUntil ||
+          !confirm('「' + task.title + '」を完了にしますか。')
+        ) {
+          return;
+        }
+
+        const original = taskById(state.snapshot, task.taskId);
+
+        if (!original) {
+          notify('このタスクは現在の一覧にありません。');
+          return;
+        }
+
+        enqueue({
+          action: 'done',
+          taskId: task.taskId,
+          expectedTask: original.version
+        }, '完了：' + task.title).catch(function (error) {
+          notify(error.message, true);
+        });
+      }, 'hit');
+
+      complete.dataset.act = 'done';
+      complete.disabled = !storageReady || legacyBlocked;
+      complete.setAttribute('aria-label', task.title + 'を完了');
+      complete.appendChild(make('span', null, 'circle'));
+
+      return complete;
+    }
+
     /* ---------- 1日の計画 ---------- */
 
     function renderPlan(content) {
@@ -1650,34 +1859,6 @@
           const row = make('li', null, 'task');
           row.dataset.id = task.taskId;
 
-          const complete = button('', function () {
-            if (
-              drag ||
-              Date.now() < suppressClickUntil ||
-              !confirm('「' + task.title + '」を完了にしますか。')
-            ) {
-              return;
-            }
-
-            const original = taskById(state.snapshot, task.taskId);
-
-            if (!original) {
-              return;
-            }
-
-            enqueue({
-              action: 'done',
-              taskId: task.taskId,
-              expectedTask: original.version
-            }, '完了：' + task.title).catch(function (error) {
-              notify(error.message, true);
-            });
-          }, 'hit');
-
-          complete.dataset.act = 'done';
-          complete.setAttribute('aria-label', task.title + 'を完了');
-          complete.appendChild(make('span', null, 'circle'));
-
           const text = make('div', null, 'ttl');
           text.appendChild(make('div', task.title));
 
@@ -1694,7 +1875,7 @@
           grip.dataset.act = 'grip';
           grip.setAttribute('aria-label', task.title + 'を移動');
 
-          row.append(complete, text, grip);
+          row.append(completeButton(task), text, grip);
           list.appendChild(row);
         });
 
@@ -2011,7 +2192,7 @@
       line.hidden = false;
     }
 
-    /* ---------- タスク一覧・編集 ---------- */
+    /* ---------- タスク一覧・カレンダー ---------- */
 
     function filterTask(task) {
       const today = japanDate();
@@ -2044,9 +2225,75 @@
         ' ／ ' + hourLabel(task.hour);
     }
 
+    function renderTaskCards(content, tasks, emptyMessage) {
+      if (!tasks.length) {
+        content.appendChild(make(
+          'p',
+          emptyMessage || '対象のタスクはありません。',
+          'sub'
+        ));
+
+        return;
+      }
+
+      const cards = make('div', null, 'cards');
+
+      tasks.forEach(function (task) {
+        const card = make('div', null, 'card');
+        const main = make('div', null, 'card-main');
+
+        main.append(
+          make('div', task.title, 'card-title'),
+          make('div', taskInfo(task), 'sub')
+        );
+
+        const edit = button('編集', function () {
+          openTaskEditor(task.taskId);
+        });
+
+        edit.disabled = !navigator.onLine;
+
+        card.append(completeButton(task), main, edit);
+        cards.appendChild(card);
+      });
+
+      content.appendChild(cards);
+    }
+
     function renderTasks(content) {
       content.appendChild(make('h2', 'タスク一覧'));
 
+      const switcher = make('div', null, 'view-switch');
+      switcher.setAttribute('role', 'group');
+      switcher.setAttribute('aria-label', 'タスク一覧の表示');
+
+      [
+        ['list', '一覧'],
+        ['calendar', 'カレンダー']
+      ].forEach(function (entry) {
+        const control = button(entry[1], function () {
+          taskView = entry[0];
+          render();
+        }, taskView === entry[0] ? 'active' : '');
+
+        control.setAttribute(
+          'aria-pressed',
+          String(taskView === entry[0])
+        );
+
+        switcher.appendChild(control);
+      });
+
+      content.appendChild(switcher);
+
+      if (taskView === 'calendar') {
+        renderCalendar(content);
+      } else {
+        renderTaskList(content);
+      }
+    }
+
+    function renderTaskList(content) {
       const tools = make('div', null, 'toolbar task-filters');
       const filterField = make('label', null, 'filter-field');
       const select = make('select');
@@ -2141,29 +2388,179 @@
           : '');
 
       content.appendChild(make('p', countText, 'sub'));
+      renderTaskCards(content, tasks);
+    }
 
-      const cards = make('div', null, 'cards');
+    function moveCalendarMonth(amount) {
+      calendarMonth = monthShift(calendarMonth, amount);
+      calendarDate = calendarMonth + '-01';
+      calendarUndated = false;
+      render();
+    }
+
+    function renderCalendar(content) {
+      const tasks = effectiveTasks();
+      const counts = new Map();
+      let undatedCount = 0;
 
       tasks.forEach(function (task) {
-        const card = make('div', null, 'card');
-        const main = make('div', null, 'card-main');
-        main.append(
-          make('div', task.title, 'card-title'),
-          make('div', taskInfo(task), 'sub')
-        );
-
-        const edit = button('編集', function () {
-          openTaskEditor(task.taskId);
-        });
-
-        edit.disabled = !navigator.onLine;
-
-        card.append(main, edit);
-        cards.appendChild(card);
+        if (task.date) {
+          counts.set(task.date, (counts.get(task.date) || 0) + 1);
+        } else {
+          undatedCount++;
+        }
       });
 
-      content.appendChild(cards);
+      const calendar = make('section', null, 'calendar');
+      const tools = make('div', null, 'toolbar');
+
+      const monthText = Number(calendarMonth.slice(0, 4)) + '年' +
+        Number(calendarMonth.slice(5, 7)) + '月';
+
+      tools.append(
+        button('前月', function () {
+          moveCalendarMonth(-1);
+        }),
+        make('h3', monthText, 'calendar-month'),
+        button('今月', function () {
+          calendarDate = japanDate();
+          calendarMonth = calendarDate.slice(0, 7);
+          calendarUndated = false;
+          render();
+        }),
+        button('翌月', function () {
+          moveCalendarMonth(1);
+        })
+      );
+
+      calendar.appendChild(tools);
+      calendar.appendChild(make(
+        'p',
+        '実行日ごとの未完了タスク数です。日付を押すと下に一覧が出ます。日付の変更は「編集」から行います。',
+        'sub'
+      ));
+
+      if (!navigator.onLine) {
+        calendar.appendChild(make(
+          'p',
+          '前回取得した内容と、この端末の未送信を表示しています。実行日の変更は通信できるときに行ってください。',
+          'sub'
+        ));
+      }
+
+      const grid = make('div', null, 'calendar-grid');
+      grid.setAttribute('role', 'group');
+      grid.setAttribute('aria-label', monthText + 'のタスク数');
+
+      ['日', '月', '火', '水', '木', '金', '土'].forEach(function (weekday) {
+        grid.appendChild(make('div', weekday, 'calendar-weekday'));
+      });
+
+      const first = new Date(calendarMonth + '-01T12:00:00Z');
+      const firstWeekday = first.getUTCDay();
+
+      const last = new Date(first);
+      last.setUTCMonth(last.getUTCMonth() + 1);
+      last.setUTCDate(0);
+
+      const daysInMonth = last.getUTCDate();
+      const today = japanDate();
+
+      for (let index = 0; index < firstWeekday; index++) {
+        const empty = make('div');
+        empty.setAttribute('aria-hidden', 'true');
+        grid.appendChild(empty);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = calendarMonth + '-' + String(day).padStart(2, '0');
+        const count = counts.get(date) || 0;
+        const selected = !calendarUndated && calendarDate === date;
+
+        const cell = button('', function () {
+          calendarDate = date;
+          calendarUndated = false;
+          render();
+        }, 'calendar-day');
+
+        cell.classList.toggle('is-selected', selected);
+        cell.classList.toggle('is-today', date === today);
+        cell.setAttribute('aria-pressed', String(selected));
+        cell.setAttribute(
+          'aria-label',
+          dateLabel(date) + '、' + (count ? count + '件' : 'タスクなし')
+        );
+
+        if (date === today) {
+          cell.setAttribute('aria-current', 'date');
+        }
+
+        cell.append(
+          make('span', String(day), 'calendar-day-number'),
+          make('span', count ? count + '件' : '', 'calendar-count')
+        );
+
+        grid.appendChild(cell);
+      }
+
+      const trailing = (7 - (firstWeekday + daysInMonth) % 7) % 7;
+
+      for (let index = 0; index < trailing; index++) {
+        const empty = make('div');
+        empty.setAttribute('aria-hidden', 'true');
+        grid.appendChild(empty);
+      }
+
+      calendar.appendChild(grid);
+
+      const undated = button(
+        '実行日未定 ' + undatedCount + '件',
+        function () {
+          calendarUndated = true;
+          render();
+        },
+        'calendar-undated' + (calendarUndated ? ' is-selected' : '')
+      );
+
+      undated.setAttribute('aria-pressed', String(calendarUndated));
+      calendar.appendChild(undated);
+      content.appendChild(calendar);
+
+      const details = make('section', null, 'calendar-details');
+
+      details.appendChild(make(
+        'h3',
+        calendarUndated
+          ? '実行日未定'
+          : dateLabel(calendarDate) + 'のタスク'
+      ));
+
+      const shown = tasks.filter(function (task) {
+        return calendarUndated
+          ? !task.date
+          : task.date === calendarDate;
+      });
+
+      if (!calendarUndated) {
+        shown.sort(compareTasks);
+      }
+
+      if (shown.length) {
+        details.appendChild(make('p', shown.length + ' 件', 'sub'));
+      }
+
+      renderTaskCards(
+        details,
+        shown,
+        calendarUndated
+          ? '実行日未定のタスクはありません。'
+          : 'この日のタスクはありません。'
+      );
+
+      content.appendChild(details);
     }
+
+    /* ---------- 追加・編集 ---------- */
 
     function field(name, label, type, value, required) {
       const wrapper = make('label', null, 'field');
@@ -2184,10 +2581,11 @@
       return input;
     }
 
-    function showEditor(title, note, handler) {
+    function showEditor(title, note, handler, submitLabel) {
       $('editor-title').textContent = title;
       $('editor-fields').replaceChildren();
       $('editor-note').textContent = note || '';
+      $('editor-submit').textContent = submitLabel || '保存';
       $('editor-submit').disabled = false;
       editorContext = handler;
       $('editor').showModal();
@@ -2196,32 +2594,38 @@
     function openAdd() {
       showEditor(
         'タスクを追加',
-        '実行日は自動では入りません。追加後に「実行日未定」から設定できます。',
+        '期限と実行日は任意です。件名だけでも追加できます。追加後も今の画面を維持します。',
         async function (form) {
           const title = String(form.get('title') || '').trim();
+          const due = String(form.get('due') || '');
+          const date = String(form.get('date') || '');
 
           if (!title) {
             throw new Error('件名を入力してください。');
           }
 
-          const context = {
-            keys: [],
-            causes: []
-          };
-
           await enqueue({
             action: 'add',
-            title: title
-          }, '追加：' + title, context);
+            title: title,
+            due: due,
+            date: date
+          }, '追加：' + title +
+            ' ／ ' + (date ? '実行日：' + date : '実行日未定') +
+            (due ? ' ／ 期限：' + due : '')
+          );
 
-          page = 'tasks';
-          taskFilter = 'nodate';
-          notify('追加を端末に保存しました。登録後は「実行日未定」に表示されます。');
-          render();
-        }
+          notify(
+            '端末に保存しました。未送信です。\n' +
+            '追加先：' + (date ? dateLabel(date) + 'の時間未定' : '実行日未定')
+          );
+        },
+        '追加'
       );
 
-      field('title', '件名', 'text', '', true).focus();
+      const titleInput = field('title', '件名', 'text', '', true);
+      field('due', '期限', 'date', '', false);
+      field('date', '実行日', 'date', '', false);
+      titleInput.focus();
     }
 
     function onlineRequired() {
@@ -2723,7 +3127,7 @@
 
       $('conflict-note').textContent =
         job.note + '\n関連する未送信 ' + related.length +
-        ' 件が対象です。保存済みを選ぶと、この端末の対象変更を取り消します。';
+        ' 件が対象です。保存済みを選ぶと、この端末の対象変更は反映しません。';
 
       $('conflict-server').replaceChildren(
         make('p', describePayload(job.payload, false))
@@ -2876,6 +3280,7 @@
       try {
         localStorage.setItem(URL_KEY, newUrl);
         localStorage.setItem(TOKEN_KEY, $('token').value.trim());
+        verifiedConnection = '';
         $('settings-dialog').close();
 
         if (oldUrl !== newUrl) {
