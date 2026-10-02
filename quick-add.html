@@ -1,0 +1,1728 @@
+<!-- Output: html -->
+<!-- File: quick-add.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1a73e8">
+  <title>タスクを追加</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --accent: #1a73e8;
+      --muted: #657383;
+      --line: #d8dfe6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 18px;
+      color: #202833;
+      background: #f6f8fb;
+      font-family: -apple-system, system-ui, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .version {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .sub {
+      margin: 5px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      margin: 10px 0;
+      padding: 10px 12px;
+      border: 1px solid #ead49b;
+      border-radius: 8px;
+      background: #fff7df;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .notice.error {
+      color: #a52620;
+    }
+
+    form {
+      margin-top: 15px;
+    }
+
+    fieldset {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 13px;
+      font-size: 13px;
+    }
+
+    input,
+    button {
+      font: inherit;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      padding: 10px;
+      border: 1px solid #bcc7d4;
+      border-radius: 8px;
+      color: #202833;
+      background: #fff;
+      font-size: 16px;
+    }
+
+    input:focus {
+      outline: 2px solid #c5dcff;
+      border-color: var(--accent);
+    }
+
+    .dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    button {
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid #ccd4de;
+      border-radius: 8px;
+      color: #263445;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      color: #fff;
+      background: var(--accent);
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: default;
+    }
+
+    .actions,
+    footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .actions {
+      justify-content: flex-end;
+    }
+
+    footer {
+      justify-content: space-between;
+      margin-top: 15px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    a {
+      color: #1559ad;
+    }
+
+    details {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    summary {
+      cursor: pointer;
+    }
+
+    .job {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .job-note {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 380px) {
+      .dates {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>タスクを追加</h1>
+    <span class="version">小窓 v4.4</span>
+  </header>
+
+  <p id="status" class="sub" aria-live="polite">端末保存を準備中…</p>
+  <p id="bridge-status" class="sub">自動で戻る：確認中</p>
+
+  <div id="notice" class="notice" hidden aria-live="polite"></div>
+
+  <div id="setup-note" class="notice" hidden>
+    下の「通常画面を開く」から「設定」を開き、
+    接続先と合い言葉を保存してください。
+  </div>
+
+  <form id="add-form">
+    <fieldset id="fields" disabled>
+      <label>
+        件名
+        <input
+          id="title"
+          name="title"
+          type="text"
+          maxlength="200"
+          required
+          autocomplete="off"
+          enterkeyhint="done"
+          placeholder="件名を入力">
+      </label>
+
+      <div class="dates">
+        <label>
+          期限（任意）
+          <input
+              id="due"
+              name="due"
+              type="date"
+              min="0001-01-01"
+              max="9999-12-31">
+        </label>
+
+        <label>
+          実行日（任意）
+          <input
+              id="date"
+              name="date"
+              type="date"
+              min="0001-01-01"
+              max="9999-12-31">
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="submit" type="submit" class="primary">
+          追加して戻る
+        </button>
+      </div>
+    </fieldset>
+  </form>
+
+  <p class="sub">
+    Enterで追加。日本語の変換確定では追加しません。
+  </p>
+
+  <footer>
+    <a href="./index.html" target="_blank" rel="noopener">
+      通常画面を開く
+    </a>
+    <button id="cancel" type="button">戻る（Esc）</button>
+  </footer>
+
+  <details id="outbox" hidden>
+    <summary id="outbox-summary">未送信</summary>
+    <p class="sub">
+      通常画面と共通の未送信です。
+      「確認が必要」と表示された操作は、通常画面で確認してください。
+    </p>
+    <button id="send" type="button">いま送る</button>
+    <div id="outbox-items"></div>
+  </details>
+
+  <p id="offline-note" class="sub"></p>
+
+  <script>
+    'use strict';
+
+    const SERVER_VERSION = 'v4.3';
+    const DB_NAME = 'taskapp-unified';
+    const URL_KEY = 'gasUrl_v1';
+    const TOKEN_KEY = 'gasTok_v1';
+    const REQUEST_TIMEOUT_MS = 60000;
+    const TAB_ID = uuid();
+
+    const PAGE_CHANNEL = 'task-quick-page-v1';
+    const EXTENSION_CHANNEL = 'task-quick-extension-v1';
+
+    let db = null;
+    let state = emptyState();
+    let storageReady = false;
+    let legacyBlocked = false;
+    let busy = false;
+    let channel = null;
+
+    let pumpPromise = null;
+    let nextTry = 0;
+    let failures = 0;
+    let verifiedConnection = '';
+
+    let composing = false;
+    let imeGuardUntil = 0;
+
+    let bridge = {
+      managed: false,
+      activation: ''
+    };
+
+    let bridgeCheckPromise = null;
+    let focusEpoch = 0;
+    const extensionRequests = new Map();
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function uuid() {
+      if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+        /[xy]/g,
+        function (character) {
+          const number = Math.random() * 16 | 0;
+
+          return (
+            character === 'x'
+              ? number
+              : number & 3 | 8
+          ).toString(16);
+        }
+      );
+    }
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function emptyState() {
+      return {
+        snapshot: null,
+        jobs: [],
+        sequence: 0,
+        transitions: [],
+        savedAt: 0
+      };
+    }
+
+    function checkedState(value) {
+      if (value === undefined || value === null) {
+        return emptyState();
+      }
+
+      if (
+        !Array.isArray(value.jobs) ||
+        !Array.isArray(value.transitions) ||
+        !Number.isSafeInteger(value.sequence)
+      ) {
+        throw new Error(
+          '端末の記録を読み取れません。データを消さず、通常画面で確認してください。'
+        );
+      }
+
+      return value;
+    }
+
+    function configuration() {
+      return {
+        url: localStorage.getItem(URL_KEY) || '',
+        token: localStorage.getItem(TOKEN_KEY) || ''
+      };
+    }
+
+    function configured() {
+      try {
+        const value = configuration();
+        return !!value.url && !!value.token;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function notify(text, error) {
+      $('notice').textContent = text || '';
+      $('notice').className = 'notice' + (error ? ' error' : '');
+      $('notice').hidden = !text;
+    }
+
+    function render() {
+      const pending = state.jobs.length;
+
+      const needsConfirmation = state.jobs.some(function (job) {
+        return job.state === 'conflict' || job.state === 'blocked';
+      });
+
+      let text = navigator.onLine ? '通信あり' : '通信なし';
+
+      if (!storageReady) {
+        text += '／端末保存は未準備';
+      } else if (legacyBlocked) {
+        text += '／旧画面の未送信を確認してください';
+      } else {
+        text += '／未送信 ' + pending + ' 件';
+
+        if (needsConfirmation) {
+          text += '／確認が必要';
+        } else if (pumpPromise) {
+          text += '／送信結果を確認中';
+        }
+      }
+
+      $('status').textContent = text;
+      $('bridge-status').textContent = bridge.managed
+        ? '自動で戻る：有効'
+        : '自動で戻る：専用キーから小窓を開いてください';
+
+      $('fields').disabled =
+        !storageReady ||
+        legacyBlocked ||
+        !configured() ||
+        busy;
+
+      $('cancel').disabled = busy;
+      $('setup-note').hidden = !storageReady || configured();
+
+      $('submit').textContent = busy
+        ? '端末に保存中…'
+        : '追加して戻る';
+
+      $('send').disabled =
+        !storageReady ||
+        legacyBlocked ||
+        !navigator.onLine ||
+        !configured() ||
+        !!pumpPromise;
+
+      $('outbox').hidden = !pending;
+      $('outbox-summary').textContent = '未送信 ' + pending + ' 件';
+
+      const container = $('outbox-items');
+      container.replaceChildren();
+
+      state.jobs.forEach(function (job) {
+        const row = document.createElement('div');
+        row.className = 'job';
+
+        const title = document.createElement('div');
+        title.textContent = job.label || '未送信の操作';
+
+        const note = document.createElement('div');
+        note.className = 'job-note';
+        note.textContent = job.note || '端末に保存済みです。';
+
+        row.append(title, note);
+
+        if (job.state === 'conflict' || job.state === 'blocked') {
+          const link = document.createElement('a');
+          link.href = './index.html';
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = '通常画面で確認する';
+          row.appendChild(link);
+        }
+
+        container.appendChild(row);
+      });
+
+      if (needsConfirmation) {
+        $('outbox').open = true;
+      }
+    }
+
+    function stateChanged() {
+      try {
+        render();
+      } catch (error) {
+        console.error(error);
+      }
+
+      try {
+        if (channel) {
+          channel.postMessage('changed');
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    /* ---------- 端末への保存 ---------- */
+
+    function openDatabase() {
+      return new Promise(function (resolve, reject) {
+        if (!window.indexedDB) {
+          reject(new Error('この端末では保存を利用できません。'));
+          return;
+        }
+
+        const request = indexedDB.open(DB_NAME, 1);
+
+        request.onupgradeneeded = function () {
+          if (!request.result.objectStoreNames.contains('data')) {
+            request.result.createObjectStore('data');
+          }
+        };
+
+        request.onsuccess = function () {
+          resolve(request.result);
+        };
+
+        request.onerror = function () {
+          reject(request.error);
+        };
+      });
+    }
+
+    function readState() {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readonly');
+        const request = transaction.objectStore('data').get('main');
+
+        transaction.oncomplete = function () {
+          try {
+            resolve(checkedState(request.result));
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        transaction.onerror = transaction.onabort = function () {
+          reject(
+            transaction.error ||
+            new Error('端末の記録を読み取れませんでした。')
+          );
+        };
+      });
+    }
+
+    function updateState(change) {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readwrite');
+        const store = transaction.objectStore('data');
+        const request = store.get('main');
+
+        let next;
+        let output;
+        let caught;
+
+        request.onsuccess = function () {
+          try {
+            next = checkedState(request.result);
+            output = change(next);
+            next.savedAt = Date.now();
+            store.put(next, 'main');
+          } catch (error) {
+            caught = error;
+            transaction.abort();
+          }
+        };
+
+        transaction.oncomplete = function () {
+          state = next;
+
+          // 保存の確定を、画面更新の成否から切り離す。
+          resolve(output);
+          stateChanged();
+        };
+
+        transaction.onerror = transaction.onabort = function () {
+          reject(
+            caught ||
+            transaction.error ||
+            new Error('端末に保存できませんでした。')
+          );
+        };
+      });
+    }
+
+    function lease(action) {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readwrite');
+        const store = transaction.objectStore('data');
+        const request = store.get('sender');
+        let accepted = false;
+
+        request.onsuccess = function () {
+          const saved = request.result;
+          const now = Date.now();
+
+          if (action === 'release') {
+            if (saved && saved.owner === TAB_ID) {
+              store.delete('sender');
+            }
+
+            accepted = true;
+            return;
+          }
+
+          if (!saved || saved.owner === TAB_ID || saved.until < now) {
+            store.put({
+              owner: TAB_ID,
+              until: now + 180000
+            }, 'sender');
+
+            accepted = true;
+          }
+        };
+
+        transaction.oncomplete = function () {
+          resolve(accepted);
+        };
+
+        transaction.onerror = transaction.onabort = function () {
+          reject(
+            transaction.error ||
+            new Error('送信の準備を確認できませんでした。')
+          );
+        };
+      });
+    }
+
+    async function oldPendingCount() {
+      let fallback;
+
+      try {
+        fallback = JSON.parse(
+          localStorage.getItem('outbox_v1') || '[]'
+        );
+
+        if (!Array.isArray(fallback)) {
+          throw new Error('記録の形式が異なります。');
+        }
+      } catch (error) {
+        throw new Error(
+          '以前の未送信記録を読み取れません。端末データは消さないでください。'
+        );
+      }
+
+      const old = await new Promise(function (resolve, reject) {
+        const request = indexedDB.open('taskapp');
+        let created = false;
+
+        request.onupgradeneeded = function () {
+          created = true;
+          request.transaction.abort();
+        };
+
+        request.onerror = function () {
+          if (created) {
+            resolve([]);
+          } else {
+            reject(request.error);
+          }
+        };
+
+        request.onsuccess = function () {
+          const oldDb = request.result;
+
+          if (!oldDb.objectStoreNames.contains('outbox')) {
+            oldDb.close();
+            resolve([]);
+            return;
+          }
+
+          const transaction = oldDb.transaction('outbox', 'readonly');
+          const get = transaction.objectStore('outbox').getAll();
+
+          transaction.oncomplete = function () {
+            oldDb.close();
+            resolve(get.result || []);
+          };
+
+          transaction.onerror = transaction.onabort = function () {
+            oldDb.close();
+            reject(transaction.error);
+          };
+        };
+      });
+
+      return new Set(
+        old.concat(fallback).map(function (job) {
+          return job.id;
+        })
+      ).size;
+    }
+
+    async function enqueueAdd(title, due, date) {
+      const id = uuid();
+
+      await updateState(function (saved) {
+        const keys = date ? ['day:' + date] : [];
+
+        const causes = saved.jobs.filter(function (job) {
+          return (job.keys || []).some(function (key) {
+            return keys.indexOf(key) >= 0;
+          });
+        }).map(function (job) {
+          return job.id;
+        });
+
+        saved.sequence++;
+
+        saved.jobs.push({
+          id: id,
+          sequence: saved.sequence,
+          payload: {
+            action: 'add',
+            requestId: id,
+            title: title,
+            due: due,
+            date: date
+          },
+          label: '追加：' + title +
+            ' ／ ' + (date ? '実行日：' + date : '実行日未定') +
+            (due ? ' ／ 期限：' + due : ''),
+          keys: keys,
+          causes: causes,
+          state: 'saved',
+          frozen: false,
+          note: ''
+        });
+      });
+
+      return id;
+    }
+
+    /* ---------- 通信 ---------- */
+
+    async function api(payload) {
+      if (!configured()) {
+        throw new Error(
+          '通常画面の「設定」で、接続先と合い言葉を保存してください。'
+        );
+      }
+
+      const settings = configuration();
+      const connection = settings.url + '\n' + settings.token;
+
+      const readOnly = [
+        'load',
+        'history',
+        'preview',
+        'check'
+      ].indexOf(payload.action) >= 0;
+
+      if (!readOnly && verifiedConnection !== connection) {
+        const checked = await api({
+          action: 'load'
+        });
+
+        if (!checked.ok) {
+          return checked;
+        }
+      }
+
+      const controller = new AbortController();
+      let timedOut = false;
+
+      const timer = setTimeout(function () {
+        timedOut = true;
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
+
+      try {
+        const response = await fetch(settings.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(Object.assign({
+            mode: 'web',
+            token: settings.token
+          }, payload)),
+          redirect: 'follow',
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            '保存先から正常な返答を受け取れませんでした' +
+            '（応答番号：' + response.status + '）。'
+          );
+        }
+
+        const text = await response.text();
+        let result;
+
+        try {
+          result = JSON.parse(text);
+        } catch (error) {
+          throw new Error(
+            '保存先から、タスクデータとして読めない返答が届きました。'
+          );
+        }
+
+        if (
+          !result ||
+          typeof result !== 'object' ||
+          typeof result.ok !== 'boolean'
+        ) {
+          throw new Error('保存先の返答を読み取れませんでした。');
+        }
+
+        if (result.ok && result.app !== SERVER_VERSION) {
+          verifiedConnection = '';
+
+          throw new Error(
+            '保存先の版が' + SERVER_VERSION + 'ではありません。' +
+            '通常画面の「設定」から「動作の点検」を実行してください。'
+          );
+        }
+
+        if (result.ok) {
+          verifiedConnection = connection;
+        }
+
+        return result;
+      } catch (error) {
+        if (timedOut) {
+          throw new Error(
+            '保存先の応答を60秒以内に受け取れなかったため、通信を終了しました。'
+          );
+        }
+
+        if (error && error.name === 'AbortError') {
+          throw new Error('通信が途中で中断されました。');
+        }
+
+        if (error && error.name === 'TypeError') {
+          throw new Error(
+            '保存先に接続できませんでした。通信が戻ってから再確認します。'
+          );
+        }
+
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function requireSnapshot(snapshot) {
+      if (
+        !snapshot ||
+        !Array.isArray(snapshot.tasks) ||
+        !snapshot.days ||
+        !snapshot.periodic ||
+        !Array.isArray(snapshot.periodic.items) ||
+        !snapshot.undo
+      ) {
+        throw new Error(
+          '保存先の返答に、必要なタスク一覧が含まれていません。'
+        );
+      }
+    }
+
+    function storeSnapshot(saved, snapshot) {
+      const previousTime = saved.snapshot
+        ? Date.parse(saved.snapshot.fetchedAt || '')
+        : NaN;
+
+      const incomingTime = Date.parse(snapshot.fetchedAt || '');
+
+      if (
+        Number.isFinite(previousTime) &&
+        Number.isFinite(incomingTime) &&
+        incomingTime < previousTime
+      ) {
+        return;
+      }
+
+      saved.snapshot = snapshot;
+    }
+
+    function compareTasks(a, b) {
+      const first = a.hour === null ? 7 : a.hour;
+      const second = b.hour === null ? 7 : b.hour;
+
+      if (first !== second) {
+        return first - second;
+      }
+
+      const orderA = a.order == null ? Infinity : a.order;
+      const orderB = b.order == null ? Infinity : b.order;
+
+      return orderA - orderB || a.row - b.row;
+    }
+
+    function mergePlan(items, tasks, date) {
+      const available = tasks.filter(function (task) {
+        return task.date === date;
+      }).sort(compareTasks);
+
+      const byId = new Map(
+        available.map(function (task) {
+          return [task.taskId, task];
+        })
+      );
+
+      const used = new Set();
+      const output = [];
+
+      (items || []).forEach(function (item) {
+        if (byId.has(item.id) && !used.has(item.id)) {
+          used.add(item.id);
+
+          output.push({
+            id: item.id,
+            hour: item.hour
+          });
+        }
+      });
+
+      available.forEach(function (task) {
+        if (!used.has(task.taskId)) {
+          output.push({
+            id: task.taskId,
+            hour: task.hour
+          });
+        }
+      });
+
+      return output.map(function (item, index) {
+        return {
+          item: item,
+          index: index
+        };
+      }).sort(function (a, b) {
+        const first = a.item.hour === null ? 7 : a.item.hour;
+        const second = b.item.hour === null ? 7 : b.item.hour;
+
+        return first - second || a.index - b.index;
+      }).map(function (entry) {
+        return entry.item;
+      });
+    }
+
+    function advance(payload, transition) {
+      if (!transition) {
+        return;
+      }
+
+      (transition.days || []).forEach(function (entry) {
+        if (
+          payload.action === 'order' &&
+          payload.date === entry.key &&
+          payload.expectedDay === entry.before
+        ) {
+          payload.expectedDay = entry.after;
+        }
+      });
+
+      (transition.tasks || []).forEach(function (entry) {
+        if (
+          payload.taskId === entry.key &&
+          payload.expectedTask === entry.before
+        ) {
+          payload.expectedTask = entry.after;
+        }
+      });
+
+      if (
+        transition.periodic &&
+        payload.expectedPeriodic === transition.periodic.before
+      ) {
+        payload.expectedPeriodic = transition.periodic.after;
+      }
+
+      if (
+        transition.undo &&
+        payload.expectedUndo === transition.undo.before
+      ) {
+        payload.expectedUndo = transition.undo.after;
+      }
+    }
+
+    function readyJob(saved) {
+      const ids = new Set(
+        saved.jobs.map(function (job) {
+          return job.id;
+        })
+      );
+
+      return saved.jobs.slice().sort(function (a, b) {
+        return a.sequence - b.sequence;
+      }).find(function (job) {
+        return ['saved', 'unknown', 'sending'].indexOf(job.state) >= 0 &&
+          !job.causes.some(function (id) {
+            return ids.has(id);
+          });
+      });
+    }
+
+    function pump(force) {
+      if (pumpPromise) {
+        return pumpPromise;
+      }
+
+      if (
+        !storageReady ||
+        legacyBlocked ||
+        !navigator.onLine ||
+        !configured() ||
+        (!force && Date.now() < nextTry)
+      ) {
+        return Promise.resolve();
+      }
+
+      pumpPromise = drainOutbox().catch(function (error) {
+        notify(
+          '端末の記録を確認できませんでした。データを消さずに、通常画面で確認してください。\n' +
+          String(error.message || error),
+          true
+        );
+      }).finally(function () {
+        pumpPromise = null;
+        render();
+      });
+
+      render();
+      return pumpPromise;
+    }
+
+    async function drainOutbox() {
+      let ownsLease = false;
+      let renewal = null;
+
+      state = await readState();
+
+      if (!readyJob(state)) {
+        return;
+      }
+
+      try {
+        ownsLease = await lease('claim');
+
+        if (!ownsLease) {
+          return;
+        }
+
+        renewal = setInterval(function () {
+          lease('claim').catch(function () {
+            // 次の送信前にも所有状態を確認する。
+          });
+        }, 10000);
+
+        while (navigator.onLine && configured()) {
+          if (!(await lease('claim'))) {
+            break;
+          }
+
+          state = await readState();
+
+          if (!readyJob(state)) {
+            break;
+          }
+
+          let job = null;
+
+          await updateState(function (saved) {
+            const current = readyJob(saved);
+
+            if (!current) {
+              return;
+            }
+
+            if (
+              !current.frozen &&
+              current.payload.action === 'order' &&
+              saved.snapshot
+            ) {
+              current.payload.items = mergePlan(
+                current.payload.items,
+                saved.snapshot.tasks,
+                current.payload.date
+              );
+            }
+
+            current.frozen = true;
+            current.state = 'sending';
+            current.note = '送信結果を確認しています。';
+            job = clone(current);
+          });
+
+          if (!job) {
+            break;
+          }
+
+          try {
+            const result = await api(job.payload);
+
+            if (result.ok) {
+              requireSnapshot(result.snapshot);
+
+              await updateState(function (saved) {
+                const exists = saved.jobs.some(function (entry) {
+                  return entry.id === job.id;
+                });
+
+                if (!exists) {
+                  return;
+                }
+
+                saved.jobs.forEach(function (entry) {
+                  if (
+                    entry.id !== job.id &&
+                    !entry.frozen &&
+                    entry.causes.indexOf(job.id) >= 0
+                  ) {
+                    advance(entry.payload, result.transition);
+                  }
+                });
+
+                saved.jobs = saved.jobs.filter(function (entry) {
+                  return entry.id !== job.id;
+                });
+
+                saved.transitions.push({
+                  id: job.id,
+                  transition: result.transition
+                });
+
+                saved.transitions = saved.transitions.slice(-100);
+                storeSnapshot(saved, result.snapshot);
+              });
+
+              failures = 0;
+              nextTry = 0;
+              continue;
+            }
+
+            const conflict = result.status === 'conflict';
+
+            const blocked =
+              result.status === 'invalid' ||
+              result.status === 'indeterminate';
+
+            if (result.snapshot) {
+              requireSnapshot(result.snapshot);
+            }
+
+            await updateState(function (saved) {
+              const current = saved.jobs.find(function (entry) {
+                return entry.id === job.id;
+              });
+
+              if (!current) {
+                return;
+              }
+
+              current.state = conflict
+                ? 'conflict'
+                : blocked
+                  ? 'blocked'
+                  : 'unknown';
+
+              current.note = result.message || '後で再試行します。';
+
+              if (result.snapshot) {
+                storeSnapshot(saved, result.snapshot);
+              }
+            });
+
+            if (conflict || blocked) {
+              continue;
+            }
+
+            throw new Error(
+              result.message || '送信を確認できませんでした。'
+            );
+          } catch (error) {
+            failures++;
+
+            nextTry = Date.now() + Math.min(
+              300000,
+              5000 * Math.pow(2, Math.min(failures, 6))
+            );
+
+            await updateState(function (saved) {
+              const current = saved.jobs.find(function (entry) {
+                return entry.id === job.id;
+              });
+
+              if (
+                current &&
+                current.state !== 'conflict' &&
+                current.state !== 'blocked'
+              ) {
+                current.state = 'unknown';
+
+                current.note =
+                  String(error.message || error) +
+                  '\n未反映とは限りません。同じ受付番号で再確認します。';
+              }
+            });
+
+            break;
+          }
+        }
+      } finally {
+        if (renewal) {
+          clearInterval(renewal);
+        }
+
+        if (ownsLease) {
+          await lease('release').catch(function () {
+            return null;
+          });
+        }
+      }
+    }
+
+    /* ---------- 小窓の最小化 ---------- */
+
+    function extensionRequest(type, values) {
+      return new Promise(function (resolve, reject) {
+        const requestId = uuid();
+
+        const timer = setTimeout(function () {
+          extensionRequests.delete(requestId);
+
+          reject(new Error(
+            '小窓を操作する拡張機能から返答を受け取れませんでした。'
+          ));
+        }, 2000);
+
+        extensionRequests.set(requestId, {
+          resolve: resolve,
+          reject: reject,
+          timer: timer
+        });
+
+        window.postMessage(Object.assign({
+          channel: PAGE_CHANNEL,
+          requestId: requestId,
+          type: type
+        }, values || {}), window.location.origin);
+      });
+    }
+
+    function focusTitle() {
+      if (
+        storageReady &&
+        !legacyBlocked &&
+        !busy &&
+        configured()
+      ) {
+        const input = $('title');
+        input.focus({
+          preventScroll: true
+        });
+
+        input.setSelectionRange(
+          input.value.length,
+          input.value.length
+        );
+      }
+    }
+
+    window.addEventListener('message', function (event) {
+      if (
+        event.source !== window ||
+        event.origin !== window.location.origin ||
+        !event.data ||
+        event.data.channel !== EXTENSION_CHANNEL
+      ) {
+        return;
+      }
+
+      const message = event.data;
+
+      if (message.type === 'focus') {
+        if (typeof message.activation !== 'string') {
+          return;
+        }
+
+        focusEpoch++;
+
+        bridge = {
+          managed: true,
+          activation: message.activation
+        };
+
+        render();
+        focusTitle();
+        return;
+      }
+
+      if (message.type !== 'response') {
+        return;
+      }
+
+      const pending = extensionRequests.get(message.requestId);
+
+      if (!pending) {
+        return;
+      }
+
+      clearTimeout(pending.timer);
+      extensionRequests.delete(message.requestId);
+      pending.resolve(message.result);
+    });
+
+    function connectBridge() {
+      if (bridgeCheckPromise) {
+        return bridgeCheckPromise;
+      }
+
+      bridgeCheckPromise = extensionRequest('hello').then(function (result) {
+        if (!result || !result.ok) {
+          throw new Error(
+            result && result.message
+              ? result.message
+              : '拡張機能を確認できませんでした。'
+          );
+        }
+
+        bridge = {
+          managed: result.managed === true,
+          activation: result.activation || ''
+        };
+      }).catch(function () {
+        bridge = {
+          managed: false,
+          activation: ''
+        };
+      }).finally(function () {
+        bridgeCheckPromise = null;
+        render();
+      });
+
+      return bridgeCheckPromise;
+    }
+
+    async function minimizeWindow(reason, activation, capturedEpoch) {
+      if (!activation) {
+        await connectBridge();
+        activation = bridge.activation;
+      }
+
+      if (capturedEpoch !== focusEpoch) {
+        return false;
+      }
+
+      if (!bridge.managed || !activation) {
+        throw new Error(
+          '専用キーで開いた小窓ではないため、自動では最小化できません。' +
+          '右上の「－」で最小化してください。'
+        );
+      }
+
+      const result = await extensionRequest('minimize', {
+        activation: activation,
+        reason: reason
+      });
+
+      if (!result || !result.ok) {
+        throw new Error(
+          result && result.message
+            ? result.message
+            : '小窓を最小化できませんでした。'
+        );
+      }
+
+      return result.minimized === true;
+    }
+
+    /* ---------- 入力 ---------- */
+
+    function validDate(value) {
+      if (!value) {
+        return true;
+      }
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+      }
+
+      const parsed = new Date(value + 'T12:00:00Z');
+
+      return !isNaN(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === value;
+    }
+
+    async function saveForm() {
+      if (
+        busy ||
+        !storageReady ||
+        legacyBlocked ||
+        !configured()
+      ) {
+        return;
+      }
+
+      const form = $('add-form');
+
+      if (!form.reportValidity()) {
+        return;
+      }
+
+      const title = $('title').value.trim();
+      const due = $('due').value;
+      const date = $('date').value;
+
+      if (!title || title.length > 200) {
+        notify('件名は1～200文字で入力してください。', true);
+        $('title').focus();
+        return;
+      }
+
+      if (!validDate(due) || !validDate(date)) {
+        notify('期限と実行日を確認してください。', true);
+        return;
+      }
+
+      const activation = bridge.activation;
+      const capturedEpoch = focusEpoch;
+
+      busy = true;
+      render();
+      notify('');
+
+      try {
+        await enqueueAdd(title, due, date);
+      } catch (error) {
+        busy = false;
+        render();
+
+        notify(
+          'この端末に保存できませんでした。入力は消していません。\n' +
+          String(error.message || error),
+          true
+        );
+
+        focusTitle();
+        return;
+      }
+
+      // ここより前に、端末への保存が確定している。
+      $('title').value = '';
+      $('due').value = '';
+      $('date').value = '';
+
+      notify(
+        '端末に保存しました。通信できるときに送信します。\n' +
+        '追加先：' + (date ? date + ' の時間未定' : '実行日未定')
+      );
+
+      // 送信完了を待たず、小窓を最小化する。
+      pump(true);
+
+      try {
+        const minimized = await minimizeWindow(
+          'saved',
+          activation,
+          capturedEpoch
+        );
+
+        if (!minimized) {
+          notify(
+            'タスクは端末に保存しました。\n' +
+            '小窓が再び呼び出されたため、そのまま表示しています。'
+          );
+        }
+      } catch (error) {
+        notify(
+          'タスクは端末に保存済みです。追加し直す必要はありません。\n' +
+          String(error.message || error),
+          true
+        );
+      } finally {
+        busy = false;
+        render();
+
+        if (document.hasFocus()) {
+          focusTitle();
+        }
+      }
+    }
+
+    async function cancelInput() {
+      if (busy) {
+        return;
+      }
+
+      const activation = bridge.activation;
+      const capturedEpoch = focusEpoch;
+
+      try {
+        await minimizeWindow(
+          'cancel',
+          activation,
+          capturedEpoch
+        );
+      } catch (error) {
+        notify(
+          'タスクは追加していません。入力は残しています。\n' +
+          String(error.message || error),
+          true
+        );
+      }
+    }
+
+    $('add-form').addEventListener('compositionstart', function () {
+      composing = true;
+    });
+
+    $('add-form').addEventListener('compositionend', function () {
+      composing = false;
+      imeGuardUntil = performance.now() + 100;
+    });
+
+    $('add-form').addEventListener('keydown', function (event) {
+      const usingIme =
+        composing ||
+        event.isComposing ||
+        event.keyCode === 229;
+
+      if (usingIme) {
+        imeGuardUntil = performance.now() + 100;
+        return;
+      }
+
+      if (
+        event.key !== 'Enter' ||
+        !(event.target instanceof HTMLInputElement)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (
+        event.repeat ||
+        busy ||
+        performance.now() < imeGuardUntil
+      ) {
+        return;
+      }
+
+      $('add-form').requestSubmit();
+    });
+
+    $('add-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      if (
+        composing ||
+        busy ||
+        performance.now() < imeGuardUntil
+      ) {
+        return;
+      }
+
+      saveForm();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.keyCode === 229 ||
+        composing ||
+        busy ||
+        performance.now() < imeGuardUntil
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      cancelInput();
+    });
+
+    $('cancel').addEventListener('click', cancelInput);
+
+    $('send').addEventListener('click', function () {
+      nextTry = 0;
+      pump(true);
+    });
+
+    /* ---------- 起動・再開 ---------- */
+
+    async function reread(sendNow) {
+      if (!storageReady) {
+        return;
+      }
+
+      try {
+        state = await readState();
+        render();
+
+        if (sendNow) {
+          nextTry = 0;
+          pump(true);
+        } else {
+          pump(false);
+        }
+      } catch (error) {
+        notify(
+          '端末の記録を読み取れませんでした。データは消さずに開き直してください。',
+          true
+        );
+      }
+    }
+
+    window.addEventListener('online', function () {
+      reread(true);
+    });
+
+    window.addEventListener('offline', render);
+
+    window.addEventListener('storage', function (event) {
+      if (
+        event.key === URL_KEY ||
+        event.key === TOKEN_KEY ||
+        event.key === null
+      ) {
+        verifiedConnection = '';
+        render();
+        reread(true);
+      }
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) {
+        connectBridge();
+        reread(true);
+      }
+    });
+
+    window.addEventListener('beforeunload', function (event) {
+      if (
+        busy ||
+        $('title').value ||
+        $('due').value ||
+        $('date').value
+      ) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
+
+    setInterval(function () {
+      reread(false);
+    }, 15000);
+
+    async function start() {
+      connectBridge();
+
+      try {
+        db = await openDatabase();
+
+        db.onversionchange = function () {
+          db.close();
+          storageReady = false;
+          render();
+
+          notify(
+            '端末の保存先が変更されました。入力を控えたうえで、この小窓を開き直してください。',
+            true
+          );
+        };
+
+        state = await readState();
+        const oldCount = await oldPendingCount();
+
+        legacyBlocked = oldCount > 0;
+        storageReady = true;
+
+        if (legacyBlocked) {
+          notify(
+            '以前の画面に未送信が ' + oldCount +
+            ' 件残っています。記録は消していません。通常画面で確認してください。',
+            true
+          );
+        }
+
+        if ('BroadcastChannel' in window) {
+          channel = new BroadcastChannel('task-unified-state');
+
+          channel.onmessage = function () {
+            reread(false);
+          };
+        }
+
+        render();
+        focusTitle();
+
+        if (!legacyBlocked) {
+          pump(true);
+        }
+      } catch (error) {
+        storageReady = false;
+        render();
+
+        notify(
+          '端末への保存を準備できないため、追加を止めています。\n' +
+          String(error.message || error),
+          true
+        );
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', {
+        updateViaCache: 'none'
+      }).then(function (registration) {
+        return registration.update();
+      }).catch(function () {
+        $('offline-note').textContent =
+          '通信なしで開くための準備を更新できませんでした。' +
+          '通信できる状態で小窓を開き直してください。';
+      });
+    }
+
+    start();
+  </script>
+</body>
+</html>
