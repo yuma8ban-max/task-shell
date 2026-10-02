@@ -212,6 +212,7 @@
       color: #326347;
       font-size: 13px;
       line-height: 1.6;
+      overflow-wrap: anywhere;
     }
 
     .notice {
@@ -647,7 +648,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.3</span>
+        <span class="version">v4.3.1</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -729,8 +730,9 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.3';
+    const VERSION = 'v4.3.1';
     const SERVER_VERSION = 'v4.3';
+    const REQUEST_TIMEOUT_MS = 60000;
     const DB_NAME = 'taskapp-unified';
     const URL_KEY = 'gasUrl_v1';
     const TOKEN_KEY = 'gasTok_v1';
@@ -757,14 +759,22 @@
     let storageReady = false;
     let legacyBlocked = false;
     let refreshing = false;
-    let pumping = false;
+    let manualReloading = false;
     let nextTry = 0;
     let failures = 0;
     let editorContext = null;
     let conflictId = null;
-    let readSequence = 0;
     let channel = null;
     let verifiedConnection = '';
+
+    let remoteTail = Promise.resolve();
+    let refreshPromise = null;
+    let pumpPromise = null;
+    let historyPromise = null;
+
+    let lastReadError = '';
+    let receivedThisSession = false;
+    let messageKind = '';
 
     let drag = null;
     let candidate = null;
@@ -829,7 +839,8 @@
       return element;
     }
 
-    function notify(text, error) {
+    function notify(text, error, kind) {
+      messageKind = kind || '';
       $('message').textContent = text || '';
       $('message').className = 'notice' + (error ? ' error' : '');
       $('message').hidden = !text;
@@ -855,6 +866,19 @@
       return Number(value.slice(0, 4)) + '年' +
         Number(value.slice(5, 7)) + '月' +
         Number(value.slice(8, 10)) + '日';
+    }
+
+    function fetchedAtLabel(value) {
+      const time = Date.parse(value || '');
+
+      if (!Number.isFinite(time)) {
+        return '未取得';
+      }
+
+      return new Date(time + 9 * 3600000)
+        .toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
     }
 
     function hourLabel(hour) {
@@ -1069,6 +1093,16 @@
         !!localStorage.getItem(TOKEN_KEY);
     }
 
+    function runRemote(work) {
+      const result = remoteTail.then(work);
+
+      remoteTail = result.catch(function () {
+        return undefined;
+      });
+
+      return result;
+    }
+
     async function api(payload) {
       if (!configured()) {
         throw new Error('設定から接続先と合い言葉を保存してください。');
@@ -1096,9 +1130,12 @@
       }
 
       const controller = new AbortController();
+      let timedOut = false;
+
       const timer = setTimeout(function () {
+        timedOut = true;
         controller.abort();
-      }, 30000);
+      }, REQUEST_TIMEOUT_MS);
 
       try {
         const response = await fetch(url, {
@@ -1114,13 +1151,31 @@
           signal: controller.signal
         });
 
+        if (!response.ok) {
+          throw new Error(
+            '保存先から正常な返答を受け取れませんでした' +
+            '（応答番号：' + response.status + '）。'
+          );
+        }
+
         const text = await response.text();
         let result;
 
         try {
           result = JSON.parse(text);
         } catch (error) {
-          throw new Error('接続先から一覧を受け取れませんでした。公開中の内容と接続先を確認してください。');
+          throw new Error(
+            '保存先から、タスクデータとして読めない返答が届きました' +
+            '（応答番号：' + response.status + '）。'
+          );
+        }
+
+        if (
+          !result ||
+          typeof result !== 'object' ||
+          typeof result.ok !== 'boolean'
+        ) {
+          throw new Error('保存先の返答が、タスクデータの形式ではありません。');
         }
 
         if (result.ok && result.app !== SERVER_VERSION) {
@@ -1128,8 +1183,7 @@
 
           throw new Error(
             '保存先の版が' + SERVER_VERSION + 'ではありません。' +
-            'Apps Scriptで「新バージョン」を選んで公開し直してから、' +
-            '画面の「最新を取得」を押してください。'
+            '今回の画面に対応する保存先の版は' + SERVER_VERSION + 'です。'
           );
         }
 
@@ -1138,60 +1192,152 @@
         }
 
         return result;
+      } catch (error) {
+        if (timedOut) {
+          throw new Error(
+            '保存先の応答を60秒以内に受け取れなかったため、通信を終了しました。'
+          );
+        }
+
+        if (error && error.name === 'AbortError') {
+          throw new Error('通信が途中で中断されました。');
+        }
+
+        if (error && error.name === 'TypeError') {
+          throw new Error(
+            '保存先に接続できませんでした。通信経路や保存先の応答を確認できない状態です。'
+          );
+        }
+
+        throw error;
       } finally {
         clearTimeout(timer);
       }
     }
 
-    async function acceptSnapshot(snapshot) {
-      if (!snapshot) {
+    function requireSnapshot(snapshot) {
+      if (
+        !snapshot ||
+        !Array.isArray(snapshot.tasks) ||
+        !snapshot.days ||
+        !snapshot.periodic ||
+        !Array.isArray(snapshot.periodic.items) ||
+        !snapshot.undo
+      ) {
+        throw new Error('保存先の返答に、必要なタスク一覧が含まれていません。');
+      }
+    }
+
+    function storeSnapshot(saved, snapshot) {
+      const previousTime = saved.snapshot
+        ? Date.parse(saved.snapshot.fetchedAt || '')
+        : NaN;
+
+      const incomingTime = Date.parse(snapshot.fetchedAt || '');
+
+      if (
+        Number.isFinite(previousTime) &&
+        Number.isFinite(incomingTime) &&
+        incomingTime < previousTime
+      ) {
         return;
       }
 
+      saved.snapshot = snapshot;
+    }
+
+    function markListReceived() {
+      lastReadError = '';
+      receivedThisSession = true;
+
+      if (messageKind === 'read') {
+        notify('');
+      }
+
+      renderStatus();
+    }
+
+    async function acceptSnapshot(snapshot) {
+      requireSnapshot(snapshot);
+
       await updateState(function (saved) {
-        saved.snapshot = snapshot;
+        storeSnapshot(saved, snapshot);
+      });
+
+      markListReceived();
+    }
+
+    function reportReadFailure(error) {
+      lastReadError = String(error.message || error);
+
+      notify(
+        lastReadError +
+        (state.snapshot
+          ? '\n前回取得した一覧を表示しています。端末の記録は消していません。'
+          : '\n一覧はまだ取得できていません。'),
+        true,
+        'read'
+      );
+
+      renderStatus();
+    }
+
+    function readServer(payload, afterRead) {
+      return runRemote(async function () {
+        try {
+          const result = await api(payload);
+
+          if (!result.ok) {
+            throw new Error(result.message || '一覧を取得できませんでした。');
+          }
+
+          requireSnapshot(result.snapshot);
+
+          if (afterRead) {
+            afterRead(result);
+          }
+
+          await acceptSnapshot(result.snapshot);
+          return result;
+        } catch (error) {
+          reportReadFailure(error);
+          throw error;
+        }
       });
     }
 
-    async function refresh() {
+    function refresh() {
+      if (refreshPromise) {
+        return refreshPromise;
+      }
+
       if (
         !storageReady ||
         legacyBlocked ||
-        refreshing ||
         drag ||
-        pumping ||
         !navigator.onLine ||
         !configured()
       ) {
         renderStatus();
-        return;
+        return Promise.resolve(false);
       }
 
       refreshing = true;
-      const sequence = ++readSequence;
+      renderStatus();
 
-      try {
-        const result = await api({
-          action: 'load'
-        });
-
-        if (!result.ok) {
-          throw new Error(result.message);
-        }
-
-        if (sequence === readSequence && !pumping) {
-          await acceptSnapshot(result.snapshot);
-        }
-      } catch (error) {
-        notify(
-          String(error.message || error) +
-          (state.snapshot ? '\n取得済みの内容は端末に残っています。' : ''),
-          true
-        );
-      } finally {
+      refreshPromise = readServer({
+        action: 'load'
+      }).then(function () {
+        return true;
+      }).catch(function () {
+        return false;
+      }).finally(function () {
         refreshing = false;
+        refreshPromise = null;
         renderStatus();
-      }
+      });
+
+      return refreshPromise;
     }
 
     /* ---------- 未送信の順序と食い違い ---------- */
@@ -1445,180 +1591,247 @@
       });
     }
 
-    async function pump(force) {
+    function pump(force) {
+      if (pumpPromise) {
+        return pumpPromise;
+      }
+
       if (
-        pumping ||
         !storageReady ||
         legacyBlocked ||
         !navigator.onLine ||
         !configured() ||
         (!force && Date.now() < nextTry)
       ) {
-        return;
+        return Promise.resolve(false);
       }
 
-      pumping = true;
-      readSequence++;
+      pumpPromise = drainOutbox().then(function (changed) {
+        if (changed && page === 'history') {
+          loadHistory(false);
+        }
+
+        return changed;
+      }).catch(function (error) {
+        notify(
+          '端末への保存を確認できません。データは消さずに、画面を開き直してください。\n' +
+          String(error.message || error),
+          true
+        );
+
+        return false;
+      }).finally(function () {
+        pumpPromise = null;
+        renderStatus();
+      });
+
+      return pumpPromise;
+    }
+
+    async function drainOutbox() {
       let ownsLease = false;
       let renewal = null;
       let changed = false;
+
+      state = await readState();
+
+      if (!readyJob(state)) {
+        return false;
+      }
 
       try {
         ownsLease = await lease('claim');
 
         if (!ownsLease) {
-          return;
+          return false;
         }
 
         renewal = setInterval(function () {
           lease('claim').catch(function () {
-            // 次の送信前に再確認する。
+            // 次の送信前にも所有状態を確認する。
           });
         }, 10000);
 
         while (navigator.onLine) {
-          if (!await lease('claim')) {
-            break;
-          }
-
-          state = await readState();
-          const candidateJob = readyJob(state);
-
-          if (!candidateJob) {
-            break;
-          }
-
-          let job;
-
-          await updateState(function (saved) {
-            const current = saved.jobs.find(function (entry) {
-              return entry.id === candidateJob.id;
-            });
-
-            if (!current) {
-              return;
-            }
-
+          const step = await runRemote(async function () {
             if (
-              !current.frozen &&
-              current.payload.action === 'order' &&
-              saved.snapshot
+              !navigator.onLine ||
+              !configured() ||
+              !(await lease('claim'))
             ) {
-              current.payload.items = mergePlan(
-                current.payload.items,
-                saved.snapshot.tasks,
-                current.payload.date
-              );
+              return {
+                stop: true
+              };
             }
 
-            current.frozen = true;
-            current.state = 'sending';
-            current.note = '送信結果を確認しています。';
-            job = clone(current);
-          });
+            state = await readState();
 
-          if (!job) {
-            continue;
-          }
-
-          try {
-            const result = await api(job.payload);
-
-            if (result.ok) {
-              await updateState(function (saved) {
-                const exists = saved.jobs.some(function (entry) {
-                  return entry.id === job.id;
-                });
-
-                if (!exists) {
-                  return;
-                }
-
-                saved.jobs.forEach(function (entry) {
-                  if (
-                    entry.id !== job.id &&
-                    !entry.frozen &&
-                    entry.causes.indexOf(job.id) >= 0
-                  ) {
-                    advance(entry.payload, result.transition);
-                  }
-                });
-
-                saved.jobs = saved.jobs.filter(function (entry) {
-                  return entry.id !== job.id;
-                });
-
-                saved.transitions.push({
-                  id: job.id,
-                  transition: result.transition
-                });
-
-                saved.transitions = saved.transitions.slice(-100);
-                saved.snapshot = result.snapshot;
-              });
-
-              changed = true;
-              failures = 0;
-              nextTry = 0;
-              notify(result.message || '保存しました。');
-              continue;
+            if (!readyJob(state)) {
+              return {
+                stop: true
+              };
             }
 
-            const conflict = result.status === 'conflict';
-            const blocked = result.status === 'invalid' ||
-              result.status === 'indeterminate';
+            let job = null;
 
             await updateState(function (saved) {
-              const current = saved.jobs.find(function (entry) {
-                return entry.id === job.id;
-              });
+              const current = readyJob(saved);
 
               if (!current) {
                 return;
               }
 
-              current.state = conflict ? 'conflict' : blocked ? 'blocked' : 'unknown';
-              current.note = result.message || '後で再試行します。';
-
-              if (result.snapshot) {
-                saved.snapshot = result.snapshot;
+              if (
+                !current.frozen &&
+                current.payload.action === 'order' &&
+                saved.snapshot
+              ) {
+                current.payload.items = mergePlan(
+                  current.payload.items,
+                  saved.snapshot.tasks,
+                  current.payload.date
+                );
               }
+
+              current.frozen = true;
+              current.state = 'sending';
+              current.note = '送信結果を確認しています。';
+              job = clone(current);
             });
 
-            if (conflict || blocked) {
-              continue;
+            if (!job) {
+              return {
+                stop: true
+              };
             }
 
-            throw new Error(result.message || '送信を確認できませんでした。');
-          } catch (error) {
-            failures++;
-            nextTry = Date.now() + Math.min(
-              300000,
-              5000 * Math.pow(2, Math.min(failures, 6))
-            );
+            try {
+              const result = await api(job.payload);
 
-            await updateState(function (saved) {
-              const current = saved.jobs.find(function (entry) {
-                return entry.id === job.id;
+              if (result.ok) {
+                requireSnapshot(result.snapshot);
+
+                await updateState(function (saved) {
+                  const exists = saved.jobs.some(function (entry) {
+                    return entry.id === job.id;
+                  });
+
+                  if (!exists) {
+                    return;
+                  }
+
+                  saved.jobs.forEach(function (entry) {
+                    if (
+                      entry.id !== job.id &&
+                      !entry.frozen &&
+                      entry.causes.indexOf(job.id) >= 0
+                    ) {
+                      advance(entry.payload, result.transition);
+                    }
+                  });
+
+                  saved.jobs = saved.jobs.filter(function (entry) {
+                    return entry.id !== job.id;
+                  });
+
+                  saved.transitions.push({
+                    id: job.id,
+                    transition: result.transition
+                  });
+
+                  saved.transitions = saved.transitions.slice(-100);
+                  storeSnapshot(saved, result.snapshot);
+                });
+
+                markListReceived();
+                failures = 0;
+                nextTry = 0;
+                notify(result.message || '保存しました。');
+
+                return {
+                  saved: true,
+                  stop: false
+                };
+              }
+
+              const conflict = result.status === 'conflict';
+              const blocked = result.status === 'invalid' ||
+                result.status === 'indeterminate';
+
+              await updateState(function (saved) {
+                const current = saved.jobs.find(function (entry) {
+                  return entry.id === job.id;
+                });
+
+                if (!current) {
+                  return;
+                }
+
+                current.state = conflict
+                  ? 'conflict'
+                  : blocked
+                    ? 'blocked'
+                    : 'unknown';
+
+                current.note = result.message || '後で再試行します。';
+
+                if (result.snapshot) {
+                  requireSnapshot(result.snapshot);
+                  storeSnapshot(saved, result.snapshot);
+                }
               });
 
-              if (
-                current &&
-                current.state !== 'conflict' &&
-                current.state !== 'blocked'
-              ) {
-                current.state = 'unknown';
-                current.note =
-                  String(error.message || error) +
-                  '\n未反映とは限りません。同じ受付番号で再確認します。';
+              if (result.snapshot) {
+                markListReceived();
               }
-            });
 
+              if (conflict || blocked) {
+                return {
+                  saved: false,
+                  stop: false
+                };
+              }
+
+              throw new Error(result.message || '送信を確認できませんでした。');
+            } catch (error) {
+              failures++;
+              nextTry = Date.now() + Math.min(
+                300000,
+                5000 * Math.pow(2, Math.min(failures, 6))
+              );
+
+              await updateState(function (saved) {
+                const current = saved.jobs.find(function (entry) {
+                  return entry.id === job.id;
+                });
+
+                if (
+                  current &&
+                  current.state !== 'conflict' &&
+                  current.state !== 'blocked'
+                ) {
+                  current.state = 'unknown';
+                  current.note =
+                    String(error.message || error) +
+                    '\n未反映とは限りません。同じ受付番号で再確認します。';
+                }
+              });
+
+              return {
+                saved: false,
+                stop: true
+              };
+            }
+          });
+
+          if (step.saved) {
+            changed = true;
+          }
+
+          if (step.stop) {
             break;
           }
         }
-      } catch (error) {
-        notify('端末への保存を確認できません。データは消さずに、画面を開き直してください。', true);
       } finally {
         if (renewal) {
           clearInterval(renewal);
@@ -1629,14 +1842,9 @@
             return null;
           });
         }
-
-        pumping = false;
-        renderStatus();
-
-        if (changed && page === 'history') {
-          loadHistory(false);
-        }
       }
+
+      return changed;
     }
 
     /* ---------- 共通表示 ---------- */
@@ -1653,23 +1861,41 @@
         text += '／端末保存を準備中';
       } else if (legacyBlocked) {
         text += '／旧画面の未送信を先に確認してください';
-      } else if (conflict) {
-        text += '／確認が必要／未送信 ' + pending + ' 件';
-      } else if (pending) {
-        text += '／未送信 ' + pending + ' 件';
-      } else if (state.snapshot) {
-        text += '／保存済み';
       } else {
-        text += '／未取得';
-      }
+        if (refreshing) {
+          text += '／一覧を読み込み中';
+        } else if (lastReadError) {
+          text += '／一覧取得に失敗';
+        }
 
-      if (refreshing) {
-        text += '／読み込み中';
+        if (conflict) {
+          text += '／確認が必要／未送信 ' + pending + ' 件';
+        } else if (pending) {
+          text += '／未送信 ' + pending + ' 件';
+        } else if (refreshing || lastReadError) {
+          text += '／未送信 0 件';
+        } else if (state.snapshot && receivedThisSession) {
+          text += '／保存済み';
+        } else if (state.snapshot) {
+          text += '／取得済みの一覧を表示';
+        } else {
+          text += '／未取得';
+        }
+
+        if (state.snapshot) {
+          text += '／前回取得：' +
+            fetchedAtLabel(state.snapshot.fetchedAt) +
+            '（日本時間）';
+        }
       }
 
       $('status').textContent = text;
       $('add').disabled = !storageReady || legacyBlocked;
-      $('reload').disabled = !storageReady || legacyBlocked || refreshing;
+      $('reload').disabled =
+        !storageReady ||
+        legacyBlocked ||
+        refreshing ||
+        manualReloading;
     }
 
     function renderOutbox() {
@@ -2726,7 +2952,6 @@
       });
 
       tools.append(add, preview, automatic);
-      content.appendChild(tools);
       content.appendChild(make(
         'p',
         '追加されたタスクは、その日の「時間未定」に入ります。',
@@ -2851,15 +3076,10 @@
       }
 
       try {
-        const result = await api({
+        const result = await readServer({
           action: 'preview'
         });
 
-        if (!result.ok) {
-          throw new Error(result.message);
-        }
-
-        await acceptSnapshot(result.snapshot);
         const preview = result.preview;
 
         const text = '【下見】まだ追加していません。\n\n' +
@@ -2884,7 +3104,9 @@
           }, '定期タスク ' + preview.items.length + ' 件を追加');
         }
       } catch (error) {
-        notify(error.message, true);
+        if (messageKind !== 'read') {
+          notify(error.message, true);
+        }
       }
     }
 
@@ -2913,36 +3135,34 @@
 
     /* ---------- 完了済み ---------- */
 
-    async function loadHistory(more) {
-      if (!onlineRequired() || !configured()) {
-        return;
+    function loadHistory(more) {
+      if (historyPromise) {
+        return historyPromise;
       }
 
-      try {
-        const result = await api({
-          action: 'history',
-          offset: more ? historyData.items.length : 0
-        });
+      if (!onlineRequired() || !configured()) {
+        return Promise.resolve(null);
+      }
 
-        if (!result.ok) {
-          throw new Error(result.message);
-        }
+      const offset = more ? historyData.items.length : 0;
 
+      historyPromise = readServer({
+        action: 'history',
+        offset: offset
+      }, function (result) {
         historyData = {
           total: result.history.total,
           items: more
             ? historyData.items.concat(result.history.items)
             : result.history.items
         };
+      }).catch(function () {
+        return null;
+      }).finally(function () {
+        historyPromise = null;
+      });
 
-        if (!pumping) {
-          await acceptSnapshot(result.snapshot);
-        } else {
-          render();
-        }
-      } catch (error) {
-        notify(error.message, true);
-      }
+      return historyPromise;
     }
 
     async function undoDone() {
@@ -3270,20 +3490,37 @@
 
     $('settings-save').addEventListener('click', async function () {
       const oldUrl = localStorage.getItem(URL_KEY) || '';
+      const oldToken = localStorage.getItem(TOKEN_KEY) || '';
       const newUrl = $('url').value.trim();
+      const newToken = $('token').value.trim();
 
       if (state.jobs.length && oldUrl && oldUrl !== newUrl) {
         alert('未送信があるため、接続先は変更できません。先に未送信を解決してください。');
         return;
       }
 
+      if (
+        (oldUrl !== newUrl || oldToken !== newToken) &&
+        (refreshPromise || pumpPromise || historyPromise)
+      ) {
+        alert('読み込みや送信が終わってから、設定を保存してください。');
+        return;
+      }
+
       try {
         localStorage.setItem(URL_KEY, newUrl);
-        localStorage.setItem(TOKEN_KEY, $('token').value.trim());
+        localStorage.setItem(TOKEN_KEY, newToken);
         verifiedConnection = '';
         $('settings-dialog').close();
 
         if (oldUrl !== newUrl) {
+          lastReadError = '';
+          receivedThisSession = false;
+          historyData = {
+            items: [],
+            total: 0
+          };
+
           await updateState(function (saved) {
             saved.snapshot = null;
             saved.transitions = [];
@@ -3308,15 +3545,10 @@
       }
 
       try {
-        const result = await api({
+        const result = await readServer({
           action: 'check'
         });
 
-        if (!result.ok) {
-          throw new Error(result.message);
-        }
-
-        await acceptSnapshot(result.snapshot);
         alert('版：' + result.app + '\n\n' + result.checks.join('\n'));
       } catch (error) {
         alert(String(error.message || error));
@@ -3354,11 +3586,25 @@
     }
 
     $('copy').addEventListener('click', async function () {
+      const cacheVersion = await workerVersion();
+
+      const acquisition = refreshing
+        ? '読み込み中'
+        : lastReadError
+          ? '失敗'
+          : receivedThisSession
+            ? '成功'
+            : 'この起動後は未確認';
+
       const text = [
         '画面：' + VERSION,
         '保存先の版：' + (state.snapshot ? state.snapshot.app : '未取得'),
-        'オフライン保存：' + await workerVersion(),
+        'オフライン保存：' + cacheVersion,
         '通信：' + (navigator.onLine ? 'あり' : 'なし'),
+        '一覧取得：' + acquisition,
+        '前回取得（日本時間）：' +
+          fetchedAtLabel(state.snapshot ? state.snapshot.fetchedAt : ''),
+        '取得エラー：' + (lastReadError || 'なし'),
         '未送信：' + state.jobs.length + ' 件',
         '確認が必要：' + state.jobs.filter(function (job) {
           return job.state === 'conflict' || job.state === 'blocked';
@@ -3396,12 +3642,38 @@
     $('settings').addEventListener('click', openSettings);
 
     $('reload').addEventListener('click', async function () {
-      nextTry = 0;
-      await pump(true);
-      await refresh();
+      if (manualReloading) {
+        return;
+      }
 
-      if (page === 'history') {
-        loadHistory(false);
+      if (!navigator.onLine) {
+        notify('通信がないため、前回取得した一覧を表示しています。', true);
+        return;
+      }
+
+      manualReloading = true;
+      nextTry = 0;
+      renderStatus();
+
+      try {
+        await pump(true);
+
+        if (page === 'history') {
+          const result = await loadHistory(false);
+
+          if (result) {
+            notify('完了済みとタスク一覧を取得しました。');
+          }
+        } else {
+          const success = await refresh();
+
+          if (success) {
+            notify('一覧を取得しました。');
+          }
+        }
+      } finally {
+        manualReloading = false;
+        renderStatus();
       }
     });
 
@@ -3426,10 +3698,14 @@
       }
 
       if (storageReady) {
-        state = await readState();
-        render();
-        await pump(true);
-        refresh();
+        try {
+          state = await readState();
+          render();
+          await pump(true);
+          refresh();
+        } catch (error) {
+          notify('端末の記録を読み取れませんでした。データは消さずに開き直してください。', true);
+        }
       }
     });
 
@@ -3467,8 +3743,12 @@
           channel = new BroadcastChannel('task-unified-state');
 
           channel.onmessage = async function () {
-            state = await readState();
-            render();
+            try {
+              state = await readState();
+              render();
+            } catch (error) {
+              notify('端末の記録を読み取れませんでした。データは消さずに開き直してください。', true);
+            }
           };
         }
 
