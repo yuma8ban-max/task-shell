@@ -1,8 +1,14 @@
-/* File: sw.js — task-v4.3.1-1 */
-const CACHE = 'task-v4.3.1-1';
+/* File: sw.js — task-v4.4-1 */
+const CACHE = 'task-v4.4-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
+const QUICK = new URL('./quick-add.html', self.registration.scope).href;
+
+const REQUIRED_FILES = [
+  INDEX,
+  QUICK
+];
 
 const OPTIONAL_FILES = [
   './manifest.webmanifest',
@@ -14,19 +20,25 @@ const OPTIONAL_FILES = [
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE).then(function (cache) {
-      return cache.add(new Request(INDEX, {
-        cache: 'reload'
-      })).then(function () {
-        return Promise.all(OPTIONAL_FILES.map(function (file) {
-          return cache.add(new Request(
-            new URL(file, self.registration.scope).href,
-            {
-              cache: 'reload'
-            }
-          )).catch(function () {
-            return null;
-          });
-        }));
+      return Promise.all(
+        REQUIRED_FILES.map(function (file) {
+          return cache.add(new Request(file, {
+            cache: 'reload'
+          }));
+        })
+      ).then(function () {
+        return Promise.all(
+          OPTIONAL_FILES.map(function (file) {
+            return cache.add(new Request(
+              new URL(file, self.registration.scope).href,
+              {
+                cache: 'reload'
+              }
+            )).catch(function () {
+              return null;
+            });
+          })
+        );
       });
     }).then(function () {
       return self.skipWaiting();
@@ -37,22 +49,24 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (key) {
-        if (key !== CACHE && /^task-v/.test(key)) {
-          return caches.delete(key);
-        }
+      return Promise.all(
+        keys.map(function (key) {
+          if (key !== CACHE && /^task-v/.test(key)) {
+            return caches.delete(key);
+          }
 
-        return null;
-      }));
+          return null;
+        })
+      );
     }).then(function () {
       return self.clients.claim();
     })
   );
 });
 
-function offlinePage() {
+function offlinePage(documentUrl) {
   return caches.open(CACHE).then(function (cache) {
-    return cache.match(INDEX).then(function (saved) {
+    return cache.match(documentUrl).then(function (saved) {
       if (saved) {
         return saved;
       }
@@ -68,18 +82,44 @@ function offlinePage() {
 <body>
   <h2>初回の準備が必要です</h2>
   <p>
-    通信できる状態で一度アプリを開いてください。
-    準備後は、取得済みのタスクを通信がないときも操作できます。
+    通信できる状態で一度この画面を開いてください。
+    準備後は、通信がないときも開けるようになります。
+  </p>
+  <p>
+    保存済みのタスクや未送信の記録は消していません。
   </p>
 </body>
 </html>`,
         {
+          status: 503,
           headers: {
             'Content-Type': 'text/html; charset=utf-8'
           }
         }
       );
     });
+  });
+}
+
+function documentResponse(request, documentUrl) {
+  return fetch(new Request(request, {
+    cache: 'no-cache'
+  })).then(function (response) {
+    if (!response.ok) {
+      return offlinePage(documentUrl);
+    }
+
+    const copied = response.clone();
+
+    return caches.open(CACHE).then(function (cache) {
+      return cache.put(documentUrl, copied);
+    }).catch(function () {
+      return null;
+    }).then(function () {
+      return response;
+    });
+  }).catch(function () {
+    return offlinePage(documentUrl);
   });
 }
 
@@ -91,6 +131,7 @@ self.addEventListener('fetch', function (event) {
   const url = new URL(event.request.url);
   const index = new URL(INDEX);
   const root = new URL(ROOT);
+  const quick = new URL(QUICK);
 
   if (url.origin !== self.location.origin) {
     return;
@@ -101,23 +142,15 @@ self.addEventListener('fetch', function (event) {
     url.pathname === root.pathname
   ) {
     event.respondWith(
-      fetch(new Request(event.request, {
-        cache: 'no-cache'
-      })).then(function (response) {
-        if (!response.ok) {
-          return offlinePage();
-        }
+      documentResponse(event.request, INDEX)
+    );
 
-        const copied = response.clone();
+    return;
+  }
 
-        return caches.open(CACHE).then(function (cache) {
-          return cache.put(INDEX, copied);
-        }).catch(function () {
-          return null;
-        }).then(function () {
-          return response;
-        });
-      }).catch(offlinePage)
+  if (url.pathname === quick.pathname) {
+    event.respondWith(
+      documentResponse(event.request, QUICK)
     );
 
     return;
