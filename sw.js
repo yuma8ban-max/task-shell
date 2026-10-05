@@ -1,5 +1,6 @@
-/* File: sw.js — task-v4.4.1-1 */
-const CACHE = 'task-v4.4.1-1';
+/* File: sw.js — task-v4.4.1-weather-1 */
+
+const CACHE = 'task-v4.4.1-weather-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -7,6 +8,7 @@ const QUICK = new URL('./quick-add.html', self.registration.scope).href;
 
 const OPTIONAL_FILES = [
   './quick-add.html',
+  './weather.js?v=1',
   './manifest.webmanifest',
   './icon-180.png',
   './icon-192.png',
