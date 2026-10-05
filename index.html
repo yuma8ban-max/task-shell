@@ -457,6 +457,16 @@
       line-height: 1.4;
     }
 
+    .plan-edit {
+      flex: none;
+      min-height: 42px;
+      margin: -6px 0;
+      padding: 8px 10px;
+      font-size: 13px;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+
     .grip {
       display: flex;
       align-items: center;
@@ -648,7 +658,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.3.1</span>
+        <span class="version">v4.4.1</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -730,7 +740,7 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.3.1';
+    const VERSION = 'v4.4.1';
     const SERVER_VERSION = 'v4.3';
     const REQUEST_TIMEOUT_MS = 60000;
     const DB_NAME = 'taskapp-unified';
@@ -763,6 +773,7 @@
     let nextTry = 0;
     let failures = 0;
     let editorContext = null;
+    let editorPlanPosition = null;
     let conflictId = null;
     let channel = null;
     let verifiedConnection = '';
@@ -1936,7 +1947,39 @@
       }
     }
 
+    function capturePlanPosition() {
+      const timeline = $('timeline');
+
+      if (
+        page !== 'plan' ||
+        !timeline ||
+        timeline.dataset.date !== selectedDate
+      ) {
+        return null;
+      }
+
+      return {
+        date: selectedDate,
+        x: window.scrollX,
+        y: window.scrollY
+      };
+    }
+
+    function restorePlanPosition(position) {
+      if (
+        !position ||
+        page !== 'plan' ||
+        selectedDate !== position.date
+      ) {
+        return;
+      }
+
+      window.scrollTo(position.x, position.y);
+    }
+
     function render() {
+      const position = drag ? null : capturePlanPosition();
+
       renderStatus();
       renderOutbox();
 
@@ -1971,6 +2014,8 @@
       } else {
         renderHistory(content);
       }
+
+      restorePlanPosition(position);
     }
 
     function completeButton(task) {
@@ -2005,6 +2050,30 @@
       complete.appendChild(make('span', null, 'circle'));
 
       return complete;
+    }
+
+    function taskEditButton(task, className) {
+      const edit = button('編集', function () {
+        if (drag || Date.now() < suppressClickUntil) {
+          return;
+        }
+
+        openTaskEditor(task.taskId);
+      }, className || '');
+
+      edit.dataset.act = 'edit';
+      edit.disabled =
+        !storageReady ||
+        legacyBlocked ||
+        !navigator.onLine;
+
+      edit.setAttribute('aria-label', task.title + 'を編集');
+
+      if (!navigator.onLine) {
+        edit.title = '編集は通信できるときに行ってください。';
+      }
+
+      return edit;
     }
 
     /* ---------- 1日の計画 ---------- */
@@ -2043,14 +2112,16 @@
       content.appendChild(tools);
       content.appendChild(make(
         'p',
-        '左の丸＝完了／右の≡を動かす＝配置して自動保存。時間帯は目安です。',
+        '左の丸＝完了／編集＝件名・期限・実行日を変更／' +
+        '右の≡を動かす＝配置して自動保存。時間帯は目安です。',
         'sub'
       ));
 
       if (!navigator.onLine) {
         content.appendChild(make(
           'p',
-          '前回取得した内容と、この端末の未送信を表示しています。',
+          '前回取得した内容と、この端末の未送信を表示しています。' +
+          '編集は通信できるときに行ってください。',
           'sub'
         ));
       }
@@ -2067,6 +2138,7 @@
 
       const timeline = make('div', null, 'timeline');
       timeline.id = 'timeline';
+      timeline.dataset.date = selectedDate;
 
       [null].concat(Array.from({
         length: 15
@@ -2096,12 +2168,20 @@
             ));
           }
 
+          const edit = taskEditButton(task, 'plan-edit');
+
           const grip = make('button', '≡', 'grip');
           grip.type = 'button';
           grip.dataset.act = 'grip';
           grip.setAttribute('aria-label', task.title + 'を移動');
 
-          row.append(completeButton(task), text, grip);
+          row.append(
+            completeButton(task),
+            text,
+            edit,
+            grip
+          );
+
           list.appendChild(row);
         });
 
@@ -2304,7 +2384,10 @@
 
       const row = event.target.closest('.task');
 
-      if (!row || event.target.closest('[data-act="done"]')) {
+      if (
+        !row ||
+        event.target.closest('[data-act="done"], [data-act="edit"]')
+      ) {
         return;
       }
 
@@ -2473,11 +2556,7 @@
           make('div', taskInfo(task), 'sub')
         );
 
-        const edit = button('編集', function () {
-          openTaskEditor(task.taskId);
-        });
-
-        edit.disabled = !navigator.onLine;
+        const edit = taskEditButton(task);
 
         card.append(completeButton(task), main, edit);
         cards.appendChild(card);
@@ -2808,6 +2887,7 @@
     }
 
     function showEditor(title, note, handler, submitLabel) {
+      editorPlanPosition = capturePlanPosition();
       $('editor-title').textContent = title;
       $('editor-fields').replaceChildren();
       $('editor-note').textContent = note || '';
@@ -2868,19 +2948,23 @@
         return;
       }
 
-      const task = taskById(state.snapshot, id);
+      const original = taskById(state.snapshot, id);
 
-      if (!task) {
+      const visibleTask = effectiveTasks().find(function (task) {
+        return task.taskId === id;
+      });
+
+      if (!original || !visibleTask) {
         notify('最新の一覧を取得してから編集してください。', true);
         return;
       }
 
-      const captured = clone(task);
+      const captured = clone(visibleTask);
 
       const basePayload = {
         action: 'edit',
         taskId: id,
-        expectedTask: captured.version
+        expectedTask: original.version
       };
 
       const context = contextFor(basePayload, state.snapshot);
@@ -2893,17 +2977,44 @@
             throw new Error('通信が戻ってから保存してください。入力は残しています。');
           }
 
+          const title = String(form.get('title') || '').trim();
+          const due = String(form.get('due') || '');
+          const date = String(form.get('date') || '');
+
+          if (!title || title.length > 200) {
+            throw new Error('件名は1～200文字で入力してください。');
+          }
+
           await enqueue(Object.assign({}, basePayload, {
-            title: String(form.get('title') || '').trim(),
-            due: String(form.get('due') || ''),
-            date: String(form.get('date') || '')
-          }), '編集：' + captured.title, context);
+            title: title,
+            due: due,
+            date: date
+          }), '編集：' + title, context);
+
+          let message = '変更を端末に保存しました。送信結果を確認しています。';
+
+          if (captured.date !== date) {
+            message += date
+              ? '\n表示先：' + dateLabel(date) +
+                '。設定済みの時間帯はそのままです。'
+              : '\n表示先：「タスク一覧」の「実行日未定」。';
+          }
+
+          notify(message);
         }
       );
 
-      field('title', '件名', 'text', captured.title, true);
+      const titleInput = field(
+        'title',
+        '件名',
+        'text',
+        captured.title,
+        true
+      );
+
       field('due', '期限', 'date', captured.due, false);
       field('date', '実行日', 'date', captured.date, false);
+      titleInput.focus();
     }
 
     $('editor-form').addEventListener('submit', async function (event) {
@@ -2929,6 +3040,18 @@
       $('editor').close();
     });
 
+    $('editor').addEventListener('close', function () {
+      const position = editorPlanPosition;
+      editorPlanPosition = null;
+      editorContext = null;
+
+      restorePlanPosition(position);
+
+      requestAnimationFrame(function () {
+        restorePlanPosition(position);
+      });
+    });
+
     /* ---------- 定期タスク ---------- */
 
     function renderPeriodic(content) {
@@ -2952,6 +3075,8 @@
       });
 
       tools.append(add, preview, automatic);
+      content.appendChild(tools);
+
       content.appendChild(make(
         'p',
         '追加されたタスクは、その日の「時間未定」に入ります。',
