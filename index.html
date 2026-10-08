@@ -9,8 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="タスク">
   <title>タスク</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="./icon-check-32.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
   <style>
     :root {
       color-scheme: light;
@@ -658,7 +659,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.4.1</span>
+        <span class="version">v4.4.2</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -740,7 +741,7 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.4.1';
+    const VERSION = 'v4.4.2';
     const SERVER_VERSION = 'v4.3';
     const REQUEST_TIMEOUT_MS = 60000;
     const DB_NAME = 'taskapp-unified';
