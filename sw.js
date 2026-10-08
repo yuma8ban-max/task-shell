@@ -1,34 +1,57 @@
-/* File: sw.js — task-v4.4.1-1 */
-const CACHE = 'task-v4.4.1-1';
+/* File: sw.js — task-v4.4.2-1 */
+const CACHE = 'task-v4.4.2-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
 const QUICK = new URL('./quick-add.html', self.registration.scope).href;
 
+const REQUIRED_FILES = [
+  './index.html',
+  './manifest.webmanifest',
+  './icon-check-32.png',
+  './icon-check-180.png',
+  './icon-check-192.png',
+  './icon-check-512.png'
+];
+
 const OPTIONAL_FILES = [
   './quick-add.html',
-  './manifest.webmanifest',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png'
 ];
 
+function saveOptionalFile(cache, file) {
+  const url = new URL(file, self.registration.scope).href;
+
+  return cache.add(new Request(url, {
+    cache: 'reload'
+  })).catch(function () {
+    return caches.match(url).then(function (saved) {
+      if (saved) {
+        return cache.put(url, saved);
+      }
+
+      return null;
+    });
+  });
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE).then(function (cache) {
-      return cache.add(new Request(INDEX, {
-        cache: 'reload'
-      })).then(function () {
+      return Promise.all(
+        REQUIRED_FILES.map(function (file) {
+          const url = new URL(file, self.registration.scope).href;
+
+          return cache.add(new Request(url, {
+            cache: 'reload'
+          }));
+        })
+      ).then(function () {
         return Promise.all(
           OPTIONAL_FILES.map(function (file) {
-            return cache.add(new Request(
-              new URL(file, self.registration.scope).href,
-              {
-                cache: 'reload'
-              }
-            )).catch(function () {
-              return null;
-            });
+            return saveOptionalFile(cache, file);
           })
         );
       });
