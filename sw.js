@@ -1,5 +1,5 @@
-/* File: sw.js — task-v4.5-1 */
-const CACHE = 'task-v4.5-1';
+/* File: sw.js — task-v4.6-1 */
+const CACHE = 'task-v4.6-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -156,18 +156,12 @@ self.addEventListener('fetch', function (event) {
     url.pathname === index.pathname ||
     url.pathname === root.pathname
   ) {
-    event.respondWith(
-      documentResponse(event.request, INDEX)
-    );
-
+    event.respondWith(documentResponse(event.request, INDEX));
     return;
   }
 
   if (url.pathname === quick.pathname) {
-    event.respondWith(
-      documentResponse(event.request, QUICK)
-    );
-
+    event.respondWith(documentResponse(event.request, QUICK));
     return;
   }
 
