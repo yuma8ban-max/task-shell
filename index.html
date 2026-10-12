@@ -659,7 +659,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.4.2</span>
+        <span class="version">v4.5</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -741,7 +741,7 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.4.2';
+    const VERSION = 'v4.5';
     const SERVER_VERSION = 'v4.3';
     const REQUEST_TIMEOUT_MS = 60000;
     const DB_NAME = 'taskapp-unified';
@@ -778,6 +778,7 @@
     let conflictId = null;
     let channel = null;
     let verifiedConnection = '';
+    let verifiedFeatures = {};
 
     let remoteTail = Promise.resolve();
     let refreshPromise = null;
@@ -897,6 +898,52 @@
       return hour === null ? '時間未定' : hour + '時';
     }
 
+    function dueRuleLabel(value) {
+      const rule = value || {
+        type: 'none'
+      };
+
+      switch (rule.type) {
+        case 'offset':
+          return rule.days === 0
+            ? '基準日当日'
+            : '基準日から' + rule.days + '日後';
+        case 'weekly':
+          return '毎週' + '日月火水木金土'.charAt(rule.weekday) + '曜日';
+        case 'monthly':
+          return '毎月' + rule.day + '日';
+        case 'monthEnd':
+          return '毎月末';
+        case 'none':
+          return '期限なし';
+        default:
+          return '確認が必要';
+      }
+    }
+
+    function periodicSupported() {
+      return !!(
+        state.snapshot &&
+        state.snapshot.features &&
+        state.snapshot.features.periodicDue
+      );
+    }
+
+    function requirePeriodicSupport() {
+      if (!periodicSupported()) {
+        notify(
+          '保存先の更新が確認できません。' +
+          '手順1の公開を終えてから「最新を取得」を押してください。' +
+          '「設定」→「動作の点検」で「改修版：v4.5」が正しい状態です。',
+          true
+        );
+
+        return false;
+      }
+
+      return true;
+    }
+
     function compareTasks(a, b) {
       const first = a.hour === null ? 7 : a.hour;
       const second = b.hour === null ? 7 : b.hour;
@@ -937,7 +984,9 @@
         const request = indexedDB.open(DB_NAME, 1);
 
         request.onupgradeneeded = function () {
-          request.result.createObjectStore('data');
+          if (!request.result.objectStoreNames.contains('data')) {
+            request.result.createObjectStore('data');
+          }
         };
 
         request.onsuccess = function () {
@@ -959,8 +1008,8 @@
           resolve(request.result || emptyState());
         };
 
-        transaction.onerror = function () {
-          reject(transaction.error);
+        transaction.onerror = transaction.onabort = function () {
+          reject(transaction.error || new Error('端末の記録を読み取れませんでした。'));
         };
       });
     }
@@ -988,13 +1037,21 @@
 
         transaction.oncomplete = function () {
           state = next;
-          render();
+          resolve(output);
 
-          if (channel) {
-            channel.postMessage('changed');
+          try {
+            render();
+          } catch (error) {
+            console.error(error);
           }
 
-          resolve(output);
+          try {
+            if (channel) {
+              channel.postMessage('changed');
+            }
+          } catch (error) {
+            console.error(error);
+          }
         };
 
         transaction.onerror = transaction.onabort = function () {
@@ -1026,7 +1083,7 @@
           if (!saved || saved.owner === TAB_ID || saved.until < now) {
             store.put({
               owner: TAB_ID,
-              until: now + 60000
+              until: now + 180000
             }, 'sender');
 
             accepted = true;
@@ -1037,8 +1094,8 @@
           resolve(accepted);
         };
 
-        transaction.onerror = function () {
-          reject(transaction.error);
+        transaction.onerror = transaction.onabort = function () {
+          reject(transaction.error || new Error('送信の準備を確認できませんでした。'));
         };
       });
     }
@@ -1141,6 +1198,17 @@
         }
       }
 
+      if (
+        payload.action === 'periodicSave' &&
+        Object.prototype.hasOwnProperty.call(payload, 'dueRule') &&
+        !verifiedFeatures.periodicDue
+      ) {
+        throw new Error(
+          '保存先が定期タスクの期限設定に対応していません。' +
+          '手順1の公開後に再送してください。入力した変更は端末に残しています。'
+        );
+      }
+
       const controller = new AbortController();
       let timedOut = false;
 
@@ -1192,6 +1260,7 @@
 
         if (result.ok && result.app !== SERVER_VERSION) {
           verifiedConnection = '';
+          verifiedFeatures = {};
 
           throw new Error(
             '保存先の版が' + SERVER_VERSION + 'ではありません。' +
@@ -1201,6 +1270,9 @@
 
         if (result.ok) {
           verifiedConnection = connection;
+          verifiedFeatures = result.snapshot
+            ? result.snapshot.features || {}
+            : verifiedFeatures;
         }
 
         return result;
@@ -2516,6 +2588,8 @@
           return task.date === filterDate;
         case 'week':
           return !!task.date && task.date >= today && task.date <= weekEnd;
+        case 'runoverdue':
+          return !!task.date && task.date < today;
         case 'hasdue':
           return !!task.due;
         case 'overdue':
@@ -2622,7 +2696,8 @@
           items: [
             ['today', '今日の分'],
             ['week', '今週の分'],
-            ['date', '日付を指定']
+            ['date', '日付を指定'],
+            ['runoverdue', '実行日超過']
           ]
         },
         {
@@ -2686,14 +2761,31 @@
         tasks.sort(function (a, b) {
           return a.due.localeCompare(b.due) || a.row - b.row;
         });
+      } else if (taskFilter === 'runoverdue') {
+        tasks.sort(function (a, b) {
+          return a.date.localeCompare(b.date) || compareTasks(a, b);
+        });
       }
 
-      const countText = tasks.length + ' 件' +
-        (taskFilter === 'hasdue'
-          ? ' ／ 期限切れを含め、期限が早い順'
-          : '');
+      let countText = tasks.length + ' 件';
+
+      if (taskFilter === 'hasdue') {
+        countText += ' ／ 期限切れを含め、期限が早い順';
+      } else if (taskFilter === 'runoverdue') {
+        countText += ' ／ 実行日が古い順';
+      }
 
       content.appendChild(make('p', countText, 'sub'));
+
+      if (taskFilter === 'runoverdue') {
+        content.appendChild(make(
+          'p',
+          '実行日が昨日以前の未完了タスクです。' +
+          '今日の分・実行日未定は含みません。期限とは別に判定します。',
+          'sub'
+        ));
+      }
+
       renderTaskCards(content, tasks);
     }
 
@@ -2875,7 +2967,7 @@
       const input = make('input');
       input.name = name;
       input.type = type;
-      input.value = value || '';
+      input.value = value == null ? '' : String(value);
       input.required = !!required;
 
       if (type === 'text') {
@@ -2887,6 +2979,25 @@
       return input;
     }
 
+    function selectField(name, label, options, value) {
+      const wrapper = make('label', null, 'field');
+      wrapper.appendChild(make('span', label));
+
+      const select = make('select');
+      select.name = name;
+
+      options.forEach(function (entry) {
+        const option = make('option', entry[1]);
+        option.value = String(entry[0]);
+        select.appendChild(option);
+      });
+
+      select.value = String(value);
+      wrapper.appendChild(select);
+      $('editor-fields').appendChild(wrapper);
+      return select;
+    }
+
     function showEditor(title, note, handler, submitLabel) {
       editorPlanPosition = capturePlanPosition();
       $('editor-title').textContent = title;
@@ -2894,6 +3005,7 @@
       $('editor-note').textContent = note || '';
       $('editor-submit').textContent = submitLabel || '保存';
       $('editor-submit').disabled = false;
+      $('editor-cancel').disabled = false;
       editorContext = handler;
       $('editor').showModal();
     }
@@ -3025,20 +3137,31 @@
         return;
       }
 
+      const handler = editorContext;
+      const form = new FormData($('editor-form'));
+
       $('editor-submit').disabled = true;
+      $('editor-cancel').disabled = true;
 
       try {
-        await editorContext(new FormData($('editor-form')));
+        await handler(form);
         $('editor').close();
       } catch (error) {
         $('editor-note').textContent = String(error.message || error);
       } finally {
         $('editor-submit').disabled = false;
+        $('editor-cancel').disabled = false;
       }
     });
 
     $('editor-cancel').addEventListener('click', function () {
       $('editor').close();
+    });
+
+    $('editor').addEventListener('cancel', function (event) {
+      if ($('editor-submit').disabled) {
+        event.preventDefault();
+      }
     });
 
     $('editor').addEventListener('close', function () {
@@ -3057,7 +3180,17 @@
 
     function renderPeriodic(content) {
       const periodic = state.snapshot.periodic;
+      const supported = periodicSupported();
+
       content.appendChild(make('h2', '定期タスク'));
+
+      if (!supported) {
+        content.appendChild(make(
+          'p',
+          '保存先の更新を確認できていません。手順1の公開後に「最新を取得」を押してください。',
+          'notice'
+        ));
+      }
 
       const tools = make('div', null, 'toolbar');
 
@@ -3072,7 +3205,11 @@
       );
 
       [add, preview, automatic].forEach(function (element) {
-        element.disabled = !navigator.onLine;
+        element.disabled =
+          !navigator.onLine ||
+          !storageReady ||
+          legacyBlocked ||
+          !supported;
       });
 
       tools.append(add, preview, automatic);
@@ -3080,7 +3217,9 @@
 
       content.appendChild(make(
         'p',
-        '追加されたタスクは、その日の「時間未定」に入ります。',
+        '追加されたタスクは、その日の「時間未定」に入ります。' +
+        '予定分の期限は本来の追加予定日が基準です。' +
+        '「今すぐ1件追加」の期限は、押した日が基準です。',
         'sub'
       ));
 
@@ -3094,21 +3233,43 @@
           make('div', item.name, 'card-title'),
           make(
             'div',
-            (item.freq || '不定期') + ' ／ 次回：' + (item.next || '未設定'),
+            (item.freq || '不定期') + ' ／ 次回追加予定日：' + (item.next || '未設定'),
             'sub'
           )
         );
 
+        if (supported) {
+          main.appendChild(make(
+            'div',
+            '期限：' + dueRuleLabel(item.dueRule),
+            'sub'
+          ));
+
+          if (item.nextDue) {
+            main.appendChild(make(
+              'div',
+              '次の予定分の期限：' + item.nextDue,
+              'sub'
+            ));
+          }
+        }
+
         const actions = make('div', null, 'card-actions');
+
         const edit = button('編集', function () {
           openPeriodicEditor(item);
         });
 
         const send = button('今すぐ1件追加', async function () {
-          if (
-            !onlineRequired() ||
-            !confirm('「' + item.name + '」を今日の時間未定に追加しますか。')
-          ) {
+          if (!onlineRequired() || !requirePeriodicSupport()) {
+            return;
+          }
+
+          if (!confirm(
+            '「' + item.name + '」を今日の時間未定に追加しますか。\n\n' +
+            '期限の決め方：' + dueRuleLabel(item.dueRule) + '\n' +
+            'この操作では、今日を基準に期限を決めます。'
+          )) {
             return;
           }
 
@@ -3116,25 +3277,170 @@
             await enqueue({
               action: 'periodicSend',
               row: item.row,
-              expectedPeriodic: state.snapshot.periodic.version
+              expectedPeriodic: periodic.version
             }, '定期追加：' + item.name);
           } catch (error) {
             notify(error.message, true);
           }
         });
 
-        edit.disabled = !navigator.onLine;
-        send.disabled = !navigator.onLine;
+        edit.disabled =
+          !navigator.onLine ||
+          !storageReady ||
+          legacyBlocked ||
+          !supported;
+
+        send.disabled = edit.disabled;
         actions.append(edit, send);
         card.append(main, actions);
         cards.appendChild(card);
       });
 
+      if (!periodic.items.length) {
+        content.appendChild(make('p', '定期タスクはまだありません。', 'sub'));
+      }
+
       content.appendChild(cards);
     }
 
+    function addDueRuleFields(value) {
+      const rule = value || {
+        type: 'none'
+      };
+
+      const type = selectField(
+        'dueType',
+        '期限の決め方',
+        [
+          ['none', '期限なし'],
+          ['offset', '基準日から○日後'],
+          ['weekly', '毎週○曜日'],
+          ['monthly', '毎月○日'],
+          ['monthEnd', '毎月末']
+        ],
+        rule.type
+      );
+
+      const days = field(
+        'dueDays',
+        '何日後（0＝基準日当日）',
+        'number',
+        rule.days == null ? 0 : rule.days,
+        false
+      );
+
+      days.min = '0';
+      days.max = '3650';
+      days.step = '1';
+
+      const weekday = selectField(
+        'dueWeekday',
+        '期限の曜日',
+        [
+          [1, '月曜日'],
+          [2, '火曜日'],
+          [3, '水曜日'],
+          [4, '木曜日'],
+          [5, '金曜日'],
+          [6, '土曜日'],
+          [0, '日曜日']
+        ],
+        rule.weekday == null ? 5 : rule.weekday
+      );
+
+      const day = field(
+        'dueDay',
+        '期限の日（1～31）',
+        'number',
+        rule.day == null ? 15 : rule.day,
+        false
+      );
+
+      day.min = '1';
+      day.max = '31';
+      day.step = '1';
+
+      function updateFields() {
+        [
+          [days, 'offset'],
+          [weekday, 'weekly'],
+          [day, 'monthly']
+        ].forEach(function (entry) {
+          const active = type.value === entry[1];
+          entry[0].closest('.field').hidden = !active;
+          entry[0].disabled = !active;
+          entry[0].required = active;
+        });
+      }
+
+      type.addEventListener('change', updateFields);
+      updateFields();
+
+      $('editor-fields').appendChild(make(
+        'p',
+        '曜日・毎月の日付は、基準日当日を含む次の該当日を選びます。' +
+        '毎月31日など、その月にない日は月末です。日数は土日も含みます。',
+        'sub'
+      ));
+    }
+
+    function dueRuleFromForm(form) {
+      const type = String(form.get('dueType') || 'none');
+
+      function integer(name, minimum, maximum, label) {
+        const raw = String(form.get(name) == null ? '' : form.get(name)).trim();
+        const value = Number(raw);
+
+        if (
+          !raw ||
+          !Number.isInteger(value) ||
+          value < minimum ||
+          value > maximum
+        ) {
+          throw new Error(
+            label + 'は' + minimum + '～' + maximum + 'の整数にしてください。'
+          );
+        }
+
+        return value;
+      }
+
+      switch (type) {
+        case 'none':
+          return {
+            type: 'none'
+          };
+
+        case 'offset':
+          return {
+            type: 'offset',
+            days: integer('dueDays', 0, 3650, '何日後')
+          };
+
+        case 'weekly':
+          return {
+            type: 'weekly',
+            weekday: integer('dueWeekday', 0, 6, '曜日')
+          };
+
+        case 'monthly':
+          return {
+            type: 'monthly',
+            day: integer('dueDay', 1, 31, '期限の日')
+          };
+
+        case 'monthEnd':
+          return {
+            type: 'monthEnd'
+          };
+
+        default:
+          throw new Error('期限の決め方を選び直してください。');
+      }
+    }
+
     function openPeriodicEditor(item) {
-      if (!onlineRequired()) {
+      if (!onlineRequired() || !requirePeriodicSupport()) {
         return;
       }
 
@@ -3142,7 +3448,10 @@
         row: 0,
         name: '',
         freq: '毎日',
-        next: japanDate()
+        next: japanDate(),
+        dueRule: {
+          type: 'none'
+        }
       };
 
       const payload = {
@@ -3155,21 +3464,33 @@
 
       showEditor(
         item ? '定期タスクを編集' : '定期タスクを追加',
-        '頻度の例：毎日、毎週月曜日、毎月、毎月15日、3日ごと。不定期にすると毎日の自動追加の対象から外れます。',
+        '予定分の期限は追加予定日が基準で、遅れて追加しても繰り越しません。' +
+        '「今すぐ1件追加」は押した日が基準です。' +
+        '設定の変更は、これから追加する分だけに適用します。',
         async function (form) {
           if (!navigator.onLine) {
             throw new Error('通信が戻ってから保存してください。');
           }
 
+          const name = String(form.get('name') || '').trim();
+
+          if (!name || name.length > 200) {
+            throw new Error('タスク名は1～200文字で入力してください。');
+          }
+
           await enqueue(Object.assign({}, payload, {
-            name: String(form.get('name') || '').trim(),
+            name: name,
             freq: String(form.get('freq') || '').trim(),
-            next: String(form.get('next') || '')
-          }), '定期設定：' + String(form.get('name') || ''), captured);
+            next: String(form.get('next') || ''),
+            dueRule: dueRuleFromForm(form)
+          }), '定期設定：' + name, captured);
+
+          notify('定期タスクの変更を端末に保存しました。送信結果を確認しています。');
         }
       );
 
       field('name', 'タスク名', 'text', value.name, true);
+
       const freq = field('freq', '頻度', 'text', value.freq, true);
       const options = make('datalist');
       options.id = 'frequency-options';
@@ -3193,11 +3514,20 @@
 
       freq.setAttribute('list', options.id);
       $('editor-fields').appendChild(options);
-      field('next', '次回実行日', 'date', value.next, false);
+
+      $('editor-fields').appendChild(make(
+        'p',
+        '頻度の例：毎日、毎週月曜日、毎月、毎月15日、3日ごと。' +
+        '不定期にすると毎日の自動追加の対象から外れます。',
+        'sub'
+      ));
+
+      field('next', '次回追加予定日', 'date', value.next, false);
+      addDueRuleFields(value.dueRule);
     }
 
     async function previewPeriodic() {
-      if (!onlineRequired()) {
+      if (!onlineRequired() || !requirePeriodicSupport()) {
         return;
       }
 
@@ -3206,13 +3536,22 @@
           action: 'preview'
         });
 
+        if (!periodicSupported()) {
+          requirePeriodicSupport();
+          return;
+        }
+
         const preview = result.preview;
 
         const text = '【下見】まだ追加していません。\n\n' +
           preview.items.length + ' 件\n' +
           preview.items.map(function (item) {
-            return '・' + item.name;
+            return '・' + item.name +
+              '\n  追加予定日：' + item.next +
+              ' ／ 期限：' + (item.due || 'なし');
           }).join('\n') +
+          '\n\n実行日は追加当日、時間帯は時間未定になります。' +
+          '\n期限は本来の追加予定日を基準にした日付です。' +
           (preview.errors.length
             ? '\n\n確認が必要：\n' + preview.errors.join('\n')
             : '');
@@ -3444,12 +3783,23 @@
 
         if (!local) {
           return item
-            ? item.name + '\n' + item.freq + '\n次回：' + (item.next || '未設定')
+            ? item.name +
+              '\n' + item.freq +
+              '\n次回追加予定日：' + (item.next || '未設定') +
+              '\n期限：' + dueRuleLabel(item.dueRule)
             : '既存の対象はありません。';
         }
 
-        return payload.name + '\n' + payload.freq +
-          '\n次回：' + (payload.next || '未設定');
+        const localRule = Object.prototype.hasOwnProperty.call(payload, 'dueRule')
+          ? payload.dueRule
+          : item
+            ? item.dueRule
+            : null;
+
+        return payload.name +
+          '\n' + payload.freq +
+          '\n次回追加予定日：' + (payload.next || '未設定') +
+          '\n期限：' + dueRuleLabel(localRule);
       }
 
       return local
@@ -3637,6 +3987,7 @@
         localStorage.setItem(URL_KEY, newUrl);
         localStorage.setItem(TOKEN_KEY, newToken);
         verifiedConnection = '';
+        verifiedFeatures = {};
         $('settings-dialog').close();
 
         if (oldUrl !== newUrl) {
@@ -3675,7 +4026,10 @@
           action: 'check'
         });
 
-        alert('版：' + result.app + '\n\n' + result.checks.join('\n'));
+        alert(
+          '改修版：' + (result.build || result.snapshot.build || '未対応') +
+          '\n\n' + result.checks.join('\n')
+        );
       } catch (error) {
         alert(String(error.message || error));
       }
@@ -3725,6 +4079,9 @@
       const text = [
         '画面：' + VERSION,
         '保存先の版：' + (state.snapshot ? state.snapshot.app : '未取得'),
+        '保存先の改修版：' +
+          (state.snapshot ? state.snapshot.build || '未対応' : '未取得'),
+        '定期タスクの期限：' + (periodicSupported() ? '対応済み' : '未確認'),
         'オフライン保存：' + cacheVersion,
         '通信：' + (navigator.onLine ? 'あり' : 'なし'),
         '一覧取得：' + acquisition,
@@ -3811,7 +4168,6 @@
     });
 
     window.addEventListener('offline', render);
-
     window.addEventListener('resize', updateNow);
 
     document.addEventListener('visibilitychange', async function () {
@@ -3845,7 +4201,18 @@
       pump(false);
     }, 15000);
 
-    setInterval(updateNow, 60000);
+    setInterval(function () {
+      updateNow();
+
+      if (
+        page === 'tasks' &&
+        taskView === 'list' &&
+        !drag &&
+        !$('editor').open
+      ) {
+        render();
+      }
+    }, 60000);
 
     async function start() {
       try {
