@@ -300,6 +300,18 @@
       align-self: center;
     }
 
+    .pending-add {
+      border-style: dashed;
+      background: #fffdf5;
+    }
+
+    .pending-label {
+      margin-top: 5px;
+      color: #886414;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
     .calendar {
       max-width: 780px;
     }
@@ -414,6 +426,11 @@
       background: #fff;
       font-size: 16px;
       touch-action: pan-y;
+    }
+
+    .task.pending-add {
+      border-style: dashed;
+      background: #fffdf5;
     }
 
     .task.dragging {
@@ -659,7 +676,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.5</span>
+        <span class="version">v4.6</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
@@ -692,26 +709,21 @@
 
   <dialog id="settings-dialog">
     <h2>設定</h2>
-
     <label class="field">
       接続先
       <input id="url" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
     </label>
-
     <label class="field">
       合い言葉
       <input id="token" type="password" autocomplete="off" autocapitalize="off">
     </label>
-
     <p class="sub">
       この端末の中だけに保存します。以前から使っている端末では、設定を引き継ぎます。
     </p>
-
     <div class="toolbar">
       <button id="check" type="button">動作の点検</button>
       <button id="copy" type="button">状態をコピー</button>
     </div>
-
     <div class="dialog-actions">
       <button id="settings-close" type="button">閉じる</button>
       <button id="settings-save" class="primary" type="button">保存</button>
@@ -741,9 +753,11 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.5';
+    const VERSION = 'v4.6';
     const SERVER_VERSION = 'v4.3';
+    const SYNC_PROTOCOL = 'task-sync-v1';
     const REQUEST_TIMEOUT_MS = 60000;
+    const AUTO_REFRESH_MS = 20000;
     const DB_NAME = 'taskapp-unified';
     const URL_KEY = 'gasUrl_v1';
     const TOKEN_KEY = 'gasTok_v1';
@@ -753,11 +767,9 @@
     let state = emptyState();
     let page = 'plan';
     let selectedDate = japanDate();
-
     let taskView = 'list';
     let taskFilter = 'all';
     let filterDate = selectedDate;
-
     let calendarMonth = selectedDate.slice(0, 7);
     let calendarDate = selectedDate;
     let calendarUndated = false;
@@ -784,10 +796,14 @@
     let refreshPromise = null;
     let pumpPromise = null;
     let historyPromise = null;
+    let autoChecking = false;
+    let nextAutoRead = 0;
 
     let lastReadError = '';
     let receivedThisSession = false;
     let messageKind = '';
+    let lastCommunication = null;
+    let lastDateSeen = japanDate();
 
     let drag = null;
     let candidate = null;
@@ -932,9 +948,7 @@
     function requirePeriodicSupport() {
       if (!periodicSupported()) {
         notify(
-          '保存先の更新が確認できません。' +
-          '手順1の公開を終えてから「最新を取得」を押してください。' +
-          '「設定」→「動作の点検」で「改修版：v4.5」が正しい状態です。',
+          '保存先の更新が確認できません。手順1の公開後に「最新を取得」を押してください。',
           true
         );
 
@@ -1100,11 +1114,58 @@
       });
     }
 
+    function autoReadTicket(finish) {
+      return new Promise(function (resolve, reject) {
+        const transaction = db.transaction('data', 'readwrite');
+        const store = transaction.objectStore('data');
+        const request = store.get('auto-reader-v1');
+        let accepted = false;
+
+        request.onsuccess = function () {
+          const saved = request.result;
+          const now = Date.now();
+
+          if (finish) {
+            if (saved && saved.owner === TAB_ID) {
+              store.put({
+                owner: TAB_ID,
+                until: now + AUTO_REFRESH_MS
+              }, 'auto-reader-v1');
+            }
+
+            accepted = true;
+            return;
+          }
+
+          if (!saved || saved.until <= now) {
+            store.put({
+              owner: TAB_ID,
+              until: now + 90000
+            }, 'auto-reader-v1');
+
+            accepted = true;
+          }
+        };
+
+        transaction.oncomplete = function () {
+          resolve(accepted);
+        };
+
+        transaction.onerror = transaction.onabort = function () {
+          reject(transaction.error);
+        };
+      });
+    }
+
     async function oldPendingCount() {
       let fallback = [];
 
       try {
         fallback = JSON.parse(localStorage.getItem('outbox_v1') || '[]');
+
+        if (!Array.isArray(fallback)) {
+          throw new Error('記録の形式が異なります。');
+        }
       } catch (error) {
         throw new Error('以前の未送信記録を読み取れません。端末データは消さないでください。');
       }
@@ -1172,7 +1233,20 @@
       return result;
     }
 
-    async function api(payload) {
+    function clientHint(forceFull) {
+      return {
+        protocol: SYNC_PROTOCOL,
+        forceFull: !!forceFull,
+        revision: state.snapshot ? state.snapshot.revision || '' : '',
+        pendingAdds: state.jobs.filter(function (job) {
+          return job.payload.action === 'add';
+        }).slice(0, 500).map(function (job) {
+          return job.id;
+        })
+      };
+    }
+
+    async function api(payload, forceFull) {
       if (!configured()) {
         throw new Error('設定から接続先と合い言葉を保存してください。');
       }
@@ -1181,35 +1255,30 @@
       const token = localStorage.getItem(TOKEN_KEY);
       const connection = url + '\n' + token;
 
-      const readOnly = [
-        'load',
-        'history',
-        'preview',
-        'check'
-      ].indexOf(payload.action) >= 0;
+      const needsPeriodicCheck =
+        payload.action === 'periodicSave' &&
+        Object.prototype.hasOwnProperty.call(payload, 'dueRule');
 
-      if (!readOnly && verifiedConnection !== connection) {
+      // 通常の追加・編集では、送信前に一覧全体を取り直さない。
+      if (needsPeriodicCheck && verifiedConnection !== connection) {
         const checked = await api({
           action: 'load'
-        });
+        }, true);
 
         if (!checked.ok) {
           return checked;
         }
       }
 
-      if (
-        payload.action === 'periodicSave' &&
-        Object.prototype.hasOwnProperty.call(payload, 'dueRule') &&
-        !verifiedFeatures.periodicDue
-      ) {
+      if (needsPeriodicCheck && !verifiedFeatures.periodicDue) {
         throw new Error(
           '保存先が定期タスクの期限設定に対応していません。' +
-          '手順1の公開後に再送してください。入力した変更は端末に残しています。'
+          '手順1の公開後に再送してください。変更は端末に残しています。'
         );
       }
 
       const controller = new AbortController();
+      const started = performance.now();
       let timedOut = false;
 
       const timer = setTimeout(function () {
@@ -1226,7 +1295,9 @@
           body: JSON.stringify(Object.assign({
             mode: 'web',
             token: token
-          }, payload)),
+          }, payload, {
+            clientState: clientHint(forceFull)
+          })),
           redirect: 'follow',
           signal: controller.signal
         });
@@ -1245,8 +1316,7 @@
           result = JSON.parse(text);
         } catch (error) {
           throw new Error(
-            '保存先から、タスクデータとして読めない返答が届きました' +
-            '（応答番号：' + response.status + '）。'
+            '保存先から、タスクデータとして読めない返答が届きました。'
           );
         }
 
@@ -1255,25 +1325,28 @@
           typeof result !== 'object' ||
           typeof result.ok !== 'boolean'
         ) {
-          throw new Error('保存先の返答が、タスクデータの形式ではありません。');
+          throw new Error('保存先の返答を読み取れませんでした。');
         }
 
         if (result.ok && result.app !== SERVER_VERSION) {
           verifiedConnection = '';
           verifiedFeatures = {};
-
-          throw new Error(
-            '保存先の版が' + SERVER_VERSION + 'ではありません。' +
-            '今回の画面に対応する保存先の版は' + SERVER_VERSION + 'です。'
-          );
+          throw new Error('この画面に対応する保存先ではありません。');
         }
 
         if (result.ok) {
           verifiedConnection = connection;
-          verifiedFeatures = result.snapshot
-            ? result.snapshot.features || {}
-            : verifiedFeatures;
+
+          const source = result.snapshot || result.patch || result;
+          verifiedFeatures = source.features || verifiedFeatures;
         }
+
+        lastCommunication = {
+          action: payload.action,
+          milliseconds: Math.round(performance.now() - started),
+          serverMs: Number.isFinite(result.serverMs) ? result.serverMs : null,
+          ok: result.ok
+        };
 
         return result;
       } catch (error) {
@@ -1312,7 +1385,28 @@
       }
     }
 
+    function applyAddLinks(saved, links) {
+      if (!links) {
+        return;
+      }
+
+      saved.jobs.forEach(function (job) {
+        const link = links[job.id];
+
+        if (
+          job.payload.action === 'add' &&
+          link &&
+          typeof link.taskId === 'string'
+        ) {
+          job.remoteTaskId = link.taskId;
+          job.remoteConfirmed = link.confirmed === true;
+        }
+      });
+    }
+
     function storeSnapshot(saved, snapshot) {
+      applyAddLinks(saved, snapshot.addLinks);
+
       const previousTime = saved.snapshot
         ? Date.parse(saved.snapshot.fetchedAt || '')
         : NaN;
@@ -1330,9 +1424,78 @@
       saved.snapshot = snapshot;
     }
 
+    function applyPatch(saved, patch) {
+      if (
+        !patch ||
+        !Array.isArray(patch.tasks) ||
+        !Array.isArray(patch.removed)
+      ) {
+        throw new Error('保存先から届いた変更内容を読み取れませんでした。');
+      }
+
+      if (
+        saved.snapshot &&
+        saved.snapshot.revision === patch.revision
+      ) {
+        applyAddLinks(saved, patch.addLinks);
+        return true;
+      }
+
+      if (
+        !saved.snapshot ||
+        saved.snapshot.revision !== patch.baseRevision
+      ) {
+        return false;
+      }
+
+      const next = clone(saved.snapshot);
+      const tasks = new Map(next.tasks.map(function (task) {
+        return [task.taskId, task];
+      }));
+
+      patch.removed.forEach(function (id) {
+        tasks.delete(id);
+      });
+
+      patch.tasks.forEach(function (task) {
+        tasks.set(task.taskId, task);
+      });
+
+      next.tasks = Array.from(tasks.values()).sort(function (a, b) {
+        return a.row - b.row;
+      });
+
+      [
+        'app',
+        'build',
+        'features',
+        'today',
+        'fetchedAt',
+        'revision',
+        'days',
+        'emptyDay'
+      ].forEach(function (key) {
+        next[key] = patch[key];
+      });
+
+      if (patch.periodic) {
+        next.periodic = patch.periodic;
+      }
+
+      if (patch.undo) {
+        next.undo = patch.undo;
+      }
+
+      next.addLinks = patch.addLinks || {};
+      requireSnapshot(next);
+      storeSnapshot(saved, next);
+      return true;
+    }
+
     function markListReceived() {
       lastReadError = '';
       receivedThisSession = true;
+      nextAutoRead = Date.now() + AUTO_REFRESH_MS;
 
       if (messageKind === 'read') {
         notify('');
@@ -1351,6 +1514,34 @@
       markListReceived();
     }
 
+    async function acceptUnchanged(result) {
+      const accepted = await updateState(function (saved) {
+        applyAddLinks(saved, result.addLinks);
+
+        if (
+          !saved.snapshot ||
+          saved.snapshot.revision !== result.revision
+        ) {
+          return false;
+        }
+
+        const previous = Date.parse(saved.snapshot.fetchedAt || '');
+        const incoming = Date.parse(result.fetchedAt || '');
+
+        if (!Number.isFinite(previous) || incoming >= previous) {
+          saved.snapshot.fetchedAt = result.fetchedAt;
+        }
+
+        return true;
+      });
+
+      if (accepted) {
+        markListReceived();
+      }
+
+      return accepted;
+    }
+
     function reportReadFailure(error) {
       lastReadError = String(error.message || error);
 
@@ -1366,13 +1557,25 @@
       renderStatus();
     }
 
-    function readServer(payload, afterRead) {
+    function readServer(payload, afterRead, forceFull) {
       return runRemote(async function () {
         try {
-          const result = await api(payload);
+          let result = await api(payload, forceFull);
 
           if (!result.ok) {
             throw new Error(result.message || '一覧を取得できませんでした。');
+          }
+
+          if (result.unchanged) {
+            if (await acceptUnchanged(result)) {
+              return result;
+            }
+
+            result = await api(payload, true);
+
+            if (!result.ok) {
+              throw new Error(result.message || '一覧を取得できませんでした。');
+            }
           }
 
           requireSnapshot(result.snapshot);
@@ -1418,6 +1621,7 @@
       }).finally(function () {
         refreshing = false;
         refreshPromise = null;
+        nextAutoRead = Date.now() + (lastReadError ? 60000 : AUTO_REFRESH_MS);
         renderStatus();
       });
 
@@ -1464,12 +1668,12 @@
       return Array.from(new Set(keys));
     }
 
-    function contextFor(payload, snapshot) {
+    function contextFor(payload, snapshot, jobs) {
       const keys = resources(payload, snapshot);
 
       return {
         keys: keys,
-        causes: state.jobs.filter(function (job) {
+        causes: (jobs || state.jobs).filter(function (job) {
           return job.keys.some(function (key) {
             return keys.indexOf(key) >= 0;
           });
@@ -1520,7 +1724,7 @@
 
     function mergePlan(items, tasks, date) {
       const available = tasks.filter(function (task) {
-        return task.date === date;
+        return task.date === date && !task.localOnly;
       }).sort(compareTasks);
 
       const byId = new Map(available.map(function (task) {
@@ -1558,24 +1762,56 @@
       }).sort(function (a, b) {
         const first = a.item.hour === null ? 7 : a.item.hour;
         const second = b.item.hour === null ? 7 : b.item.hour;
-
         return first - second || a.index - b.index;
       }).map(function (entry) {
         return entry.item;
       });
     }
 
-    function effectiveTasks() {
-      if (!state.snapshot) {
-        return [];
+    function pendingLabel(job) {
+      if (job.state === 'conflict' || job.state === 'blocked') {
+        return '確認が必要';
       }
 
-      let tasks = clone(state.snapshot.tasks);
+      if (job.state === 'sending' || job.state === 'unknown') {
+        return '端末に保存済み・送信結果を確認中';
+      }
+
+      return '端末に保存済み・送信待ち';
+    }
+
+    function effectiveTasks() {
+      let tasks = state.snapshot ? clone(state.snapshot.tasks) : [];
+      const links = state.snapshot ? state.snapshot.addLinks || {} : {};
 
       state.jobs.slice().sort(function (a, b) {
         return a.sequence - b.sequence;
       }).forEach(function (job) {
         const payload = job.payload;
+
+        if (payload.action === 'add') {
+          const link = links[job.id] || {};
+          const remoteId = job.remoteTaskId || link.taskId || '';
+          const confirmed = job.remoteConfirmed === true || link.confirmed === true;
+
+          const alreadyVisible = remoteId && tasks.some(function (task) {
+            return task.taskId === remoteId;
+          });
+
+          if (!alreadyVisible && !confirmed) {
+            tasks.push({
+              taskId: 'local:' + job.id,
+              title: payload.title,
+              due: payload.due || '',
+              date: payload.date || '',
+              hour: null,
+              order: null,
+              row: 1000000000 + job.sequence,
+              localOnly: true,
+              pendingText: pendingLabel(job)
+            });
+          }
+        }
 
         if (payload.action === 'done') {
           tasks = tasks.filter(function (task) {
@@ -1596,16 +1832,17 @@
         }
 
         if (payload.action === 'order') {
-          const merged = mergePlan(payload.items, tasks, payload.date);
+          mergePlan(payload.items, tasks, payload.date)
+            .forEach(function (item, index) {
+              const task = tasks.find(function (entry) {
+                return entry.taskId === item.id;
+              });
 
-          merged.forEach(function (item, index) {
-            const task = tasks.find(function (entry) {
-              return entry.taskId === item.id;
+              if (task) {
+                task.hour = item.hour;
+                task.order = index + 1;
+              }
             });
-
-            task.hour = item.hour;
-            task.order = index + 1;
-          });
         }
       });
 
@@ -1617,22 +1854,18 @@
         throw new Error('端末への保存が準備できていません。');
       }
 
-      const currentContext = contextFor(payload, state.snapshot);
-
-      const context = captured
-        ? {
-          keys: Array.from(new Set(
-            captured.keys.concat(currentContext.keys)
-          )),
-          causes: Array.from(new Set(
-            captured.causes.concat(currentContext.causes)
-          ))
-        }
-        : currentContext;
-
       const id = uuid();
 
       await updateState(function (saved) {
+        const current = contextFor(payload, saved.snapshot, saved.jobs);
+
+        const context = captured
+          ? {
+            keys: Array.from(new Set(captured.keys.concat(current.keys))),
+            causes: Array.from(new Set(captured.causes.concat(current.causes)))
+          }
+          : current;
+
         const data = clone(payload);
         data.requestId = id;
 
@@ -1672,6 +1905,52 @@
           !job.causes.some(function (id) {
             return ids.has(id);
           });
+      });
+    }
+
+    async function acceptMutation(job, result) {
+      if (result.snapshot) {
+        requireSnapshot(result.snapshot);
+      } else if (!result.patch) {
+        throw new Error('保存結果に必要な一覧情報がありません。');
+      }
+
+      return updateState(function (saved) {
+        if (result.snapshot) {
+          storeSnapshot(saved, result.snapshot);
+        } else if (!applyPatch(saved, result.patch)) {
+          return false;
+        }
+
+        const exists = saved.jobs.some(function (entry) {
+          return entry.id === job.id;
+        });
+
+        if (!exists) {
+          return true;
+        }
+
+        saved.jobs.forEach(function (entry) {
+          if (
+            entry.id !== job.id &&
+            !entry.frozen &&
+            entry.causes.indexOf(job.id) >= 0
+          ) {
+            advance(entry.payload, result.transition);
+          }
+        });
+
+        saved.jobs = saved.jobs.filter(function (entry) {
+          return entry.id !== job.id;
+        });
+
+        saved.transitions.push({
+          id: job.id,
+          transition: result.transition
+        });
+
+        saved.transitions = saved.transitions.slice(-100);
+        return true;
       });
     }
 
@@ -1793,39 +2072,27 @@
               const result = await api(job.payload);
 
               if (result.ok) {
-                requireSnapshot(result.snapshot);
+                let accepted = await acceptMutation(job, result);
 
-                await updateState(function (saved) {
-                  const exists = saved.jobs.some(function (entry) {
-                    return entry.id === job.id;
-                  });
+                if (!accepted) {
+                  // 別のタブが一覧を更新した場合は、全体を取り直してから確定する。
+                  const full = await api({
+                    action: 'load'
+                  }, true);
 
-                  if (!exists) {
-                    return;
+                  if (!full.ok) {
+                    throw new Error(full.message || '保存後の一覧を確認できませんでした。');
                   }
 
-                  saved.jobs.forEach(function (entry) {
-                    if (
-                      entry.id !== job.id &&
-                      !entry.frozen &&
-                      entry.causes.indexOf(job.id) >= 0
-                    ) {
-                      advance(entry.payload, result.transition);
-                    }
-                  });
+                  requireSnapshot(full.snapshot);
+                  result.snapshot = full.snapshot;
+                  delete result.patch;
+                  accepted = await acceptMutation(job, result);
+                }
 
-                  saved.jobs = saved.jobs.filter(function (entry) {
-                    return entry.id !== job.id;
-                  });
-
-                  saved.transitions.push({
-                    id: job.id,
-                    transition: result.transition
-                  });
-
-                  saved.transitions = saved.transitions.slice(-100);
-                  storeSnapshot(saved, result.snapshot);
-                });
+                if (!accepted) {
+                  throw new Error('保存後の一覧を確認できませんでした。');
+                }
 
                 markListReceived();
                 failures = 0;
@@ -1935,6 +2202,7 @@
 
     function renderStatus() {
       const pending = state.jobs.length;
+
       const conflict = state.jobs.some(function (job) {
         return job.state === 'conflict' || job.state === 'blocked';
       });
@@ -1947,7 +2215,7 @@
         text += '／旧画面の未送信を先に確認してください';
       } else {
         if (refreshing) {
-          text += '／一覧を読み込み中';
+          text += '／一覧を確認中';
         } else if (lastReadError) {
           text += '／一覧取得に失敗';
         }
@@ -1955,9 +2223,7 @@
         if (conflict) {
           text += '／確認が必要／未送信 ' + pending + ' 件';
         } else if (pending) {
-          text += '／未送信 ' + pending + ' 件';
-        } else if (refreshing || lastReadError) {
-          text += '／未送信 0 件';
+          text += '／端末に保存済み・未送信 ' + pending + ' 件';
         } else if (state.snapshot && receivedThisSession) {
           text += '／保存済み';
         } else if (state.snapshot) {
@@ -1967,7 +2233,7 @@
         }
 
         if (state.snapshot) {
-          text += '／前回取得：' +
+          text += '／前回確認：' +
             fetchedAtLabel(state.snapshot.fetchedAt) +
             '（日本時間）';
         }
@@ -2067,7 +2333,14 @@
       const content = $('content');
       content.replaceChildren();
 
-      if (!state.snapshot) {
+      const pendingAdds = state.jobs.some(function (job) {
+        return job.payload.action === 'add';
+      });
+
+      if (
+        !state.snapshot &&
+        (!pendingAdds || (page !== 'plan' && page !== 'tasks'))
+      ) {
         content.appendChild(make('h2', '接続の準備'));
         content.appendChild(make(
           'p',
@@ -2076,6 +2349,14 @@
             : '「設定」で接続先と合い言葉を保存してください。'
         ));
         return;
+      }
+
+      if (!state.snapshot) {
+        content.appendChild(make(
+          'p',
+          '保存先の一覧はまだ取得していません。この端末で追加した未送信分だけを表示します。',
+          'notice'
+        ));
       }
 
       if (page === 'plan') {
@@ -2094,6 +2375,7 @@
     function completeButton(task) {
       const complete = button('', function () {
         if (
+          task.localOnly ||
           drag ||
           Date.now() < suppressClickUntil ||
           !confirm('「' + task.title + '」を完了にしますか。')
@@ -2118,16 +2400,19 @@
       }, 'hit');
 
       complete.dataset.act = 'done';
-      complete.disabled = !storageReady || legacyBlocked;
+      complete.disabled =
+        !storageReady ||
+        legacyBlocked ||
+        !!task.localOnly;
+
       complete.setAttribute('aria-label', task.title + 'を完了');
       complete.appendChild(make('span', null, 'circle'));
-
       return complete;
     }
 
     function taskEditButton(task, className) {
       const edit = button('編集', function () {
-        if (drag || Date.now() < suppressClickUntil) {
+        if (task.localOnly || drag || Date.now() < suppressClickUntil) {
           return;
         }
 
@@ -2138,11 +2423,14 @@
       edit.disabled =
         !storageReady ||
         legacyBlocked ||
-        !navigator.onLine;
+        !navigator.onLine ||
+        !!task.localOnly;
 
       edit.setAttribute('aria-label', task.title + 'を編集');
 
-      if (!navigator.onLine) {
+      if (task.localOnly) {
+        edit.title = '送信結果の確認後に編集できます。';
+      } else if (!navigator.onLine) {
         edit.title = '編集は通信できるときに行ってください。';
       }
 
@@ -2190,24 +2478,25 @@
         'sub'
       ));
 
-      if (!navigator.onLine) {
-        content.appendChild(make(
-          'p',
-          '前回取得した内容と、この端末の未送信を表示しています。' +
-          '編集は通信できるときに行ってください。',
-          'sub'
-        ));
-      }
-
       const tasks = effectiveTasks().filter(function (task) {
         return task.date === selectedDate;
       }).sort(compareTasks);
 
       content.appendChild(make(
         'div',
-        tasks.length ? tasks.length + ' 件' : '取得済みの一覧に、この日のタスクはありません。',
+        tasks.length ? tasks.length + ' 件' : 'この日のタスクはありません。',
         'sub'
       ));
+
+      if (tasks.some(function (task) {
+        return task.localOnly;
+      })) {
+        content.appendChild(make(
+          'p',
+          '送信待ちの新規タスクは先に表示しています。編集・完了・移動は送信結果の確認後に使えます。',
+          'sub'
+        ));
+      }
 
       const timeline = make('div', null, 'timeline');
       timeline.id = 'timeline';
@@ -2227,31 +2516,36 @@
         tasks.filter(function (task) {
           return task.hour === hour;
         }).forEach(function (task) {
-          const row = make('li', null, 'task');
+          const row = make(
+            'li',
+            null,
+            'task' + (task.localOnly ? ' pending-add' : '')
+          );
+
           row.dataset.id = task.taskId;
+          row.dataset.local = task.localOnly ? 'true' : 'false';
 
           const text = make('div', null, 'ttl');
           text.appendChild(make('div', task.title));
 
           if (task.due) {
-            text.appendChild(make(
-              'div',
-              '期限：' + task.due,
-              'task-due'
-            ));
+            text.appendChild(make('div', '期限：' + task.due, 'task-due'));
           }
 
-          const edit = taskEditButton(task, 'plan-edit');
+          if (task.localOnly) {
+            text.appendChild(make('div', task.pendingText, 'pending-label'));
+          }
 
           const grip = make('button', '≡', 'grip');
           grip.type = 'button';
           grip.dataset.act = 'grip';
+          grip.disabled = !!task.localOnly;
           grip.setAttribute('aria-label', task.title + 'を移動');
 
           row.append(
             completeButton(task),
             text,
-            edit,
+            taskEditButton(task, 'plan-edit'),
             grip
           );
 
@@ -2275,7 +2569,9 @@
     }
 
     function visibleItems() {
-      return Array.from(document.querySelectorAll('#timeline .task')).map(function (row) {
+      return Array.from(
+        document.querySelectorAll('#timeline .task[data-local="false"]')
+      ).map(function (row) {
         const value = row.closest('.slot').dataset.hour;
 
         return {
@@ -2295,7 +2591,12 @@
     }
 
     function startDrag(row, id) {
-      if (!state.snapshot || drag || !document.contains(row)) {
+      if (
+        !state.snapshot ||
+        drag ||
+        row.dataset.local === 'true' ||
+        !document.contains(row)
+      ) {
         return;
       }
 
@@ -2359,6 +2660,7 @@
       }
 
       const list = slot.querySelector('.slot-list');
+
       const before = Array.from(list.querySelectorAll('.task')).find(function (row) {
         if (row === drag) {
           return false;
@@ -2459,6 +2761,7 @@
 
       if (
         !row ||
+        row.dataset.local === 'true' ||
         event.target.closest('[data-act="done"], [data-act="edit"]')
       ) {
         return;
@@ -2549,10 +2852,7 @@
       const now = new Date(Date.now() + 9 * 3600000);
       const hour = now.getUTCHours();
       const minute = now.getUTCMinutes();
-
-      const slot = timeline.querySelector(
-        '.slot[data-hour="' + hour + '"]'
-      );
+      const slot = timeline.querySelector('.slot[data-hour="' + hour + '"]');
 
       if (
         selectedDate !== now.toISOString().slice(0, 10) ||
@@ -2623,7 +2923,12 @@
       const cards = make('div', null, 'cards');
 
       tasks.forEach(function (task) {
-        const card = make('div', null, 'card');
+        const card = make(
+          'div',
+          null,
+          'card' + (task.localOnly ? ' pending-add' : '')
+        );
+
         const main = make('div', null, 'card-main');
 
         main.append(
@@ -2631,9 +2936,16 @@
           make('div', taskInfo(task), 'sub')
         );
 
-        const edit = taskEditButton(task);
+        if (task.localOnly) {
+          main.appendChild(make('div', task.pendingText, 'pending-label'));
+        }
 
-        card.append(completeButton(task), main, edit);
+        card.append(
+          completeButton(task),
+          main,
+          taskEditButton(task)
+        );
+
         cards.appendChild(card);
       });
 
@@ -2656,11 +2968,7 @@
           render();
         }, taskView === entry[0] ? 'active' : '');
 
-        control.setAttribute(
-          'aria-pressed',
-          String(taskView === entry[0])
-        );
-
+        control.setAttribute('aria-pressed', String(taskView === entry[0]));
         switcher.appendChild(control);
       });
 
@@ -2727,11 +3035,7 @@
         render();
       });
 
-      filterField.append(
-        make('span', '表示するタスク'),
-        select
-      );
-
+      filterField.append(make('span', '表示するタスク'), select);
       tools.appendChild(filterField);
 
       if (taskFilter === 'date') {
@@ -2745,16 +3049,11 @@
           render();
         });
 
-        dateField.append(
-          make('span', '実行日'),
-          input
-        );
-
+        dateField.append(make('span', '実行日'), input);
         tools.appendChild(dateField);
       }
 
       content.appendChild(tools);
-
       const tasks = effectiveTasks().filter(filterTask);
 
       if (taskFilter === 'hasdue') {
@@ -2767,21 +3066,20 @@
         });
       }
 
-      let countText = tasks.length + ' 件';
+      let text = tasks.length + ' 件';
 
       if (taskFilter === 'hasdue') {
-        countText += ' ／ 期限切れを含め、期限が早い順';
+        text += ' ／ 期限切れを含め、期限が早い順';
       } else if (taskFilter === 'runoverdue') {
-        countText += ' ／ 実行日が古い順';
+        text += ' ／ 実行日が古い順';
       }
 
-      content.appendChild(make('p', countText, 'sub'));
+      content.appendChild(make('p', text, 'sub'));
 
       if (taskFilter === 'runoverdue') {
         content.appendChild(make(
           'p',
-          '実行日が昨日以前の未完了タスクです。' +
-          '今日の分・実行日未定は含みません。期限とは別に判定します。',
+          '実行日が昨日以前の未完了タスクです。今日の分・実行日未定は含みません。',
           'sub'
         ));
       }
@@ -2834,17 +3132,9 @@
       calendar.appendChild(tools);
       calendar.appendChild(make(
         'p',
-        '実行日ごとの未完了タスク数です。日付を押すと下に一覧が出ます。日付の変更は「編集」から行います。',
+        '実行日ごとの未完了タスク数です。この端末の送信待ちも含みます。日付を押すと下に一覧が出ます。',
         'sub'
       ));
-
-      if (!navigator.onLine) {
-        calendar.appendChild(make(
-          'p',
-          '前回取得した内容と、この端末の未送信を表示しています。実行日の変更は通信できるときに行ってください。',
-          'sub'
-        ));
-      }
 
       const grid = make('div', null, 'calendar-grid');
       grid.setAttribute('role', 'group');
@@ -2856,7 +3146,6 @@
 
       const first = new Date(calendarMonth + '-01T12:00:00Z');
       const firstWeekday = first.getUTCDay();
-
       const last = new Date(first);
       last.setUTCMonth(last.getUTCMonth() + 1);
       last.setUTCDate(0);
@@ -2934,9 +3223,7 @@
       ));
 
       const shown = tasks.filter(function (task) {
-        return calendarUndated
-          ? !task.date
-          : task.date === calendarDate;
+        return calendarUndated ? !task.date : task.date === calendarDate;
       });
 
       if (!calendarUndated) {
@@ -2982,7 +3269,6 @@
     function selectField(name, label, options, value) {
       const wrapper = make('label', null, 'field');
       wrapper.appendChild(make('span', label));
-
       const select = make('select');
       select.name = name;
 
@@ -3013,14 +3299,14 @@
     function openAdd() {
       showEditor(
         'タスクを追加',
-        '期限と実行日は任意です。件名だけでも追加できます。追加後も今の画面を維持します。',
+        '端末への保存後、一覧に送信待ちとして表示します。期限・実行日は任意です。',
         async function (form) {
           const title = String(form.get('title') || '').trim();
           const due = String(form.get('due') || '');
           const date = String(form.get('date') || '');
 
-          if (!title) {
-            throw new Error('件名を入力してください。');
+          if (!title || title.length > 200) {
+            throw new Error('件名は1～200文字で入力してください。');
           }
 
           await enqueue({
@@ -3034,7 +3320,7 @@
           );
 
           notify(
-            '端末に保存しました。未送信です。\n' +
+            '端末に保存しました。送信は裏で続けます。\n' +
             '追加先：' + (date ? dateLabel(date) + 'の時間未定' : '実行日未定')
           );
         },
@@ -3064,7 +3350,7 @@
       const original = taskById(state.snapshot, id);
 
       const visibleTask = effectiveTasks().find(function (task) {
-        return task.taskId === id;
+        return task.taskId === id && !task.localOnly;
       });
 
       if (!original || !visibleTask) {
@@ -3108,8 +3394,7 @@
 
           if (captured.date !== date) {
             message += date
-              ? '\n表示先：' + dateLabel(date) +
-                '。設定済みの時間帯はそのままです。'
+              ? '\n表示先：' + dateLabel(date) + '。設定済みの時間帯はそのままです。'
               : '\n表示先：「タスク一覧」の「実行日未定」。';
           }
 
@@ -3117,23 +3402,43 @@
         }
       );
 
-      const titleInput = field(
-        'title',
-        '件名',
-        'text',
-        captured.title,
-        true
-      );
-
+      const titleInput = field('title', '件名', 'text', captured.title, true);
       field('due', '期限', 'date', captured.due, false);
       field('date', '実行日', 'date', captured.date, false);
       titleInput.focus();
     }
 
+    let editorComposing = false;
+    let editorImeUntil = 0;
+
+    $('editor-form').addEventListener('compositionstart', function () {
+      editorComposing = true;
+    });
+
+    $('editor-form').addEventListener('compositionend', function () {
+      editorComposing = false;
+      editorImeUntil = performance.now() + 100;
+    });
+
+    $('editor-form').addEventListener('keydown', function (event) {
+      if (event.isComposing || event.keyCode === 229) {
+        editorImeUntil = performance.now() + 100;
+      }
+
+      if (event.key === 'Enter' && event.repeat) {
+        event.preventDefault();
+      }
+    });
+
     $('editor-form').addEventListener('submit', async function (event) {
       event.preventDefault();
 
-      if (!editorContext || $('editor-submit').disabled) {
+      if (
+        !editorContext ||
+        $('editor-submit').disabled ||
+        editorComposing ||
+        performance.now() < editorImeUntil
+      ) {
         return;
       }
 
@@ -3168,6 +3473,7 @@
       const position = editorPlanPosition;
       editorPlanPosition = null;
       editorContext = null;
+      editorComposing = false;
 
       restorePlanPosition(position);
 
@@ -3181,7 +3487,6 @@
     function renderPeriodic(content) {
       const periodic = state.snapshot.periodic;
       const supported = periodicSupported();
-
       content.appendChild(make('h2', '定期タスク'));
 
       if (!supported) {
@@ -3217,9 +3522,8 @@
 
       content.appendChild(make(
         'p',
-        '追加されたタスクは、その日の「時間未定」に入ります。' +
         '予定分の期限は本来の追加予定日が基準です。' +
-        '「今すぐ1件追加」の期限は、押した日が基準です。',
+        '「今すぐ1件追加」の期限は、押した日が基準です。時間帯は時間未定に入ります。',
         'sub'
       ));
 
@@ -3233,7 +3537,8 @@
           make('div', item.name, 'card-title'),
           make(
             'div',
-            (item.freq || '不定期') + ' ／ 次回追加予定日：' + (item.next || '未設定'),
+            (item.freq || '不定期') +
+              ' ／ 次回追加予定日：' + (item.next || '未設定'),
             'sub'
           )
         );
@@ -3378,8 +3683,8 @@
 
       $('editor-fields').appendChild(make(
         'p',
-        '曜日・毎月の日付は、基準日当日を含む次の該当日を選びます。' +
-        '毎月31日など、その月にない日は月末です。日数は土日も含みます。',
+        '曜日・毎月の日付は、基準日当日を含む次の該当日です。' +
+        'その月にない日は月末です。日数は土日も含みます。',
         'sub'
       ));
     }
@@ -3410,30 +3715,25 @@
           return {
             type: 'none'
           };
-
         case 'offset':
           return {
             type: 'offset',
             days: integer('dueDays', 0, 3650, '何日後')
           };
-
         case 'weekly':
           return {
             type: 'weekly',
             weekday: integer('dueWeekday', 0, 6, '曜日')
           };
-
         case 'monthly':
           return {
             type: 'monthly',
             day: integer('dueDay', 1, 31, '期限の日')
           };
-
         case 'monthEnd':
           return {
             type: 'monthEnd'
           };
-
         default:
           throw new Error('期限の決め方を選び直してください。');
       }
@@ -3464,9 +3764,8 @@
 
       showEditor(
         item ? '定期タスクを編集' : '定期タスクを追加',
-        '予定分の期限は追加予定日が基準で、遅れて追加しても繰り越しません。' +
-        '「今すぐ1件追加」は押した日が基準です。' +
-        '設定の変更は、これから追加する分だけに適用します。',
+        '予定分の期限は追加予定日が基準で、遅れても繰り越しません。' +
+        '「今すぐ1件追加」は押した日が基準です。設定変更は、これから追加する分だけに適用します。',
         async function (form) {
           if (!navigator.onLine) {
             throw new Error('通信が戻ってから保存してください。');
@@ -3490,7 +3789,6 @@
       );
 
       field('name', 'タスク名', 'text', value.name, true);
-
       const freq = field('freq', '頻度', 'text', value.freq, true);
       const options = make('datalist');
       options.id = 'frequency-options';
@@ -3517,8 +3815,7 @@
 
       $('editor-fields').appendChild(make(
         'p',
-        '頻度の例：毎日、毎週月曜日、毎月、毎月15日、3日ごと。' +
-        '不定期にすると毎日の自動追加の対象から外れます。',
+        '頻度の例：毎日、毎週月曜日、毎月15日、3日ごと。不定期は自動追加の対象外です。',
         'sub'
       ));
 
@@ -3536,8 +3833,7 @@
           action: 'preview'
         });
 
-        if (!periodicSupported()) {
-          requirePeriodicSupport();
+        if (!requirePeriodicSupport()) {
           return;
         }
 
@@ -3647,10 +3943,7 @@
         return;
       }
 
-      if (!confirm(
-        undo.count + ' 件を戻します。\n\n' +
-        undo.titles.join('\n')
-      )) {
+      if (!confirm(undo.count + ' 件を戻します。\n\n' + undo.titles.join('\n'))) {
         return;
       }
 
@@ -3667,7 +3960,6 @@
     function renderHistory(content) {
       content.appendChild(make('h2', '完了済み'));
       const tools = make('div', null, 'toolbar');
-
       const undo = button('直前の完了を戻す', undoDone);
       undo.disabled = !navigator.onLine || !state.snapshot.undo.count;
 
@@ -3747,12 +4039,10 @@
       const snapshot = state.snapshot;
 
       if (payload.action === 'order') {
-        const tasks = local
-          ? effectiveTasks()
-          : snapshot.tasks;
+        const tasks = local ? effectiveTasks() : snapshot.tasks;
 
         return tasks.filter(function (task) {
-          return task.date === payload.date;
+          return task.date === payload.date && !task.localOnly;
         }).sort(compareTasks).map(function (task) {
           return hourLabel(task.hour) + '：' + task.title;
         }).join('\n') || 'この日のタスクはありません。';
@@ -3900,6 +4190,7 @@
 
             const payload = job.payload;
             const newId = replacements.get(job.id);
+
             job.id = newId;
             payload.requestId = newId;
             job.frozen = false;
@@ -3934,6 +4225,7 @@
         });
 
         $('conflict-dialog').close();
+
         notify(useLocal
           ? '確認した変更を送信待ちに保存しました。'
           : '保存済みの内容を使います。');
@@ -4024,7 +4316,7 @@
       try {
         const result = await readServer({
           action: 'check'
-        });
+        }, null, true);
 
         alert(
           '改修版：' + (result.build || result.snapshot.build || '未対応') +
@@ -4076,6 +4368,31 @@
             ? '成功'
             : 'この起動後は未確認';
 
+      const names = {
+        add: '追加',
+        edit: '編集',
+        order: '配置',
+        done: '完了',
+        load: '一覧取得',
+        history: '完了済み取得',
+        preview: '定期タスク下見',
+        check: '点検',
+        periodicSave: '定期設定',
+        periodicSend: '定期追加',
+        periodicRun: '予定分の追加',
+        automatic: '自動追加設定',
+        undo: '完了取り消し'
+      };
+
+      const communicationText = lastCommunication
+        ? (names[lastCommunication.action] || lastCommunication.action) +
+          '／往復 ' + (lastCommunication.milliseconds / 1000).toFixed(2) + '秒' +
+          '／保存先処理 ' +
+          (lastCommunication.serverMs == null
+            ? '未取得'
+            : (lastCommunication.serverMs / 1000).toFixed(2) + '秒')
+        : '未取得';
+
       const text = [
         '画面：' + VERSION,
         '保存先の版：' + (state.snapshot ? state.snapshot.app : '未取得'),
@@ -4085,15 +4402,16 @@
         'オフライン保存：' + cacheVersion,
         '通信：' + (navigator.onLine ? 'あり' : 'なし'),
         '一覧取得：' + acquisition,
-        '前回取得（日本時間）：' +
+        '前回確認（日本時間）：' +
           fetchedAtLabel(state.snapshot ? state.snapshot.fetchedAt : ''),
         '取得エラー：' + (lastReadError || 'なし'),
         '未送信：' + state.jobs.length + ' 件',
         '確認が必要：' + state.jobs.filter(function (job) {
           return job.state === 'conflict' || job.state === 'blocked';
         }).length + ' 件',
-        'タスク：' + (state.snapshot ? state.snapshot.tasks.length : 0) + ' 件',
-        '定期タスク：' + (state.snapshot ? state.snapshot.periodic.items.length : 0) + ' 件'
+        '保存先のタスク：' + (state.snapshot ? state.snapshot.tasks.length : 0) + ' 件',
+        '定期タスク：' + (state.snapshot ? state.snapshot.periodic.items.length : 0) + ' 件',
+        '直近の通信：' + communicationText
       ].join('\n');
 
       try {
@@ -4103,6 +4421,74 @@
         prompt('この内容をコピーしてください。', text);
       }
     });
+
+    /* ---------- 自動確認 ---------- */
+
+    function anyDialogOpen() {
+      return $('editor').open ||
+        $('settings-dialog').open ||
+        $('conflict-dialog').open;
+    }
+
+    async function autoRefresh() {
+      if (
+        autoChecking ||
+        document.hidden ||
+        !storageReady ||
+        legacyBlocked ||
+        !navigator.onLine ||
+        !configured() ||
+        drag ||
+        holdTimer ||
+        anyDialogOpen() ||
+        refreshPromise ||
+        pumpPromise ||
+        historyPromise ||
+        manualReloading ||
+        Date.now() < nextAutoRead
+      ) {
+        return;
+      }
+
+      autoChecking = true;
+      let accepted = false;
+
+      try {
+        const saved = await readState();
+
+        if (saved.savedAt !== state.savedAt) {
+          state = saved;
+          render();
+        }
+
+        if (saved.jobs.length) {
+          return;
+        }
+
+        accepted = await autoReadTicket(false);
+
+        if (!accepted) {
+          return;
+        }
+
+        if (page === 'history') {
+          await loadHistory(false);
+        } else {
+          await refresh();
+        }
+      } catch (error) {
+        console.error(error);
+        nextAutoRead = Date.now() + 60000;
+      } finally {
+        if (accepted) {
+          await autoReadTicket(true).catch(function () {
+            return null;
+          });
+        }
+
+        autoChecking = false;
+      }
+    }
 
     /* ---------- 操作・起動 ---------- */
 
@@ -4130,7 +4516,7 @@
       }
 
       if (!navigator.onLine) {
-        notify('通信がないため、前回取得した一覧を表示しています。', true);
+        notify('通信がないため、端末に保存した内容を表示しています。', true);
         return;
       }
 
@@ -4147,12 +4533,8 @@
           if (result) {
             notify('完了済みとタスク一覧を取得しました。');
           }
-        } else {
-          const success = await refresh();
-
-          if (success) {
-            notify('一覧を取得しました。');
-          }
+        } else if (await refresh()) {
+          notify('一覧を取得しました。');
         }
       } finally {
         manualReloading = false;
@@ -4184,7 +4566,10 @@
           state = await readState();
           render();
           await pump(true);
-          refresh();
+
+          if (!anyDialogOpen()) {
+            refresh();
+          }
         } catch (error) {
           notify('端末の記録を読み取れませんでした。データは消さずに開き直してください。', true);
         }
@@ -4201,16 +4586,18 @@
       pump(false);
     }, 15000);
 
+    setInterval(autoRefresh, 5000);
+
     setInterval(function () {
       updateNow();
+      const today = japanDate();
 
-      if (
-        page === 'tasks' &&
-        taskView === 'list' &&
-        !drag &&
-        !$('editor').open
-      ) {
-        render();
+      if (today !== lastDateSeen) {
+        lastDateSeen = today;
+
+        if (!drag && !anyDialogOpen()) {
+          render();
+        }
       }
     }, 60000);
 
@@ -4218,13 +4605,12 @@
       try {
         db = await openDatabase();
         state = await readState();
-        storageReady = true;
 
         const oldCount = await oldPendingCount();
+        legacyBlocked = oldCount > 0;
+        storageReady = true;
 
-        if (oldCount) {
-          legacyBlocked = true;
-
+        if (legacyBlocked) {
           notify(
             '以前の画面に未送信が ' + oldCount +
             ' 件残っています。記録は消していません。旧版で送信を完了してから切り替えてください。',
@@ -4248,18 +4634,23 @@
         render();
 
         if (!legacyBlocked && configured()) {
-          await pump(true);
-          await refresh();
+          const changed = await pump(true);
+
+          if (!changed || !state.snapshot) {
+            await refresh();
+          }
         } else if (!configured()) {
-          notify('PCで初めて開いた場合は、「設定」に接続先と合い言葉を保存してください。');
+          notify('「設定」に接続先と合い言葉を保存してください。');
         }
       } catch (error) {
         storageReady = false;
+
         notify(
           '端末への保存を準備できないため、変更操作を止めています。\n' +
           String(error.message || error),
           true
         );
+
         renderStatus();
       }
     }
