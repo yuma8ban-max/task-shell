@@ -1,5 +1,5 @@
-/* File: sw.js — task-v4.6-1 */
-const CACHE = 'task-v4.6-1';
+/* File: sw.js — task-v4.7-1 */
+const CACHE = 'task-v4.7-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -7,6 +7,7 @@ const QUICK = new URL('./quick-add.html', self.registration.scope).href;
 
 const REQUIRED_FILES = [
   './index.html',
+  './quick-add.html',
   './manifest.webmanifest',
   './icon-check-32.png',
   './icon-check-180.png',
@@ -15,7 +16,6 @@ const REQUIRED_FILES = [
 ];
 
 const OPTIONAL_FILES = [
-  './quick-add.html',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png'
@@ -95,14 +95,9 @@ function offlinePage(documentUrl) {
   <title>タスク</title>
 </head>
 <body>
-  <h2>初回の準備が必要です</h2>
-  <p>
-    通信できる状態で一度この画面を開いてください。
-    準備後は、通信がないときも開けるようになります。
-  </p>
-  <p>
-    保存済みのタスクや未送信の記録は消していません。
-  </p>
+  <h2>画面の準備が必要です</h2>
+  <p>通信できる状態で一度開いてください。</p>
+  <p>端末の記録は消していません。</p>
 </body>
 </html>`,
         {
