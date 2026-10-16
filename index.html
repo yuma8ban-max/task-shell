@@ -17,7 +17,7 @@
       color-scheme: light;
       --accent: #1a73e8;
       --line: #d8dfe6;
-      --muted: #657383;
+      --secondary: #46576a;
     }
 
     * {
@@ -147,17 +147,21 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .spacer {
       flex: 1;
     }
 
-    .version,
-    .sub {
-      color: var(--muted);
+    .version {
+      color: var(--secondary);
       font-size: 12px;
+    }
+
+    .sub {
+      color: var(--secondary);
+      font-size: 14px;
       line-height: 1.6;
     }
 
@@ -195,8 +199,8 @@
       display: grid;
       gap: 6px;
       min-width: 0;
-      color: var(--muted);
-      font-size: 13px;
+      color: var(--secondary);
+      font-size: 14px;
     }
 
     .filter-field input,
@@ -210,25 +214,66 @@
 
     .status {
       margin-bottom: 10px;
-      color: #326347;
-      font-size: 13px;
-      line-height: 1.6;
-      overflow-wrap: anywhere;
+      color: #725619;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
     .notice {
       margin: 10px 0;
-      padding: 11px 13px;
-      border: 1px solid #ead49b;
+      padding: 10px 13px;
+      border: 1px solid #cbdcec;
       border-radius: 9px;
-      background: #fff7df;
-      font-size: 13px;
+      color: #234f77;
+      background: #edf5ff;
+      font-size: 14px;
       line-height: 1.6;
-      white-space: pre-wrap;
     }
 
-    .error {
-      color: #a52620;
+    .notice.error {
+      border-color: #e7bdba;
+      color: #8f211c;
+      background: #fff1ef;
+    }
+
+    .notice-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notice-row span {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .notice-close {
+      flex: none;
+      min-height: 30px;
+      width: 30px;
+      padding: 0;
+      border: 0;
+      color: inherit;
+      background: transparent;
+      font-size: 20px;
+    }
+
+    .detail-text {
+      margin-top: 8px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .notice details,
+    .job details {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    summary {
+      cursor: pointer;
     }
 
     .panel {
@@ -241,26 +286,49 @@
     #outbox {
       margin: 12px 0;
       padding: 12px;
-      border: 1px solid var(--line);
+      border: 1px solid #ddcfab;
       border-radius: 10px;
-      background: #fff;
+      background: #fffaf0;
     }
 
     #outbox summary {
-      cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .job {
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid #edf0f4;
+      border-top: 1px solid #e7dfcd;
       overflow-wrap: anywhere;
     }
 
+    .job-heading {
+      display: flex;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+
     .job-title {
-      margin-bottom: 5px;
+      flex: 1;
+      min-width: 160px;
       font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .job-state {
+      padding: 2px 7px;
+      border-radius: 5px;
+      color: #725619;
+      background: #f6e9c7;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .job-state.needs-check {
+      color: #8f211c;
+      background: #f9dcd8;
     }
 
     .cards {
@@ -307,8 +375,8 @@
 
     .pending-label {
       margin-top: 5px;
-      color: #886414;
-      font-size: 12px;
+      color: #775912;
+      font-size: 13px;
       line-height: 1.5;
     }
 
@@ -330,9 +398,9 @@
 
     .calendar-weekday {
       padding: 5px 0;
-      color: var(--muted);
+      color: var(--secondary);
       text-align: center;
-      font-size: 12px;
+      font-size: 13px;
     }
 
     .calendar-day {
@@ -365,9 +433,9 @@
     }
 
     .calendar-count {
-      min-height: 17px;
+      min-height: 18px;
       color: #1559ad;
-      font-size: 12px;
+      font-size: 13px;
       line-height: 1.4;
     }
 
@@ -402,8 +470,8 @@
 
     .slot-label {
       padding: 12px 4px 0 0;
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--secondary);
+      font-size: 13px;
       line-height: 1.3;
     }
 
@@ -457,7 +525,7 @@
     .circle {
       width: 24px;
       height: 24px;
-      border: 2px solid #b4beca;
+      border: 2px solid #a5b1bf;
       border-radius: 50%;
     }
 
@@ -469,9 +537,9 @@
     }
 
     .task-due {
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 12px;
+      margin-top: 5px;
+      color: var(--secondary);
+      font-size: 14px;
       line-height: 1.4;
     }
 
@@ -495,7 +563,7 @@
       margin: -10px 0;
       padding: 0;
       border: 0;
-      color: #99a7b7;
+      color: #8595a8;
       background: transparent;
       font-size: 24px;
       cursor: grab;
@@ -506,8 +574,8 @@
       min-height: 28px;
       padding-top: 7px;
       border-top: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--secondary);
+      font-size: 13px;
     }
 
     .now-line {
@@ -527,7 +595,7 @@
       width: 50px;
       color: #cb3535;
       background: #fff;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: bold;
     }
 
@@ -558,12 +626,26 @@
       width: 100%;
     }
 
+    .form-error {
+      margin: 10px 0;
+      color: #a52620;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
     .dialog-actions {
       display: flex;
       justify-content: flex-end;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 18px;
+    }
+
+    .dialog-text {
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
     }
 
     .comparison {
@@ -582,8 +664,42 @@
 
     .comparison p {
       margin-bottom: 8px;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .settings-section {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .settings-section h3 {
+      margin-top: 16px;
+    }
+
+    .settings-section li {
+      margin: 5px 0;
+    }
+
+    .settings-state {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      gap: 8px 14px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .settings-state dt {
+      font-weight: bold;
+    }
+
+    .settings-state dd {
+      margin: 0;
+      overflow-wrap: anywhere;
       white-space: pre-wrap;
     }
 
@@ -676,18 +792,32 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.6</span>
+        <span class="version">v4.7</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button">タスクを追加</button>
         <button id="reload" type="button">最新を取得</button>
         <button id="settings" type="button">設定</button>
       </header>
 
-      <div id="status" class="status" aria-live="polite">準備中…</div>
-      <div id="message" class="notice" hidden aria-live="polite"></div>
+      <div id="status" class="status" aria-live="polite">準備中</div>
+
+      <div id="message" class="notice" hidden aria-live="polite">
+        <div class="notice-row">
+          <span id="message-text"></span>
+          <button
+            id="message-close"
+            class="notice-close"
+            type="button"
+            aria-label="お知らせを閉じる">×</button>
+        </div>
+        <details id="message-details" hidden>
+          <summary>詳細</summary>
+          <div id="message-detail-body" class="detail-text"></div>
+        </details>
+      </div>
 
       <details id="outbox" hidden>
-        <summary id="outbox-summary">未送信</summary>
+        <summary id="outbox-summary">送信待ち</summary>
         <div id="outbox-items"></div>
       </details>
 
@@ -699,7 +829,7 @@
     <h2 id="editor-title"></h2>
     <form id="editor-form">
       <div id="editor-fields"></div>
-      <div id="editor-note" class="sub"></div>
+      <div id="editor-note" class="form-error" hidden aria-live="polite"></div>
       <div class="dialog-actions">
         <button type="button" id="editor-cancel">キャンセル</button>
         <button type="submit" class="primary" id="editor-submit">保存</button>
@@ -709,21 +839,77 @@
 
   <dialog id="settings-dialog">
     <h2>設定</h2>
+
     <label class="field">
       接続先
       <input id="url" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
     </label>
+
     <label class="field">
       合い言葉
       <input id="token" type="password" autocomplete="off" autocapitalize="off">
     </label>
-    <p class="sub">
-      この端末の中だけに保存します。以前から使っている端末では、設定を引き継ぎます。
-    </p>
+
     <div class="toolbar">
       <button id="check" type="button">動作の点検</button>
       <button id="copy" type="button">状態をコピー</button>
     </div>
+
+    <details class="settings-section">
+      <summary>詳しい状態</summary>
+      <dl id="settings-state" class="settings-state"></dl>
+    </details>
+
+    <details class="settings-section">
+      <summary>使い方</summary>
+
+      <h3>入力</h3>
+      <ul>
+        <li>＊が付いた項目は必須です。</li>
+        <li>期限・実行日は空欄でも追加できます。</li>
+        <li>実行日が空欄のタスクは「実行日未定」に入ります。</li>
+        <li>新規タスクは端末への保存後、送信待ちとして表示します。</li>
+        <li>送信待ちの新規タスクは、保存結果を確認してから編集・完了・移動ができます。</li>
+      </ul>
+
+      <h3>1日の計画</h3>
+      <ul>
+        <li>左の丸で完了、編集ボタンで件名・期限・実行日を変更します。</li>
+        <li>右の≡をつかんで、時間帯や並び順を変更します。</li>
+        <li>件名部分を0.6秒長押ししても移動を始められます。</li>
+        <li>時間帯は目安です。実行日を変更しても、設定した時間帯は残ります。</li>
+      </ul>
+
+      <h3>定期タスク</h3>
+      <ul>
+        <li>頻度の例：毎日、毎週月曜日、毎月15日、3日ごと。</li>
+        <li>「不定期」は毎日の自動追加の対象外です。</li>
+        <li>予定分の期限は、本来の追加予定日が基準です。遅れて追加しても期限を繰り越しません。</li>
+        <li>個別の「今すぐ1件追加」は、押した日が基準です。</li>
+        <li>期限の0日後は基準日当日です。日数には土日も含みます。</li>
+        <li>曜日・毎月の日付は、基準日当日を含む次の該当日です。その月にない日は月末にします。</li>
+        <li>設定変更は、これから追加する分だけに適用します。</li>
+      </ul>
+
+      <h3>保存と通信</h3>
+      <ul>
+        <li>端末への保存と、保存先への送信完了は別です。</li>
+        <li>未送信の内容は端末に残し、通信できるときに再送します。</li>
+        <li>小窓と通常画面を両方閉じると、その間は送信が進まないことがあります。次に開いたときに再開します。</li>
+        <li>別端末の変更は、画面を表示している間に約20秒ごとを目安に確認します。</li>
+        <li>編集中・移動中・未送信があるときは、自動確認を控えます。</li>
+        <li>変更が重なった場合は、確認してから反映します。</li>
+        <li>接続先と合い言葉は、この端末の中に保存します。</li>
+      </ul>
+
+      <h3>追加用の小窓</h3>
+      <ul>
+        <li>専用キーで同じ小窓を呼び出します。</li>
+        <li>追加後も小窓はそのまま残り、続けて入力できます。</li>
+        <li>閉じるときは、小窓の右上の×を使ってください。</li>
+      </ul>
+    </details>
+
     <div class="dialog-actions">
       <button id="settings-close" type="button">閉じる</button>
       <button id="settings-save" class="primary" type="button">保存</button>
@@ -732,7 +918,8 @@
 
   <dialog id="conflict-dialog">
     <h2>変更が重なっています</h2>
-    <p id="conflict-note" class="sub"></p>
+    <p id="conflict-note" class="dialog-text"></p>
+
     <div class="comparison">
       <section>
         <h3>保存済み</h3>
@@ -743,6 +930,7 @@
         <div id="conflict-local"></div>
       </section>
     </div>
+
     <div class="dialog-actions">
       <button id="conflict-close" type="button">後で確認</button>
       <button id="conflict-remote" type="button">保存済みを使う</button>
@@ -753,7 +941,7 @@
   <script>
     'use strict';
 
-    const VERSION = 'v4.6';
+    const VERSION = 'v4.7';
     const SERVER_VERSION = 'v4.3';
     const SYNC_PROTOCOL = 'task-sync-v1';
     const REQUEST_TIMEOUT_MS = 60000;
@@ -802,8 +990,10 @@
     let lastReadError = '';
     let receivedThisSession = false;
     let messageKind = '';
+    let messageTimer = null;
     let lastCommunication = null;
     let lastDateSeen = japanDate();
+    let settingsCacheVersion = '未確認';
 
     let drag = null;
     let candidate = null;
@@ -868,12 +1058,32 @@
       return element;
     }
 
-    function notify(text, error, kind) {
+    function notify(text, error, kind, detail) {
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+        messageTimer = null;
+      }
+
       messageKind = kind || '';
-      $('message').textContent = text || '';
+      $('message-text').textContent = text || '';
       $('message').className = 'notice' + (error ? ' error' : '');
       $('message').hidden = !text;
+      $('message-detail-body').textContent = detail || '';
+      $('message-details').hidden = !detail;
+      $('message-details').open = false;
+
+      if (text && !error) {
+        messageTimer = setTimeout(function () {
+          $('message').hidden = true;
+          messageKind = '';
+          messageTimer = null;
+        }, 3500);
+      }
     }
+
+    $('message-close').addEventListener('click', function () {
+      notify('');
+    });
 
     function japanDate() {
       return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
@@ -948,8 +1158,10 @@
     function requirePeriodicSupport() {
       if (!periodicSupported()) {
         notify(
-          '保存先の更新が確認できません。手順1の公開後に「最新を取得」を押してください。',
-          true
+          '保存先の更新が必要です',
+          true,
+          'setup',
+          '保存先を更新してから「最新を取得」を押してください。'
         );
 
         return false;
@@ -1259,7 +1471,6 @@
         payload.action === 'periodicSave' &&
         Object.prototype.hasOwnProperty.call(payload, 'dueRule');
 
-      // 通常の追加・編集では、送信前に一覧全体を取り直さない。
       if (needsPeriodicCheck && verifiedConnection !== connection) {
         const checked = await api({
           action: 'load'
@@ -1273,7 +1484,7 @@
       if (needsPeriodicCheck && !verifiedFeatures.periodicDue) {
         throw new Error(
           '保存先が定期タスクの期限設定に対応していません。' +
-          '手順1の公開後に再送してください。変更は端末に残しています。'
+          '保存先を更新してから再送してください。変更は端末に残しています。'
         );
       }
 
@@ -1336,7 +1547,6 @@
 
         if (result.ok) {
           verifiedConnection = connection;
-
           const source = result.snapshot || result.patch || result;
           verifiedFeatures = source.features || verifiedFeatures;
         }
@@ -1449,6 +1659,7 @@
       }
 
       const next = clone(saved.snapshot);
+
       const tasks = new Map(next.tasks.map(function (task) {
         return [task.taskId, task];
       }));
@@ -1546,12 +1757,13 @@
       lastReadError = String(error.message || error);
 
       notify(
+        '一覧を取得できませんでした',
+        true,
+        'read',
         lastReadError +
         (state.snapshot
           ? '\n前回取得した一覧を表示しています。端末の記録は消していません。'
-          : '\n一覧はまだ取得できていません。'),
-        true,
-        'read'
+          : '\n保存先の一覧はまだ取得していません。')
       );
 
       renderStatus();
@@ -1774,10 +1986,10 @@
       }
 
       if (job.state === 'sending' || job.state === 'unknown') {
-        return '端末に保存済み・送信結果を確認中';
+        return '送信結果を確認中';
       }
 
-      return '端末に保存済み・送信待ち';
+      return '送信待ち';
     }
 
     function effectiveTasks() {
@@ -1977,9 +2189,11 @@
         return changed;
       }).catch(function (error) {
         notify(
-          '端末への保存を確認できません。データは消さずに、画面を開き直してください。\n' +
-          String(error.message || error),
-          true
+          '端末の保存を確認できません',
+          true,
+          'storage',
+          String(error.message || error) +
+          '\nデータは消さずに、画面を開き直してください。'
         );
 
         return false;
@@ -2075,7 +2289,6 @@
                 let accepted = await acceptMutation(job, result);
 
                 if (!accepted) {
-                  // 別のタブが一覧を更新した場合は、全体を取り直してから確定する。
                   const full = await api({
                     action: 'load'
                   }, true);
@@ -2097,7 +2310,7 @@
                 markListReceived();
                 failures = 0;
                 nextTry = 0;
-                notify(result.message || '保存しました。');
+                notify('保存しました', false, 'success');
 
                 return {
                   saved: true,
@@ -2201,87 +2414,120 @@
     /* ---------- 共通表示 ---------- */
 
     function renderStatus() {
-      const pending = state.jobs.length;
-
-      const conflict = state.jobs.some(function (job) {
-        return job.state === 'conflict' || job.state === 'blocked';
-      });
-
-      let text = navigator.onLine ? '通信あり' : '通信なし';
+      const parts = [];
 
       if (!storageReady) {
-        text += '／端末保存を準備中';
+        parts.push('準備中');
       } else if (legacyBlocked) {
-        text += '／旧画面の未送信を先に確認してください';
+        parts.push('旧画面の未送信があります');
       } else {
-        if (refreshing) {
-          text += '／一覧を確認中';
-        } else if (lastReadError) {
-          text += '／一覧取得に失敗';
+        if (!navigator.onLine) {
+          parts.push('通信なし');
         }
 
-        if (conflict) {
-          text += '／確認が必要／未送信 ' + pending + ' 件';
-        } else if (pending) {
-          text += '／端末に保存済み・未送信 ' + pending + ' 件';
-        } else if (state.snapshot && receivedThisSession) {
-          text += '／保存済み';
-        } else if (state.snapshot) {
-          text += '／取得済みの一覧を表示';
-        } else {
-          text += '／未取得';
-        }
-
-        if (state.snapshot) {
-          text += '／前回確認：' +
-            fetchedAtLabel(state.snapshot.fetchedAt) +
-            '（日本時間）';
+        if (!configured()) {
+          parts.push('接続先未設定');
+        } else if (!state.snapshot && refreshing) {
+          parts.push('読込中');
         }
       }
 
-      $('status').textContent = text;
+      $('status').textContent = parts.join('／');
+      $('status').hidden = !parts.length;
+
       $('add').disabled = !storageReady || legacyBlocked;
       $('reload').disabled =
         !storageReady ||
         legacyBlocked ||
         refreshing ||
         manualReloading;
+
+      $('reload').textContent = refreshing || manualReloading
+        ? '確認中'
+        : '最新を取得';
+
+      renderSettingsState();
+    }
+
+    function jobStateLabel(job) {
+      switch (job.state) {
+        case 'sending':
+          return '送信中';
+        case 'unknown':
+          return '再確認待ち';
+        case 'conflict':
+        case 'blocked':
+          return '確認が必要';
+        default:
+          return '送信待ち';
+      }
     }
 
     function renderOutbox() {
       const container = $('outbox-items');
       container.replaceChildren();
+
+      const needsCheck = state.jobs.filter(function (job) {
+        return job.state === 'conflict' || job.state === 'blocked';
+      }).length;
+
       $('outbox').hidden = !state.jobs.length;
-      $('outbox-summary').textContent = '未送信 ' + state.jobs.length + ' 件';
+      $('outbox-summary').textContent =
+        '送信待ち ' + state.jobs.length + '件' +
+        (needsCheck ? '・確認が必要 ' + needsCheck + '件' : '');
 
       state.jobs.forEach(function (job) {
         const row = make('div', null, 'job');
-        row.appendChild(make('div', job.label, 'job-title'));
-        row.appendChild(make('div', job.note || '端末に保存済みです。', 'sub'));
+        const heading = make('div', null, 'job-heading');
+        const attention = job.state === 'conflict' || job.state === 'blocked';
+
+        heading.append(
+          make('div', job.label, 'job-title'),
+          make(
+            'span',
+            jobStateLabel(job),
+            'job-state' + (attention ? ' needs-check' : '')
+          )
+        );
+
+        row.appendChild(heading);
 
         if (job.state === 'conflict') {
           row.appendChild(button('確認する', function () {
             openConflict(job.id);
           }));
-        } else if (job.state !== 'blocked') {
+        } else if (job.state !== 'blocked' && job.state !== 'sending') {
           row.appendChild(button('いま送る', function () {
             nextTry = 0;
             pump(true);
           }));
-        } else {
-          row.appendChild(make(
-            'div',
-            'この操作は自動反映を止めています。状態をコピーして確認してください。',
-            'sub error'
-          ));
+        }
+
+        if (
+          job.note &&
+          job.state !== 'sending'
+        ) {
+          const details = make('details');
+          details.append(
+            make('summary', '詳細'),
+            make('div', job.note, 'detail-text')
+          );
+
+          if (job.state === 'blocked') {
+            details.appendChild(make(
+              'div',
+              '自動反映を止めています。「設定」から状態をコピーして確認してください。',
+              'detail-text'
+            ));
+          }
+
+          row.appendChild(details);
         }
 
         container.appendChild(row);
       });
 
-      if (state.jobs.some(function (job) {
-        return job.state === 'conflict' || job.state === 'blocked';
-      })) {
+      if (needsCheck) {
         $('outbox').open = true;
       }
     }
@@ -2341,22 +2587,15 @@
         !state.snapshot &&
         (!pendingAdds || (page !== 'plan' && page !== 'tasks'))
       ) {
-        content.appendChild(make('h2', '接続の準備'));
         content.appendChild(make(
           'p',
-          configured()
-            ? '通信できる状態で「最新を取得」を押してください。'
-            : '「設定」で接続先と合い言葉を保存してください。'
+          configured() ? '一覧未取得' : '接続先を設定してください'
         ));
         return;
       }
 
       if (!state.snapshot) {
-        content.appendChild(make(
-          'p',
-          '保存先の一覧はまだ取得していません。この端末で追加した未送信分だけを表示します。',
-          'notice'
-        ));
+        content.appendChild(make('p', 'この端末の送信待ち', 'sub'));
       }
 
       if (page === 'plan') {
@@ -2386,7 +2625,12 @@
         const original = taskById(state.snapshot, task.taskId);
 
         if (!original) {
-          notify('このタスクは現在の一覧にありません。');
+          notify(
+            'タスクが見つかりません',
+            true,
+            '',
+            '「最新を取得」を押して確認してください。'
+          );
           return;
         }
 
@@ -2395,7 +2639,7 @@
           taskId: task.taskId,
           expectedTask: original.version
         }, '完了：' + task.title).catch(function (error) {
-          notify(error.message, true);
+          notify('保存できませんでした', true, 'storage', error.message);
         });
       }, 'hit');
 
@@ -2429,9 +2673,9 @@
       edit.setAttribute('aria-label', task.title + 'を編集');
 
       if (task.localOnly) {
-        edit.title = '送信結果の確認後に編集できます。';
+        edit.title = '送信結果の確認後に編集できます';
       } else if (!navigator.onLine) {
-        edit.title = '編集は通信できるときに行ってください。';
+        edit.title = '通信できるときに編集できます';
       }
 
       return edit;
@@ -2446,6 +2690,7 @@
       const date = make('input');
       date.type = 'date';
       date.value = selectedDate;
+      date.setAttribute('aria-label', '計画の日付');
 
       date.addEventListener('change', function () {
         if (date.value) {
@@ -2471,32 +2716,12 @@
       );
 
       content.appendChild(tools);
-      content.appendChild(make(
-        'p',
-        '左の丸＝完了／編集＝件名・期限・実行日を変更／' +
-        '右の≡を動かす＝配置して自動保存。時間帯は目安です。',
-        'sub'
-      ));
 
       const tasks = effectiveTasks().filter(function (task) {
         return task.date === selectedDate;
       }).sort(compareTasks);
 
-      content.appendChild(make(
-        'div',
-        tasks.length ? tasks.length + ' 件' : 'この日のタスクはありません。',
-        'sub'
-      ));
-
-      if (tasks.some(function (task) {
-        return task.localOnly;
-      })) {
-        content.appendChild(make(
-          'p',
-          '送信待ちの新規タスクは先に表示しています。編集・完了・移動は送信結果の確認後に使えます。',
-          'sub'
-        ));
-      }
+      content.appendChild(make('div', tasks.length + '件', 'sub'));
 
       const timeline = make('div', null, 'timeline');
       timeline.id = 'timeline';
@@ -2529,7 +2754,7 @@
           text.appendChild(make('div', task.title));
 
           if (task.due) {
-            text.appendChild(make('div', '期限：' + task.due, 'task-due'));
+            text.appendChild(make('div', '期限 ' + task.due, 'task-due'));
           }
 
           if (task.localOnly) {
@@ -2743,7 +2968,13 @@
           captured.context
         );
       } catch (error) {
-        notify('保存できなかったため、移動前の表示に戻しました。', true);
+        notify(
+          '移動を保存できませんでした',
+          true,
+          'storage',
+          '移動前の表示に戻しました。\n' + String(error.message || error)
+        );
+
         render();
       }
     }
@@ -2904,19 +3135,26 @@
     }
 
     function taskInfo(task) {
-      return '期限：' + (task.due || '未設定') +
-        ' ／ 実行日：' + (task.date || '未設定') +
-        ' ／ ' + hourLabel(task.hour);
+      const parts = [];
+
+      if (task.due) {
+        parts.push('期限 ' + task.due);
+      }
+
+      if (task.date) {
+        parts.push('実行 ' + task.date);
+      }
+
+      if (task.hour !== null && task.hour !== undefined) {
+        parts.push(task.hour + '時');
+      }
+
+      return parts.join(' ／ ');
     }
 
     function renderTaskCards(content, tasks, emptyMessage) {
       if (!tasks.length) {
-        content.appendChild(make(
-          'p',
-          emptyMessage || '対象のタスクはありません。',
-          'sub'
-        ));
-
+        content.appendChild(make('p', emptyMessage || 'タスクなし', 'sub'));
         return;
       }
 
@@ -2930,11 +3168,13 @@
         );
 
         const main = make('div', null, 'card-main');
+        main.appendChild(make('div', task.title, 'card-title'));
 
-        main.append(
-          make('div', task.title, 'card-title'),
-          make('div', taskInfo(task), 'sub')
-        );
+        const info = taskInfo(task);
+
+        if (info) {
+          main.appendChild(make('div', info, 'sub'));
+        }
 
         if (task.localOnly) {
           main.appendChild(make('div', task.pendingText, 'pending-label'));
@@ -3035,7 +3275,7 @@
         render();
       });
 
-      filterField.append(make('span', '表示するタスク'), select);
+      filterField.append(make('span', '絞り込み'), select);
       tools.appendChild(filterField);
 
       if (taskFilter === 'date') {
@@ -3066,24 +3306,7 @@
         });
       }
 
-      let text = tasks.length + ' 件';
-
-      if (taskFilter === 'hasdue') {
-        text += ' ／ 期限切れを含め、期限が早い順';
-      } else if (taskFilter === 'runoverdue') {
-        text += ' ／ 実行日が古い順';
-      }
-
-      content.appendChild(make('p', text, 'sub'));
-
-      if (taskFilter === 'runoverdue') {
-        content.appendChild(make(
-          'p',
-          '実行日が昨日以前の未完了タスクです。今日の分・実行日未定は含みません。',
-          'sub'
-        ));
-      }
-
+      content.appendChild(make('p', tasks.length + '件', 'sub'));
       renderTaskCards(content, tasks);
     }
 
@@ -3130,11 +3353,6 @@
       );
 
       calendar.appendChild(tools);
-      calendar.appendChild(make(
-        'p',
-        '実行日ごとの未完了タスク数です。この端末の送信待ちも含みます。日付を押すと下に一覧が出ます。',
-        'sub'
-      ));
 
       const grid = make('div', null, 'calendar-grid');
       grid.setAttribute('role', 'group');
@@ -3217,9 +3435,7 @@
 
       details.appendChild(make(
         'h3',
-        calendarUndated
-          ? '実行日未定'
-          : dateLabel(calendarDate) + 'のタスク'
+        calendarUndated ? '実行日未定' : dateLabel(calendarDate)
       ));
 
       const shown = tasks.filter(function (task) {
@@ -3230,18 +3446,7 @@
         shown.sort(compareTasks);
       }
 
-      if (shown.length) {
-        details.appendChild(make('p', shown.length + ' 件', 'sub'));
-      }
-
-      renderTaskCards(
-        details,
-        shown,
-        calendarUndated
-          ? '実行日未定のタスクはありません。'
-          : 'この日のタスクはありません。'
-      );
-
+      renderTaskCards(details, shown);
       content.appendChild(details);
     }
 
@@ -3284,11 +3489,12 @@
       return select;
     }
 
-    function showEditor(title, note, handler, submitLabel) {
+    function showEditor(title, handler, submitLabel) {
       editorPlanPosition = capturePlanPosition();
       $('editor-title').textContent = title;
       $('editor-fields').replaceChildren();
-      $('editor-note').textContent = note || '';
+      $('editor-note').textContent = '';
+      $('editor-note').hidden = true;
       $('editor-submit').textContent = submitLabel || '保存';
       $('editor-submit').disabled = false;
       $('editor-cancel').disabled = false;
@@ -3299,7 +3505,6 @@
     function openAdd() {
       showEditor(
         'タスクを追加',
-        '端末への保存後、一覧に送信待ちとして表示します。期限・実行日は任意です。',
         async function (form) {
           const title = String(form.get('title') || '').trim();
           const due = String(form.get('due') || '');
@@ -3320,14 +3525,17 @@
           );
 
           notify(
-            '端末に保存しました。送信は裏で続けます。\n' +
-            '追加先：' + (date ? dateLabel(date) + 'の時間未定' : '実行日未定')
+            date
+              ? '追加先：' + dateLabel(date) + '（送信待ち）'
+              : '追加先：実行日未定（送信待ち）',
+            false,
+            'local'
           );
         },
         '追加'
       );
 
-      const titleInput = field('title', '件名', 'text', '', true);
+      const titleInput = field('title', '件名＊', 'text', '', true);
       field('due', '期限', 'date', '', false);
       field('date', '実行日', 'date', '', false);
       titleInput.focus();
@@ -3335,7 +3543,7 @@
 
     function onlineRequired() {
       if (!navigator.onLine) {
-        notify('この操作は通信できるときに行ってください。', true);
+        notify('通信が必要です', true);
         return false;
       }
 
@@ -3354,7 +3562,12 @@
       });
 
       if (!original || !visibleTask) {
-        notify('最新の一覧を取得してから編集してください。', true);
+        notify(
+          'タスクが見つかりません',
+          true,
+          '',
+          '「最新を取得」を押して確認してください。'
+        );
         return;
       }
 
@@ -3370,7 +3583,6 @@
 
       showEditor(
         'タスクを編集',
-        '時間帯は「1日の計画」で動かします。実行日を変えても、設定済みの時間帯は残ります。',
         async function (form) {
           if (!navigator.onLine) {
             throw new Error('通信が戻ってから保存してください。入力は残しています。');
@@ -3390,19 +3602,19 @@
             date: date
           }), '編集：' + title, context);
 
-          let message = '変更を端末に保存しました。送信結果を確認しています。';
+          let message = '送信待ち';
 
           if (captured.date !== date) {
-            message += date
-              ? '\n表示先：' + dateLabel(date) + '。設定済みの時間帯はそのままです。'
-              : '\n表示先：「タスク一覧」の「実行日未定」。';
+            message = date
+              ? dateLabel(date) + 'へ変更（送信待ち）'
+              : '実行日未定へ変更（送信待ち）';
           }
 
-          notify(message);
+          notify(message, false, 'local');
         }
       );
 
-      const titleInput = field('title', '件名', 'text', captured.title, true);
+      const titleInput = field('title', '件名＊', 'text', captured.title, true);
       field('due', '期限', 'date', captured.due, false);
       field('date', '実行日', 'date', captured.date, false);
       titleInput.focus();
@@ -3447,12 +3659,14 @@
 
       $('editor-submit').disabled = true;
       $('editor-cancel').disabled = true;
+      $('editor-note').hidden = true;
 
       try {
         await handler(form);
         $('editor').close();
       } catch (error) {
         $('editor-note').textContent = String(error.message || error);
+        $('editor-note').hidden = false;
       } finally {
         $('editor-submit').disabled = false;
         $('editor-cancel').disabled = false;
@@ -3490,11 +3704,7 @@
       content.appendChild(make('h2', '定期タスク'));
 
       if (!supported) {
-        content.appendChild(make(
-          'p',
-          '保存先の更新を確認できていません。手順1の公開後に「最新を取得」を押してください。',
-          'notice'
-        ));
+        content.appendChild(make('p', '保存先の更新が必要です', 'form-error'));
       }
 
       const tools = make('div', null, 'toolbar');
@@ -3520,43 +3730,34 @@
       tools.append(add, preview, automatic);
       content.appendChild(tools);
 
-      content.appendChild(make(
-        'p',
-        '予定分の期限は本来の追加予定日が基準です。' +
-        '「今すぐ1件追加」の期限は、押した日が基準です。時間帯は時間未定に入ります。',
-        'sub'
-      ));
-
       const cards = make('div', null, 'cards');
 
       periodic.items.forEach(function (item) {
         const card = make('div', null, 'card');
         const main = make('div', null, 'card-main');
+        const schedule = [item.freq || '不定期'];
+
+        if (item.next) {
+          schedule.push('次回 ' + item.next);
+        }
 
         main.append(
           make('div', item.name, 'card-title'),
-          make(
-            'div',
-            (item.freq || '不定期') +
-              ' ／ 次回追加予定日：' + (item.next || '未設定'),
-            'sub'
-          )
+          make('div', schedule.join(' ／ '), 'sub')
         );
 
-        if (supported) {
-          main.appendChild(make(
-            'div',
-            '期限：' + dueRuleLabel(item.dueRule),
-            'sub'
-          ));
+        if (
+          supported &&
+          item.dueRule &&
+          item.dueRule.type !== 'none'
+        ) {
+          const deadline = ['期限 ' + dueRuleLabel(item.dueRule)];
 
           if (item.nextDue) {
-            main.appendChild(make(
-              'div',
-              '次の予定分の期限：' + item.nextDue,
-              'sub'
-            ));
+            deadline.push('次回 ' + item.nextDue);
           }
+
+          main.appendChild(make('div', deadline.join(' ／ '), 'sub'));
         }
 
         const actions = make('div', null, 'card-actions');
@@ -3572,8 +3773,8 @@
 
           if (!confirm(
             '「' + item.name + '」を今日の時間未定に追加しますか。\n\n' +
-            '期限の決め方：' + dueRuleLabel(item.dueRule) + '\n' +
-            'この操作では、今日を基準に期限を決めます。'
+            '期限：' + dueRuleLabel(item.dueRule) + '\n' +
+            '基準日：今日'
           )) {
             return;
           }
@@ -3585,7 +3786,7 @@
               expectedPeriodic: periodic.version
             }, '定期追加：' + item.name);
           } catch (error) {
-            notify(error.message, true);
+            notify('保存できませんでした', true, 'storage', error.message);
           }
         });
 
@@ -3602,7 +3803,7 @@
       });
 
       if (!periodic.items.length) {
-        content.appendChild(make('p', '定期タスクはまだありません。', 'sub'));
+        content.appendChild(make('p', '定期タスクなし', 'sub'));
       }
 
       content.appendChild(cards);
@@ -3615,9 +3816,9 @@
 
       const type = selectField(
         'dueType',
-        '期限の決め方',
+        '期限',
         [
-          ['none', '期限なし'],
+          ['none', 'なし'],
           ['offset', '基準日から○日後'],
           ['weekly', '毎週○曜日'],
           ['monthly', '毎月○日'],
@@ -3628,7 +3829,7 @@
 
       const days = field(
         'dueDays',
-        '何日後（0＝基準日当日）',
+        '何日後＊',
         'number',
         rule.days == null ? 0 : rule.days,
         false
@@ -3640,7 +3841,7 @@
 
       const weekday = selectField(
         'dueWeekday',
-        '期限の曜日',
+        '曜日＊',
         [
           [1, '月曜日'],
           [2, '火曜日'],
@@ -3655,7 +3856,7 @@
 
       const day = field(
         'dueDay',
-        '期限の日（1～31）',
+        '日＊',
         'number',
         rule.day == null ? 15 : rule.day,
         false
@@ -3680,13 +3881,6 @@
 
       type.addEventListener('change', updateFields);
       updateFields();
-
-      $('editor-fields').appendChild(make(
-        'p',
-        '曜日・毎月の日付は、基準日当日を含む次の該当日です。' +
-        'その月にない日は月末です。日数は土日も含みます。',
-        'sub'
-      ));
     }
 
     function dueRuleFromForm(form) {
@@ -3764,8 +3958,6 @@
 
       showEditor(
         item ? '定期タスクを編集' : '定期タスクを追加',
-        '予定分の期限は追加予定日が基準で、遅れても繰り越しません。' +
-        '「今すぐ1件追加」は押した日が基準です。設定変更は、これから追加する分だけに適用します。',
         async function (form) {
           if (!navigator.onLine) {
             throw new Error('通信が戻ってから保存してください。');
@@ -3784,12 +3976,14 @@
             dueRule: dueRuleFromForm(form)
           }), '定期設定：' + name, captured);
 
-          notify('定期タスクの変更を端末に保存しました。送信結果を確認しています。');
+          notify('送信待ち', false, 'local');
         }
       );
 
-      field('name', 'タスク名', 'text', value.name, true);
-      const freq = field('freq', '頻度', 'text', value.freq, true);
+      field('name', 'タスク名＊', 'text', value.name, true);
+      const freq = field('freq', '頻度＊', 'text', value.freq, true);
+      freq.placeholder = '毎日・毎週月曜日・毎月15日';
+
       const options = make('datalist');
       options.id = 'frequency-options';
 
@@ -3813,13 +4007,23 @@
       freq.setAttribute('list', options.id);
       $('editor-fields').appendChild(options);
 
-      $('editor-fields').appendChild(make(
-        'p',
-        '頻度の例：毎日、毎週月曜日、毎月15日、3日ごと。不定期は自動追加の対象外です。',
-        'sub'
-      ));
+      const next = field(
+        'next',
+        '次回追加予定日',
+        'date',
+        value.next,
+        false
+      );
 
-      field('next', '次回追加予定日', 'date', value.next, false);
+      function updateNextRequired() {
+        const required = freq.value.trim() !== '不定期';
+        next.required = required;
+        next.closest('.field').querySelector('span').textContent =
+          '次回追加予定日' + (required ? '＊' : '');
+      }
+
+      freq.addEventListener('input', updateNextRequired);
+      updateNextRequired();
       addDueRuleFields(value.dueRule);
     }
 
@@ -3839,15 +4043,12 @@
 
         const preview = result.preview;
 
-        const text = '【下見】まだ追加していません。\n\n' +
-          preview.items.length + ' 件\n' +
+        const text = '【下見】' + preview.items.length + '件\n\n' +
           preview.items.map(function (item) {
             return '・' + item.name +
               '\n  追加予定日：' + item.next +
               ' ／ 期限：' + (item.due || 'なし');
           }).join('\n') +
-          '\n\n実行日は追加当日、時間帯は時間未定になります。' +
-          '\n期限は本来の追加予定日を基準にした日付です。' +
           (preview.errors.length
             ? '\n\n確認が必要：\n' + preview.errors.join('\n')
             : '');
@@ -3857,16 +4058,16 @@
           return;
         }
 
-        if (confirm(text + '\n\nこの分を今すぐ追加しますか。')) {
+        if (confirm(text + '\n\n今日の時間未定に追加しますか。')) {
           await enqueue({
             action: 'periodicRun',
             expectedPeriodic: preview.version,
             date: preview.date
-          }, '定期タスク ' + preview.items.length + ' 件を追加');
+          }, '定期タスク ' + preview.items.length + '件を追加');
         }
       } catch (error) {
         if (messageKind !== 'read') {
-          notify(error.message, true);
+          notify('下見できませんでした', true, '', error.message);
         }
       }
     }
@@ -3890,7 +4091,7 @@
           enabled: enabled
         }, '毎日の自動追加を' + (enabled ? '入' : '切') + 'にする');
       } catch (error) {
-        notify(error.message, true);
+        notify('保存できませんでした', true, 'storage', error.message);
       }
     }
 
@@ -3932,18 +4133,23 @@
       }
 
       if (state.jobs.length) {
-        notify('先に未送信を反映するか、確認が必要な変更を解決してください。', true);
+        notify(
+          '未送信の確認が必要です',
+          true,
+          '',
+          '先に送信を完了するか、確認が必要な変更を解決してください。'
+        );
         return;
       }
 
       const undo = state.snapshot.undo;
 
       if (!undo.count) {
-        notify('戻せる完了はありません。');
+        notify('戻せる完了はありません');
         return;
       }
 
-      if (!confirm(undo.count + ' 件を戻します。\n\n' + undo.titles.join('\n'))) {
+      if (!confirm(undo.count + '件を戻しますか。\n\n' + undo.titles.join('\n'))) {
         return;
       }
 
@@ -3953,12 +4159,13 @@
           expectedUndo: undo.version
         }, '直前の完了を戻す');
       } catch (error) {
-        notify(error.message, true);
+        notify('保存できませんでした', true, 'storage', error.message);
       }
     }
 
     function renderHistory(content) {
       content.appendChild(make('h2', '完了済み'));
+
       const tools = make('div', null, 'toolbar');
       const undo = button('直前の完了を戻す', undoDone);
       undo.disabled = !navigator.onLine || !state.snapshot.undo.count;
@@ -3971,24 +4178,16 @@
       tools.append(undo, reload);
       content.appendChild(tools);
 
-      if (!navigator.onLine) {
-        content.appendChild(make(
-          'p',
-          '完了済みの取得と取り消しは、通信できるときに行います。',
-          'sub'
-        ));
-      }
-
       const cards = make('div', null, 'cards');
 
       historyData.items.forEach(function (item) {
         const card = make('div', null, 'card');
         const main = make('div', null, 'card-main');
+        main.appendChild(make('div', item.title, 'card-title'));
 
-        main.append(
-          make('div', item.title, 'card-title'),
-          make('div', '完了日時：' + item.doneAt, 'sub')
-        );
+        if (item.doneAt) {
+          main.appendChild(make('div', '完了 ' + item.doneAt, 'sub'));
+        }
 
         card.appendChild(main);
         cards.appendChild(card);
@@ -4053,7 +4252,10 @@
 
         if (!local) {
           return task
-            ? task.title + '\n' + taskInfo(task)
+            ? task.title +
+              '\n期限：' + (task.due || '未設定') +
+              '\n実行日：' + (task.date || '未設定') +
+              '\n' + hourLabel(task.hour)
             : '現在のタスク一覧にはありません。';
         }
 
@@ -4113,7 +4315,7 @@
 
       $('conflict-note').textContent =
         job.note + '\n関連する未送信 ' + related.length +
-        ' 件が対象です。保存済みを選ぶと、この端末の対象変更は反映しません。';
+        '件が対象です。「保存済みを使う」を選ぶと、対象の端末側変更は反映しません。';
 
       $('conflict-server').replaceChildren(
         make('p', describePayload(job.payload, false))
@@ -4157,7 +4359,12 @@
       if (related.some(function (job) {
         return job.id !== root.id && job.frozen;
       })) {
-        notify('関連する送信結果を先に確認しています。少し待って開き直してください。', true);
+        notify(
+          '関連する送信結果を確認中です',
+          true,
+          '',
+          '少し待ってから開き直してください。'
+        );
         return;
       }
 
@@ -4226,13 +4433,15 @@
 
         $('conflict-dialog').close();
 
-        notify(useLocal
-          ? '確認した変更を送信待ちに保存しました。'
-          : '保存済みの内容を使います。');
+        notify(
+          useLocal ? '送信待ち' : '保存済みの内容を使います',
+          false,
+          'local'
+        );
 
         pump(true);
       } catch (error) {
-        notify(error.message, true);
+        notify('処理できませんでした', true, '', error.message);
       }
     }
 
@@ -4250,10 +4459,85 @@
 
     /* ---------- 設定と点検 ---------- */
 
+    function communicationLabel() {
+      if (!lastCommunication) {
+        return '未取得';
+      }
+
+      const names = {
+        add: '追加',
+        edit: '編集',
+        order: '配置',
+        done: '完了',
+        load: '一覧取得',
+        history: '完了済み取得',
+        preview: '定期タスク下見',
+        check: '点検',
+        periodicSave: '定期設定',
+        periodicSend: '定期追加',
+        periodicRun: '予定分の追加',
+        automatic: '自動追加設定',
+        undo: '完了取り消し'
+      };
+
+      return (names[lastCommunication.action] || lastCommunication.action) +
+        '／往復 ' + (lastCommunication.milliseconds / 1000).toFixed(2) + '秒' +
+        '／保存先処理 ' +
+        (lastCommunication.serverMs == null
+          ? '未取得'
+          : (lastCommunication.serverMs / 1000).toFixed(2) + '秒');
+    }
+
+    function renderSettingsState() {
+      const target = $('settings-state');
+
+      if (!target) {
+        return;
+      }
+
+      const checks = state.jobs.filter(function (job) {
+        return job.state === 'conflict' || job.state === 'blocked';
+      }).length;
+
+      const rows = [
+        ['通信', navigator.onLine ? 'あり' : 'なし'],
+        ['未送信', state.jobs.length + '件'],
+        ['確認が必要', checks + '件'],
+        [
+          '前回確認',
+          fetchedAtLabel(state.snapshot ? state.snapshot.fetchedAt : '') +
+            '（日本時間）'
+        ],
+        ['画面', VERSION],
+        [
+          '保存先の改修版',
+          state.snapshot ? state.snapshot.build || '未取得' : '未取得'
+        ],
+        ['オフライン保存', settingsCacheVersion],
+        ['直近の通信', communicationLabel()],
+        ['取得エラー', lastReadError || 'なし']
+      ];
+
+      target.replaceChildren();
+
+      rows.forEach(function (row) {
+        target.append(
+          make('dt', row[0]),
+          make('dd', row[1])
+        );
+      });
+    }
+
     function openSettings() {
       $('url').value = localStorage.getItem(URL_KEY) || '';
       $('token').value = localStorage.getItem(TOKEN_KEY) || '';
+      renderSettingsState();
       $('settings-dialog').showModal();
+
+      workerVersion().then(function (version) {
+        settingsCacheVersion = version;
+        renderSettingsState();
+      });
     }
 
     $('settings-save').addEventListener('click', async function () {
@@ -4296,11 +4580,11 @@
           });
         }
 
-        notify('設定を保存しました。');
+        notify('設定を保存しました', false, 'success');
         await refresh();
         pump(true);
       } catch (error) {
-        notify('設定を保存できませんでした：' + error.message, true);
+        notify('設定を保存できませんでした', true, '', error.message);
       }
     });
 
@@ -4359,6 +4643,8 @@
 
     $('copy').addEventListener('click', async function () {
       const cacheVersion = await workerVersion();
+      settingsCacheVersion = cacheVersion;
+      renderSettingsState();
 
       const acquisition = refreshing
         ? '読み込み中'
@@ -4367,31 +4653,6 @@
           : receivedThisSession
             ? '成功'
             : 'この起動後は未確認';
-
-      const names = {
-        add: '追加',
-        edit: '編集',
-        order: '配置',
-        done: '完了',
-        load: '一覧取得',
-        history: '完了済み取得',
-        preview: '定期タスク下見',
-        check: '点検',
-        periodicSave: '定期設定',
-        periodicSend: '定期追加',
-        periodicRun: '予定分の追加',
-        automatic: '自動追加設定',
-        undo: '完了取り消し'
-      };
-
-      const communicationText = lastCommunication
-        ? (names[lastCommunication.action] || lastCommunication.action) +
-          '／往復 ' + (lastCommunication.milliseconds / 1000).toFixed(2) + '秒' +
-          '／保存先処理 ' +
-          (lastCommunication.serverMs == null
-            ? '未取得'
-            : (lastCommunication.serverMs / 1000).toFixed(2) + '秒')
-        : '未取得';
 
       const text = [
         '画面：' + VERSION,
@@ -4411,7 +4672,7 @@
         }).length + ' 件',
         '保存先のタスク：' + (state.snapshot ? state.snapshot.tasks.length : 0) + ' 件',
         '定期タスク：' + (state.snapshot ? state.snapshot.periodic.items.length : 0) + ' 件',
-        '直近の通信：' + communicationText
+        '直近の通信：' + communicationLabel()
       ].join('\n');
 
       try {
@@ -4516,7 +4777,12 @@
       }
 
       if (!navigator.onLine) {
-        notify('通信がないため、端末に保存した内容を表示しています。', true);
+        notify(
+          '通信なし',
+          true,
+          '',
+          '端末に保存した内容を表示しています。'
+        );
         return;
       }
 
@@ -4531,10 +4797,10 @@
           const result = await loadHistory(false);
 
           if (result) {
-            notify('完了済みとタスク一覧を取得しました。');
+            notify('更新しました', false, 'success');
           }
         } else if (await refresh()) {
-          notify('一覧を取得しました。');
+          notify('更新しました', false, 'success');
         }
       } finally {
         manualReloading = false;
@@ -4571,7 +4837,13 @@
             refresh();
           }
         } catch (error) {
-          notify('端末の記録を読み取れませんでした。データは消さずに開き直してください。', true);
+          notify(
+            '端末の記録を読み取れません',
+            true,
+            'storage',
+            'データは消さずに開き直してください。\n' +
+            String(error.message || error)
+          );
         }
       }
     });
@@ -4612,9 +4884,11 @@
 
         if (legacyBlocked) {
           notify(
+            '旧画面の未送信があります',
+            true,
+            'legacy',
             '以前の画面に未送信が ' + oldCount +
-            ' 件残っています。記録は消していません。旧版で送信を完了してから切り替えてください。',
-            true
+            '件残っています。記録は消していません。旧画面で送信を完了してください。'
           );
         }
 
@@ -4626,7 +4900,13 @@
               state = await readState();
               render();
             } catch (error) {
-              notify('端末の記録を読み取れませんでした。データは消さずに開き直してください。', true);
+              notify(
+                '端末の記録を読み取れません',
+                true,
+                'storage',
+                'データは消さずに開き直してください。\n' +
+                String(error.message || error)
+              );
             }
           };
         }
@@ -4640,15 +4920,21 @@
             await refresh();
           }
         } else if (!configured()) {
-          notify('「設定」に接続先と合い言葉を保存してください。');
+          notify(
+            '接続先を設定してください',
+            true,
+            'setup',
+            '「設定」に接続先と合い言葉を保存してください。'
+          );
         }
       } catch (error) {
         storageReady = false;
 
         notify(
-          '端末への保存を準備できないため、変更操作を止めています。\n' +
-          String(error.message || error),
-          true
+          '端末への保存を準備できません',
+          true,
+          'storage',
+          '変更操作を止めています。\n' + String(error.message || error)
         );
 
         renderStatus();
@@ -4661,7 +4947,12 @@
       }).then(function (registration) {
         return registration.update();
       }).catch(function () {
-        notify('オフライン用の画面を更新できませんでした。通信できる状態で開き直してください。', true);
+        notify(
+          '画面の更新を確認できません',
+          true,
+          'worker',
+          '通信できる状態で開き直してください。端末の記録は消していません。'
+        );
       });
     }
 
