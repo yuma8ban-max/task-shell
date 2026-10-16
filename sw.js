@@ -1,5 +1,5 @@
-/* File: sw.js — task-v4.7-1 */
-const CACHE = 'task-v4.7-1';
+/* File: sw.js — task-v4.8-1 */
+const CACHE = 'task-v4.8-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -8,6 +8,7 @@ const QUICK = new URL('./quick-add.html', self.registration.scope).href;
 const REQUIRED_FILES = [
   './index.html',
   './quick-add.html',
+  './task-core.js?v=4.8',
   './manifest.webmanifest',
   './icon-check-32.png',
   './icon-check-180.png',
@@ -28,11 +29,7 @@ function saveOptionalFile(cache, file) {
     cache: 'reload'
   })).catch(function () {
     return caches.match(url).then(function (saved) {
-      if (saved) {
-        return cache.put(url, saved);
-      }
-
-      return null;
+      return saved ? cache.put(url, saved) : null;
     });
   });
 }
@@ -42,11 +39,12 @@ self.addEventListener('install', function (event) {
     caches.open(CACHE).then(function (cache) {
       return Promise.all(
         REQUIRED_FILES.map(function (file) {
-          const url = new URL(file, self.registration.scope).href;
-
-          return cache.add(new Request(url, {
-            cache: 'reload'
-          }));
+          return cache.add(new Request(
+            new URL(file, self.registration.scope).href,
+            {
+              cache: 'reload'
+            }
+          ));
         })
       ).then(function () {
         return Promise.all(
