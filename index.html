@@ -67,10 +67,6 @@
       background: var(--accent);
     }
 
-    button.danger {
-      color: #b3261e;
-    }
-
     input,
     select {
       min-height: 42px;
@@ -266,9 +262,7 @@
       overflow-wrap: anywhere;
     }
 
-    .notice details,
-    .job details {
-      margin-top: 8px;
+    details {
       font-size: 14px;
     }
 
@@ -289,10 +283,6 @@
       border: 1px solid #ddcfab;
       border-radius: 10px;
       background: #fffaf0;
-    }
-
-    #outbox summary {
-      font-size: 14px;
     }
 
     .job {
@@ -362,10 +352,6 @@
       flex-wrap: wrap;
       gap: 5px;
       flex: none;
-    }
-
-    .card .hit {
-      align-self: center;
     }
 
     .pending-add {
@@ -642,12 +628,6 @@
       margin-top: 18px;
     }
 
-    .dialog-text {
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-    }
-
     .comparison {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -662,8 +642,8 @@
       overflow-wrap: anywhere;
     }
 
-    .comparison p {
-      margin-bottom: 8px;
+    .comparison p,
+    .dialog-text {
       font-size: 14px;
       line-height: 1.6;
       white-space: pre-wrap;
@@ -677,12 +657,8 @@
       line-height: 1.7;
     }
 
-    .settings-section h3 {
-      margin-top: 16px;
-    }
-
     .settings-section li {
-      margin: 5px 0;
+      margin: 6px 0;
     }
 
     .settings-state {
@@ -701,6 +677,12 @@
       margin: 0;
       overflow-wrap: anywhere;
       white-space: pre-wrap;
+    }
+
+    .loading {
+      color: #1559ad;
+      font-size: 15px;
+      line-height: 1.6;
     }
 
     [hidden] {
@@ -792,10 +774,10 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.7</span>
+        <span class="version">v4.8</span>
         <span class="spacer"></span>
-        <button id="add" class="primary" type="button">タスクを追加</button>
-        <button id="reload" type="button">最新を取得</button>
+        <button id="add" class="primary" type="button" disabled>タスクを追加</button>
+        <button id="reload" type="button" disabled>最新を取得</button>
         <button id="settings" type="button">設定</button>
       </header>
 
@@ -862,51 +844,19 @@
 
     <details class="settings-section">
       <summary>使い方</summary>
-
-      <h3>入力</h3>
       <ul>
-        <li>＊が付いた項目は必須です。</li>
-        <li>期限・実行日は空欄でも追加できます。</li>
+        <li>＊は必須項目です。期限・実行日は空欄でも追加できます。</li>
         <li>実行日が空欄のタスクは「実行日未定」に入ります。</li>
-        <li>新規タスクは端末への保存後、送信待ちとして表示します。</li>
-        <li>送信待ちの新規タスクは、保存結果を確認してから編集・完了・移動ができます。</li>
-      </ul>
-
-      <h3>1日の計画</h3>
-      <ul>
+        <li>新規タスクは送信待ちとして先に表示します。編集・完了・移動は送信結果の確認後に使えます。</li>
         <li>左の丸で完了、編集ボタンで件名・期限・実行日を変更します。</li>
-        <li>右の≡をつかんで、時間帯や並び順を変更します。</li>
-        <li>件名部分を0.6秒長押ししても移動を始められます。</li>
-        <li>時間帯は目安です。実行日を変更しても、設定した時間帯は残ります。</li>
-      </ul>
-
-      <h3>定期タスク</h3>
-      <ul>
-        <li>頻度の例：毎日、毎週月曜日、毎月15日、3日ごと。</li>
-        <li>「不定期」は毎日の自動追加の対象外です。</li>
-        <li>予定分の期限は、本来の追加予定日が基準です。遅れて追加しても期限を繰り越しません。</li>
-        <li>個別の「今すぐ1件追加」は、押した日が基準です。</li>
-        <li>期限の0日後は基準日当日です。日数には土日も含みます。</li>
-        <li>曜日・毎月の日付は、基準日当日を含む次の該当日です。その月にない日は月末にします。</li>
-        <li>設定変更は、これから追加する分だけに適用します。</li>
-      </ul>
-
-      <h3>保存と通信</h3>
-      <ul>
-        <li>端末への保存と、保存先への送信完了は別です。</li>
-        <li>未送信の内容は端末に残し、通信できるときに再送します。</li>
-        <li>小窓と通常画面を両方閉じると、その間は送信が進まないことがあります。次に開いたときに再開します。</li>
-        <li>別端末の変更は、画面を表示している間に約20秒ごとを目安に確認します。</li>
-        <li>編集中・移動中・未送信があるときは、自動確認を控えます。</li>
-        <li>変更が重なった場合は、確認してから反映します。</li>
-        <li>接続先と合い言葉は、この端末の中に保存します。</li>
-      </ul>
-
-      <h3>追加用の小窓</h3>
-      <ul>
-        <li>専用キーで同じ小窓を呼び出します。</li>
-        <li>追加後も小窓はそのまま残り、続けて入力できます。</li>
-        <li>閉じるときは、小窓の右上の×を使ってください。</li>
+        <li>≡をつかむか、件名部分を0.6秒長押しすると移動できます。</li>
+        <li>時間帯は目安です。実行日を変えても設定済みの時間帯は残ります。</li>
+        <li>定期タスクの頻度は、毎日・毎週月曜日・毎月15日・3日ごとなどを指定できます。「不定期」は自動追加の対象外です。</li>
+        <li>予定分の期限は本来の追加予定日が基準です。個別の「今すぐ1件追加」は押した日が基準です。</li>
+        <li>期限の0日後は基準日当日です。日数には土日も含みます。その月にない指定日は月末です。</li>
+        <li>小窓は追加後も残ります。閉じるときは右上の×を使ってください。</li>
+        <li>小窓を閉じても通常画面が開いていれば送信確認を引き継ぎます。両方閉じている間は、次に開くまで送信が進まないことがあります。</li>
+        <li>通常画面を表示中は、約20秒ごとを目安に変更を確認します。編集中・移動中・未送信があるときは控えます。</li>
       </ul>
     </details>
 
@@ -938,2652 +888,1362 @@
     </div>
   </dialog>
 
+  <script src="./task-core.js?v=4.8"></script>
   <script>
-    'use strict';
+    (function () {
+      'use strict';
 
-    const VERSION = 'v4.7';
-    const SERVER_VERSION = 'v4.3';
-    const SYNC_PROTOCOL = 'task-sync-v1';
-    const REQUEST_TIMEOUT_MS = 60000;
-    const AUTO_REFRESH_MS = 20000;
-    const DB_NAME = 'taskapp-unified';
-    const URL_KEY = 'gasUrl_v1';
-    const TOKEN_KEY = 'gasTok_v1';
-    const TAB_ID = uuid();
+      const VERSION = 'v4.8';
 
-    let db = null;
-    let state = emptyState();
-    let page = 'plan';
-    let selectedDate = japanDate();
-    let taskView = 'list';
-    let taskFilter = 'all';
-    let filterDate = selectedDate;
-    let calendarMonth = selectedDate.slice(0, 7);
-    let calendarDate = selectedDate;
-    let calendarUndated = false;
-
-    let historyData = {
-      items: [],
-      total: 0
-    };
-
-    let storageReady = false;
-    let legacyBlocked = false;
-    let refreshing = false;
-    let manualReloading = false;
-    let nextTry = 0;
-    let failures = 0;
-    let editorContext = null;
-    let editorPlanPosition = null;
-    let conflictId = null;
-    let channel = null;
-    let verifiedConnection = '';
-    let verifiedFeatures = {};
-
-    let remoteTail = Promise.resolve();
-    let refreshPromise = null;
-    let pumpPromise = null;
-    let historyPromise = null;
-    let autoChecking = false;
-    let nextAutoRead = 0;
-
-    let lastReadError = '';
-    let receivedThisSession = false;
-    let messageKind = '';
-    let messageTimer = null;
-    let lastCommunication = null;
-    let lastDateSeen = japanDate();
-    let settingsCacheVersion = '未確認';
-
-    let drag = null;
-    let candidate = null;
-    let holdTimer = null;
-    let pointerId = null;
-    let startX = 0;
-    let startY = 0;
-    let pointerX = 0;
-    let pointerY = 0;
-    let autoTimer = null;
-    let autoDirection = 0;
-    let suppressClickUntil = 0;
-    let dragContext = null;
-
-    function $(id) {
-      return document.getElementById(id);
-    }
-
-    function uuid() {
-      if (window.crypto && window.crypto.randomUUID) {
-        return crypto.randomUUID();
+      function $(id) {
+        return document.getElementById(id);
       }
 
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
-        const number = Math.random() * 16 | 0;
-        return (character === 'x' ? number : number & 3 | 8).toString(16);
-      });
-    }
+      if (!window.TaskCore || TaskCore.VERSION !== VERSION) {
+        $('status').textContent =
+          '画面の準備ができません。task-core.js を置いてから再読み込みしてください。';
+        return;
+      }
 
-    function emptyState() {
-      return {
-        snapshot: null,
-        jobs: [],
-        sequence: 0,
-        transitions: [],
-        savedAt: 0
+      const clone = TaskCore.clone;
+      const compareTasks = TaskCore.compareTasks;
+      const taskById = TaskCore.taskById;
+      const dayVersion = TaskCore.dayVersion;
+
+      let state = TaskCore.emptyState();
+      let client = null;
+      let page = 'plan';
+      let selectedDate = japanDate();
+      let taskView = 'list';
+      let taskFilter = 'all';
+      let filterDate = selectedDate;
+      let calendarMonth = selectedDate.slice(0, 7);
+      let calendarDate = selectedDate;
+      let calendarUndated = false;
+
+      let refreshPromise = null;
+      let manualReloading = false;
+      let checking = false;
+      let autoBusy = false;
+      let nextAutoRead = 0;
+      let lastDateSeen = japanDate();
+
+      let historyData = {
+        items: [],
+        total: 0,
+        loaded: false
       };
-    }
 
-    function clone(value) {
-      return JSON.parse(JSON.stringify(value));
-    }
+      let historyPromise = null;
+      let historyLoading = false;
+      let historyError = '';
+      let historyFailedMore = false;
+      let historyAgain = false;
+      let historyRefreshTimer = null;
 
-    function make(tag, text, className) {
-      const element = document.createElement(tag);
+      let editorHandler = null;
+      let editorPosition = null;
+      let editorComposing = false;
+      let editorImeUntil = 0;
+      let editorSaving = false;
+      let periodicAdding = false;
 
-      if (text !== undefined && text !== null) {
-        element.textContent = text;
+      let conflictId = null;
+      let conflictReviewed = [];
+      let messageTimer = null;
+      let messageKind = '';
+      let cacheVersion = '未確認';
+
+      let drag = null;
+      let candidate = null;
+      let holdTimer = null;
+      let pointerId = null;
+      let startX = 0;
+      let startY = 0;
+      let pointerX = 0;
+      let pointerY = 0;
+      let autoTimer = null;
+      let autoDirection = 0;
+      let suppressClickUntil = 0;
+      let dragContext = null;
+
+      function make(tag, text, className) {
+        const element = document.createElement(tag);
+
+        if (text !== undefined && text !== null) {
+          element.textContent = text;
+        }
+
+        if (className) {
+          element.className = className;
+        }
+
+        return element;
       }
 
-      if (className) {
-        element.className = className;
+      function button(text, handler, className) {
+        const element = make('button', text, className);
+        element.type = 'button';
+        element.addEventListener('click', handler);
+        return element;
       }
 
-      return element;
-    }
-
-    function button(text, handler, className) {
-      const element = make('button', text, className);
-      element.type = 'button';
-      element.addEventListener('click', handler);
-      return element;
-    }
-
-    function notify(text, error, kind, detail) {
-      if (messageTimer) {
-        clearTimeout(messageTimer);
-        messageTimer = null;
-      }
-
-      messageKind = kind || '';
-      $('message-text').textContent = text || '';
-      $('message').className = 'notice' + (error ? ' error' : '');
-      $('message').hidden = !text;
-      $('message-detail-body').textContent = detail || '';
-      $('message-details').hidden = !detail;
-      $('message-details').open = false;
-
-      if (text && !error) {
-        messageTimer = setTimeout(function () {
-          $('message').hidden = true;
-          messageKind = '';
+      function notify(text, error, detail, kind) {
+        if (messageTimer) {
+          clearTimeout(messageTimer);
           messageTimer = null;
-        }, 3500);
-      }
-    }
-
-    $('message-close').addEventListener('click', function () {
-      notify('');
-    });
-
-    function japanDate() {
-      return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
-    }
-
-    function dateShift(value, days) {
-      const date = new Date(value + 'T12:00:00Z');
-      date.setUTCDate(date.getUTCDate() + days);
-      return date.toISOString().slice(0, 10);
-    }
-
-    function monthShift(value, months) {
-      const date = new Date(value + '-01T12:00:00Z');
-      date.setUTCMonth(date.getUTCMonth() + months);
-      return date.toISOString().slice(0, 7);
-    }
-
-    function dateLabel(value) {
-      return Number(value.slice(0, 4)) + '年' +
-        Number(value.slice(5, 7)) + '月' +
-        Number(value.slice(8, 10)) + '日';
-    }
-
-    function fetchedAtLabel(value) {
-      const time = Date.parse(value || '');
-
-      if (!Number.isFinite(time)) {
-        return '未取得';
-      }
-
-      return new Date(time + 9 * 3600000)
-        .toISOString()
-        .slice(0, 19)
-        .replace('T', ' ');
-    }
-
-    function hourLabel(hour) {
-      return hour === null ? '時間未定' : hour + '時';
-    }
-
-    function dueRuleLabel(value) {
-      const rule = value || {
-        type: 'none'
-      };
-
-      switch (rule.type) {
-        case 'offset':
-          return rule.days === 0
-            ? '基準日当日'
-            : '基準日から' + rule.days + '日後';
-        case 'weekly':
-          return '毎週' + '日月火水木金土'.charAt(rule.weekday) + '曜日';
-        case 'monthly':
-          return '毎月' + rule.day + '日';
-        case 'monthEnd':
-          return '毎月末';
-        case 'none':
-          return '期限なし';
-        default:
-          return '確認が必要';
-      }
-    }
-
-    function periodicSupported() {
-      return !!(
-        state.snapshot &&
-        state.snapshot.features &&
-        state.snapshot.features.periodicDue
-      );
-    }
-
-    function requirePeriodicSupport() {
-      if (!periodicSupported()) {
-        notify(
-          '保存先の更新が必要です',
-          true,
-          'setup',
-          '保存先を更新してから「最新を取得」を押してください。'
-        );
-
-        return false;
-      }
-
-      return true;
-    }
-
-    function compareTasks(a, b) {
-      const first = a.hour === null ? 7 : a.hour;
-      const second = b.hour === null ? 7 : b.hour;
-
-      if (first !== second) {
-        return first - second;
-      }
-
-      const orderA = a.order == null ? Infinity : a.order;
-      const orderB = b.order == null ? Infinity : b.order;
-
-      return orderA - orderB || a.row - b.row;
-    }
-
-    function dayVersion(snapshot, date) {
-      return snapshot.days[date] || snapshot.emptyDay;
-    }
-
-    function taskById(snapshot, id) {
-      if (!snapshot) {
-        return null;
-      }
-
-      return snapshot.tasks.find(function (task) {
-        return task.taskId === id;
-      }) || null;
-    }
-
-    /* ---------- 端末内への保存 ---------- */
-
-    function openDatabase() {
-      return new Promise(function (resolve, reject) {
-        if (!window.indexedDB) {
-          reject(new Error('この端末では保存を利用できません。'));
-          return;
         }
 
-        const request = indexedDB.open(DB_NAME, 1);
+        messageKind = kind || '';
+        $('message-text').textContent = text || '';
+        $('message').className = 'notice' + (error ? ' error' : '');
+        $('message').hidden = !text;
+        $('message-detail-body').textContent = detail || '';
+        $('message-details').hidden = !detail;
+        $('message-details').open = false;
 
-        request.onupgradeneeded = function () {
-          if (!request.result.objectStoreNames.contains('data')) {
-            request.result.createObjectStore('data');
-          }
-        };
-
-        request.onsuccess = function () {
-          resolve(request.result);
-        };
-
-        request.onerror = function () {
-          reject(request.error);
-        };
-      });
-    }
-
-    function readState() {
-      return new Promise(function (resolve, reject) {
-        const transaction = db.transaction('data', 'readonly');
-        const request = transaction.objectStore('data').get('main');
-
-        transaction.oncomplete = function () {
-          resolve(request.result || emptyState());
-        };
-
-        transaction.onerror = transaction.onabort = function () {
-          reject(transaction.error || new Error('端末の記録を読み取れませんでした。'));
-        };
-      });
-    }
-
-    function updateState(change) {
-      return new Promise(function (resolve, reject) {
-        const transaction = db.transaction('data', 'readwrite');
-        const store = transaction.objectStore('data');
-        const request = store.get('main');
-        let next;
-        let output;
-        let caught;
-
-        request.onsuccess = function () {
-          try {
-            next = request.result || emptyState();
-            output = change(next);
-            next.savedAt = Date.now();
-            store.put(next, 'main');
-          } catch (error) {
-            caught = error;
-            transaction.abort();
-          }
-        };
-
-        transaction.oncomplete = function () {
-          state = next;
-          resolve(output);
-
-          try {
-            render();
-          } catch (error) {
-            console.error(error);
-          }
-
-          try {
-            if (channel) {
-              channel.postMessage('changed');
-            }
-          } catch (error) {
-            console.error(error);
-          }
-        };
-
-        transaction.onerror = transaction.onabort = function () {
-          reject(caught || transaction.error || new Error('端末に保存できませんでした。'));
-        };
-      });
-    }
-
-    function lease(action) {
-      return new Promise(function (resolve, reject) {
-        const transaction = db.transaction('data', 'readwrite');
-        const store = transaction.objectStore('data');
-        const request = store.get('sender');
-        let accepted = false;
-
-        request.onsuccess = function () {
-          const saved = request.result;
-          const now = Date.now();
-
-          if (action === 'release') {
-            if (saved && saved.owner === TAB_ID) {
-              store.delete('sender');
-            }
-
-            accepted = true;
-            return;
-          }
-
-          if (!saved || saved.owner === TAB_ID || saved.until < now) {
-            store.put({
-              owner: TAB_ID,
-              until: now + 180000
-            }, 'sender');
-
-            accepted = true;
-          }
-        };
-
-        transaction.oncomplete = function () {
-          resolve(accepted);
-        };
-
-        transaction.onerror = transaction.onabort = function () {
-          reject(transaction.error || new Error('送信の準備を確認できませんでした。'));
-        };
-      });
-    }
-
-    function autoReadTicket(finish) {
-      return new Promise(function (resolve, reject) {
-        const transaction = db.transaction('data', 'readwrite');
-        const store = transaction.objectStore('data');
-        const request = store.get('auto-reader-v1');
-        let accepted = false;
-
-        request.onsuccess = function () {
-          const saved = request.result;
-          const now = Date.now();
-
-          if (finish) {
-            if (saved && saved.owner === TAB_ID) {
-              store.put({
-                owner: TAB_ID,
-                until: now + AUTO_REFRESH_MS
-              }, 'auto-reader-v1');
-            }
-
-            accepted = true;
-            return;
-          }
-
-          if (!saved || saved.until <= now) {
-            store.put({
-              owner: TAB_ID,
-              until: now + 90000
-            }, 'auto-reader-v1');
-
-            accepted = true;
-          }
-        };
-
-        transaction.oncomplete = function () {
-          resolve(accepted);
-        };
-
-        transaction.onerror = transaction.onabort = function () {
-          reject(transaction.error);
-        };
-      });
-    }
-
-    async function oldPendingCount() {
-      let fallback = [];
-
-      try {
-        fallback = JSON.parse(localStorage.getItem('outbox_v1') || '[]');
-
-        if (!Array.isArray(fallback)) {
-          throw new Error('記録の形式が異なります。');
-        }
-      } catch (error) {
-        throw new Error('以前の未送信記録を読み取れません。端末データは消さないでください。');
-      }
-
-      const old = await new Promise(function (resolve, reject) {
-        const request = indexedDB.open('taskapp');
-        let created = false;
-
-        request.onupgradeneeded = function () {
-          created = true;
-          request.transaction.abort();
-        };
-
-        request.onerror = function () {
-          if (created) {
-            resolve([]);
-          } else {
-            reject(request.error);
-          }
-        };
-
-        request.onsuccess = function () {
-          const oldDb = request.result;
-
-          if (!oldDb.objectStoreNames.contains('outbox')) {
-            oldDb.close();
-            resolve([]);
-            return;
-          }
-
-          const transaction = oldDb.transaction('outbox', 'readonly');
-          const get = transaction.objectStore('outbox').getAll();
-
-          transaction.oncomplete = function () {
-            oldDb.close();
-            resolve(get.result || []);
-          };
-
-          transaction.onerror = function () {
-            oldDb.close();
-            reject(transaction.error);
-          };
-        };
-      });
-
-      return new Set(old.concat(fallback).map(function (job) {
-        return job.id;
-      })).size;
-    }
-
-    /* ---------- 通信 ---------- */
-
-    function configured() {
-      return !!localStorage.getItem(URL_KEY) &&
-        !!localStorage.getItem(TOKEN_KEY);
-    }
-
-    function runRemote(work) {
-      const result = remoteTail.then(work);
-
-      remoteTail = result.catch(function () {
-        return undefined;
-      });
-
-      return result;
-    }
-
-    function clientHint(forceFull) {
-      return {
-        protocol: SYNC_PROTOCOL,
-        forceFull: !!forceFull,
-        revision: state.snapshot ? state.snapshot.revision || '' : '',
-        pendingAdds: state.jobs.filter(function (job) {
-          return job.payload.action === 'add';
-        }).slice(0, 500).map(function (job) {
-          return job.id;
-        })
-      };
-    }
-
-    async function api(payload, forceFull) {
-      if (!configured()) {
-        throw new Error('設定から接続先と合い言葉を保存してください。');
-      }
-
-      const url = localStorage.getItem(URL_KEY);
-      const token = localStorage.getItem(TOKEN_KEY);
-      const connection = url + '\n' + token;
-
-      const needsPeriodicCheck =
-        payload.action === 'periodicSave' &&
-        Object.prototype.hasOwnProperty.call(payload, 'dueRule');
-
-      if (needsPeriodicCheck && verifiedConnection !== connection) {
-        const checked = await api({
-          action: 'load'
-        }, true);
-
-        if (!checked.ok) {
-          return checked;
+        if (text && !error) {
+          messageTimer = setTimeout(function () {
+            $('message').hidden = true;
+            messageKind = '';
+          }, 3500);
         }
       }
 
-      if (needsPeriodicCheck && !verifiedFeatures.periodicDue) {
-        throw new Error(
-          '保存先が定期タスクの期限設定に対応していません。' +
-          '保存先を更新してから再送してください。変更は端末に残しています。'
+      function japanDate() {
+        return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      }
+
+      function dateShift(value, days) {
+        const date = new Date(value + 'T12:00:00Z');
+        date.setUTCDate(date.getUTCDate() + days);
+        return date.toISOString().slice(0, 10);
+      }
+
+      function monthShift(value, months) {
+        const date = new Date(value + '-01T12:00:00Z');
+        date.setUTCMonth(date.getUTCMonth() + months);
+        return date.toISOString().slice(0, 7);
+      }
+
+      function dateLabel(value) {
+        return Number(value.slice(0, 4)) + '年' +
+          Number(value.slice(5, 7)) + '月' +
+          Number(value.slice(8, 10)) + '日';
+      }
+
+      function timeLabel(value) {
+        const time = Date.parse(value || '');
+
+        return Number.isFinite(time)
+          ? new Date(time + 9 * 3600000)
+            .toISOString()
+            .slice(0, 19)
+            .replace('T', ' ')
+          : '未取得';
+      }
+
+      function hourLabel(hour) {
+        return hour == null ? '時間未定' : hour + '時';
+      }
+
+      function dueRuleLabel(value) {
+        const rule = value || {
+          type: 'none'
+        };
+
+        switch (rule.type) {
+          case 'offset':
+            return rule.days === 0
+              ? '基準日当日'
+              : '基準日から' + rule.days + '日後';
+          case 'weekly':
+            return '毎週' + '日月火水木金土'.charAt(rule.weekday) + '曜日';
+          case 'monthly':
+            return '毎月' + rule.day + '日';
+          case 'monthEnd':
+            return '毎月末';
+          default:
+            return '期限なし';
+        }
+      }
+
+      function periodicSupported() {
+        return !!(
+          state.snapshot &&
+          state.snapshot.features &&
+          state.snapshot.features.periodicDue
         );
       }
 
-      const controller = new AbortController();
-      const started = performance.now();
-      let timedOut = false;
-
-      const timer = setTimeout(function () {
-        timedOut = true;
-        controller.abort();
-      }, REQUEST_TIMEOUT_MS);
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
-          body: JSON.stringify(Object.assign({
-            mode: 'web',
-            token: token
-          }, payload, {
-            clientState: clientHint(forceFull)
-          })),
-          redirect: 'follow',
-          signal: controller.signal
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            '保存先から正常な返答を受け取れませんでした' +
-            '（応答番号：' + response.status + '）。'
-          );
-        }
-
-        const text = await response.text();
-        let result;
-
-        try {
-          result = JSON.parse(text);
-        } catch (error) {
-          throw new Error(
-            '保存先から、タスクデータとして読めない返答が届きました。'
-          );
-        }
-
-        if (
-          !result ||
-          typeof result !== 'object' ||
-          typeof result.ok !== 'boolean'
-        ) {
-          throw new Error('保存先の返答を読み取れませんでした。');
-        }
-
-        if (result.ok && result.app !== SERVER_VERSION) {
-          verifiedConnection = '';
-          verifiedFeatures = {};
-          throw new Error('この画面に対応する保存先ではありません。');
-        }
-
-        if (result.ok) {
-          verifiedConnection = connection;
-          const source = result.snapshot || result.patch || result;
-          verifiedFeatures = source.features || verifiedFeatures;
-        }
-
-        lastCommunication = {
-          action: payload.action,
-          milliseconds: Math.round(performance.now() - started),
-          serverMs: Number.isFinite(result.serverMs) ? result.serverMs : null,
-          ok: result.ok
-        };
-
-        return result;
-      } catch (error) {
-        if (timedOut) {
-          throw new Error(
-            '保存先の応答を60秒以内に受け取れなかったため、通信を終了しました。'
-          );
-        }
-
-        if (error && error.name === 'AbortError') {
-          throw new Error('通信が途中で中断されました。');
-        }
-
-        if (error && error.name === 'TypeError') {
-          throw new Error(
-            '保存先に接続できませんでした。通信経路や保存先の応答を確認できない状態です。'
-          );
-        }
-
-        throw error;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    function requireSnapshot(snapshot) {
-      if (
-        !snapshot ||
-        !Array.isArray(snapshot.tasks) ||
-        !snapshot.days ||
-        !snapshot.periodic ||
-        !Array.isArray(snapshot.periodic.items) ||
-        !snapshot.undo
-      ) {
-        throw new Error('保存先の返答に、必要なタスク一覧が含まれていません。');
-      }
-    }
-
-    function applyAddLinks(saved, links) {
-      if (!links) {
-        return;
-      }
-
-      saved.jobs.forEach(function (job) {
-        const link = links[job.id];
-
-        if (
-          job.payload.action === 'add' &&
-          link &&
-          typeof link.taskId === 'string'
-        ) {
-          job.remoteTaskId = link.taskId;
-          job.remoteConfirmed = link.confirmed === true;
-        }
-      });
-    }
-
-    function storeSnapshot(saved, snapshot) {
-      applyAddLinks(saved, snapshot.addLinks);
-
-      const previousTime = saved.snapshot
-        ? Date.parse(saved.snapshot.fetchedAt || '')
-        : NaN;
-
-      const incomingTime = Date.parse(snapshot.fetchedAt || '');
-
-      if (
-        Number.isFinite(previousTime) &&
-        Number.isFinite(incomingTime) &&
-        incomingTime < previousTime
-      ) {
-        return;
-      }
-
-      saved.snapshot = snapshot;
-    }
-
-    function applyPatch(saved, patch) {
-      if (
-        !patch ||
-        !Array.isArray(patch.tasks) ||
-        !Array.isArray(patch.removed)
-      ) {
-        throw new Error('保存先から届いた変更内容を読み取れませんでした。');
-      }
-
-      if (
-        saved.snapshot &&
-        saved.snapshot.revision === patch.revision
-      ) {
-        applyAddLinks(saved, patch.addLinks);
-        return true;
-      }
-
-      if (
-        !saved.snapshot ||
-        saved.snapshot.revision !== patch.baseRevision
-      ) {
-        return false;
-      }
-
-      const next = clone(saved.snapshot);
-
-      const tasks = new Map(next.tasks.map(function (task) {
-        return [task.taskId, task];
-      }));
-
-      patch.removed.forEach(function (id) {
-        tasks.delete(id);
-      });
-
-      patch.tasks.forEach(function (task) {
-        tasks.set(task.taskId, task);
-      });
-
-      next.tasks = Array.from(tasks.values()).sort(function (a, b) {
-        return a.row - b.row;
-      });
-
-      [
-        'app',
-        'build',
-        'features',
-        'today',
-        'fetchedAt',
-        'revision',
-        'days',
-        'emptyDay'
-      ].forEach(function (key) {
-        next[key] = patch[key];
-      });
-
-      if (patch.periodic) {
-        next.periodic = patch.periodic;
-      }
-
-      if (patch.undo) {
-        next.undo = patch.undo;
-      }
-
-      next.addLinks = patch.addLinks || {};
-      requireSnapshot(next);
-      storeSnapshot(saved, next);
-      return true;
-    }
-
-    function markListReceived() {
-      lastReadError = '';
-      receivedThisSession = true;
-      nextAutoRead = Date.now() + AUTO_REFRESH_MS;
-
-      if (messageKind === 'read') {
-        notify('');
-      }
-
-      renderStatus();
-    }
-
-    async function acceptSnapshot(snapshot) {
-      requireSnapshot(snapshot);
-
-      await updateState(function (saved) {
-        storeSnapshot(saved, snapshot);
-      });
-
-      markListReceived();
-    }
-
-    async function acceptUnchanged(result) {
-      const accepted = await updateState(function (saved) {
-        applyAddLinks(saved, result.addLinks);
-
-        if (
-          !saved.snapshot ||
-          saved.snapshot.revision !== result.revision
-        ) {
-          return false;
-        }
-
-        const previous = Date.parse(saved.snapshot.fetchedAt || '');
-        const incoming = Date.parse(result.fetchedAt || '');
-
-        if (!Number.isFinite(previous) || incoming >= previous) {
-          saved.snapshot.fetchedAt = result.fetchedAt;
-        }
-
-        return true;
-      });
-
-      if (accepted) {
-        markListReceived();
-      }
-
-      return accepted;
-    }
-
-    function reportReadFailure(error) {
-      lastReadError = String(error.message || error);
-
-      notify(
-        '一覧を取得できませんでした',
-        true,
-        'read',
-        lastReadError +
-        (state.snapshot
-          ? '\n前回取得した一覧を表示しています。端末の記録は消していません。'
-          : '\n保存先の一覧はまだ取得していません。')
-      );
-
-      renderStatus();
-    }
-
-    function readServer(payload, afterRead, forceFull) {
-      return runRemote(async function () {
-        try {
-          let result = await api(payload, forceFull);
-
-          if (!result.ok) {
-            throw new Error(result.message || '一覧を取得できませんでした。');
-          }
-
-          if (result.unchanged) {
-            if (await acceptUnchanged(result)) {
-              return result;
-            }
-
-            result = await api(payload, true);
-
-            if (!result.ok) {
-              throw new Error(result.message || '一覧を取得できませんでした。');
-            }
-          }
-
-          requireSnapshot(result.snapshot);
-
-          if (afterRead) {
-            afterRead(result);
-          }
-
-          await acceptSnapshot(result.snapshot);
-          return result;
-        } catch (error) {
-          reportReadFailure(error);
-          throw error;
-        }
-      });
-    }
-
-    function refresh() {
-      if (refreshPromise) {
-        return refreshPromise;
-      }
-
-      if (
-        !storageReady ||
-        legacyBlocked ||
-        drag ||
-        !navigator.onLine ||
-        !configured()
-      ) {
-        renderStatus();
-        return Promise.resolve(false);
-      }
-
-      refreshing = true;
-      renderStatus();
-
-      refreshPromise = readServer({
-        action: 'load'
-      }).then(function () {
-        return true;
-      }).catch(function () {
-        return false;
-      }).finally(function () {
-        refreshing = false;
-        refreshPromise = null;
-        nextAutoRead = Date.now() + (lastReadError ? 60000 : AUTO_REFRESH_MS);
-        renderStatus();
-      });
-
-      return refreshPromise;
-    }
-
-    /* ---------- 未送信の順序と食い違い ---------- */
-
-    function resources(payload, snapshot) {
-      const keys = [];
-
-      if (
-        payload.action === 'order' ||
-        (payload.action === 'add' && payload.date)
-      ) {
-        keys.push('day:' + payload.date);
-      }
-
-      if (payload.taskId) {
-        keys.push('task:' + payload.taskId);
-
-        const task = taskById(snapshot, payload.taskId);
-
-        if (task && task.date) {
-          keys.push('day:' + task.date);
-        }
-
-        if (payload.action === 'edit' && payload.date) {
-          keys.push('day:' + payload.date);
-        }
-      }
-
-      if (
-        payload.action.indexOf('periodic') === 0 ||
-        payload.action === 'automatic'
-      ) {
-        keys.push('periodic');
-      }
-
-      if (payload.action === 'undo' || payload.action === 'done') {
-        keys.push('undo');
-      }
-
-      return Array.from(new Set(keys));
-    }
-
-    function contextFor(payload, snapshot, jobs) {
-      const keys = resources(payload, snapshot);
-
-      return {
-        keys: keys,
-        causes: (jobs || state.jobs).filter(function (job) {
-          return job.keys.some(function (key) {
-            return keys.indexOf(key) >= 0;
-          });
-        }).map(function (job) {
-          return job.id;
-        })
-      };
-    }
-
-    function advance(payload, transition) {
-      if (!transition) {
-        return;
-      }
-
-      (transition.days || []).forEach(function (entry) {
-        if (
-          payload.action === 'order' &&
-          payload.date === entry.key &&
-          payload.expectedDay === entry.before
-        ) {
-          payload.expectedDay = entry.after;
-        }
-      });
-
-      (transition.tasks || []).forEach(function (entry) {
-        if (
-          payload.taskId === entry.key &&
-          payload.expectedTask === entry.before
-        ) {
-          payload.expectedTask = entry.after;
-        }
-      });
-
-      if (
-        transition.periodic &&
-        payload.expectedPeriodic === transition.periodic.before
-      ) {
-        payload.expectedPeriodic = transition.periodic.after;
-      }
-
-      if (
-        transition.undo &&
-        payload.expectedUndo === transition.undo.before
-      ) {
-        payload.expectedUndo = transition.undo.after;
-      }
-    }
-
-    function mergePlan(items, tasks, date) {
-      const available = tasks.filter(function (task) {
-        return task.date === date && !task.localOnly;
-      }).sort(compareTasks);
-
-      const byId = new Map(available.map(function (task) {
-        return [task.taskId, task];
-      }));
-
-      const used = new Set();
-      const output = [];
-
-      (items || []).forEach(function (item) {
-        if (byId.has(item.id) && !used.has(item.id)) {
-          used.add(item.id);
-
-          output.push({
-            id: item.id,
-            hour: item.hour
-          });
-        }
-      });
-
-      available.forEach(function (task) {
-        if (!used.has(task.taskId)) {
-          output.push({
-            id: task.taskId,
-            hour: task.hour
-          });
-        }
-      });
-
-      return output.map(function (item, index) {
-        return {
-          item: item,
-          index: index
-        };
-      }).sort(function (a, b) {
-        const first = a.item.hour === null ? 7 : a.item.hour;
-        const second = b.item.hour === null ? 7 : b.item.hour;
-        return first - second || a.index - b.index;
-      }).map(function (entry) {
-        return entry.item;
-      });
-    }
-
-    function pendingLabel(job) {
-      if (job.state === 'conflict' || job.state === 'blocked') {
-        return '確認が必要';
-      }
-
-      if (job.state === 'sending' || job.state === 'unknown') {
-        return '送信結果を確認中';
-      }
-
-      return '送信待ち';
-    }
-
-    function effectiveTasks() {
-      let tasks = state.snapshot ? clone(state.snapshot.tasks) : [];
-      const links = state.snapshot ? state.snapshot.addLinks || {} : {};
-
-      state.jobs.slice().sort(function (a, b) {
-        return a.sequence - b.sequence;
-      }).forEach(function (job) {
-        const payload = job.payload;
-
-        if (payload.action === 'add') {
-          const link = links[job.id] || {};
-          const remoteId = job.remoteTaskId || link.taskId || '';
-          const confirmed = job.remoteConfirmed === true || link.confirmed === true;
-
-          const alreadyVisible = remoteId && tasks.some(function (task) {
-            return task.taskId === remoteId;
-          });
-
-          if (!alreadyVisible && !confirmed) {
-            tasks.push({
-              taskId: 'local:' + job.id,
-              title: payload.title,
-              due: payload.due || '',
-              date: payload.date || '',
-              hour: null,
-              order: null,
-              row: 1000000000 + job.sequence,
-              localOnly: true,
-              pendingText: pendingLabel(job)
-            });
-          }
-        }
-
-        if (payload.action === 'done') {
-          tasks = tasks.filter(function (task) {
-            return task.taskId !== payload.taskId;
-          });
-        }
-
-        if (payload.action === 'edit') {
-          const task = tasks.find(function (entry) {
-            return entry.taskId === payload.taskId;
-          });
-
-          if (task) {
-            task.title = payload.title;
-            task.due = payload.due;
-            task.date = payload.date;
-          }
-        }
-
-        if (payload.action === 'order') {
-          mergePlan(payload.items, tasks, payload.date)
-            .forEach(function (item, index) {
-              const task = tasks.find(function (entry) {
-                return entry.taskId === item.id;
-              });
-
-              if (task) {
-                task.hour = item.hour;
-                task.order = index + 1;
-              }
-            });
-        }
-      });
-
-      return tasks;
-    }
-
-    async function enqueue(payload, label, captured) {
-      if (!storageReady || legacyBlocked) {
-        throw new Error('端末への保存が準備できていません。');
-      }
-
-      const id = uuid();
-
-      await updateState(function (saved) {
-        const current = contextFor(payload, saved.snapshot, saved.jobs);
-
-        const context = captured
-          ? {
-            keys: Array.from(new Set(captured.keys.concat(current.keys))),
-            causes: Array.from(new Set(captured.causes.concat(current.causes)))
-          }
-          : current;
-
-        const data = clone(payload);
-        data.requestId = id;
-
-        saved.transitions.forEach(function (entry) {
-          if (context.causes.indexOf(entry.id) >= 0) {
-            advance(data, entry.transition);
-          }
-        });
-
-        saved.sequence++;
-
-        saved.jobs.push({
-          id: id,
-          sequence: saved.sequence,
-          payload: data,
-          label: label,
-          keys: context.keys,
-          causes: context.causes,
-          state: 'saved',
-          frozen: false,
-          note: ''
-        });
-      });
-
-      pump(true);
-    }
-
-    function readyJob(saved) {
-      const ids = new Set(saved.jobs.map(function (job) {
-        return job.id;
-      }));
-
-      return saved.jobs.slice().sort(function (a, b) {
-        return a.sequence - b.sequence;
-      }).find(function (job) {
-        return ['saved', 'unknown', 'sending'].indexOf(job.state) >= 0 &&
-          !job.causes.some(function (id) {
-            return ids.has(id);
-          });
-      });
-    }
-
-    async function acceptMutation(job, result) {
-      if (result.snapshot) {
-        requireSnapshot(result.snapshot);
-      } else if (!result.patch) {
-        throw new Error('保存結果に必要な一覧情報がありません。');
-      }
-
-      return updateState(function (saved) {
-        if (result.snapshot) {
-          storeSnapshot(saved, result.snapshot);
-        } else if (!applyPatch(saved, result.patch)) {
-          return false;
-        }
-
-        const exists = saved.jobs.some(function (entry) {
-          return entry.id === job.id;
-        });
-
-        if (!exists) {
-          return true;
-        }
-
-        saved.jobs.forEach(function (entry) {
-          if (
-            entry.id !== job.id &&
-            !entry.frozen &&
-            entry.causes.indexOf(job.id) >= 0
-          ) {
-            advance(entry.payload, result.transition);
-          }
-        });
-
-        saved.jobs = saved.jobs.filter(function (entry) {
-          return entry.id !== job.id;
-        });
-
-        saved.transitions.push({
-          id: job.id,
-          transition: result.transition
-        });
-
-        saved.transitions = saved.transitions.slice(-100);
-        return true;
-      });
-    }
-
-    function pump(force) {
-      if (pumpPromise) {
-        return pumpPromise;
-      }
-
-      if (
-        !storageReady ||
-        legacyBlocked ||
-        !navigator.onLine ||
-        !configured() ||
-        (!force && Date.now() < nextTry)
-      ) {
-        return Promise.resolve(false);
-      }
-
-      pumpPromise = drainOutbox().then(function (changed) {
-        if (changed && page === 'history') {
-          loadHistory(false);
-        }
-
-        return changed;
-      }).catch(function (error) {
-        notify(
-          '端末の保存を確認できません',
-          true,
-          'storage',
-          String(error.message || error) +
-          '\nデータは消さずに、画面を開き直してください。'
-        );
-
-        return false;
-      }).finally(function () {
-        pumpPromise = null;
-        renderStatus();
-      });
-
-      return pumpPromise;
-    }
-
-    async function drainOutbox() {
-      let ownsLease = false;
-      let renewal = null;
-      let changed = false;
-
-      state = await readState();
-
-      if (!readyJob(state)) {
-        return false;
-      }
-
-      try {
-        ownsLease = await lease('claim');
-
-        if (!ownsLease) {
-          return false;
-        }
-
-        renewal = setInterval(function () {
-          lease('claim').catch(function () {
-            // 次の送信前にも所有状態を確認する。
-          });
-        }, 10000);
-
-        while (navigator.onLine) {
-          const step = await runRemote(async function () {
-            if (
-              !navigator.onLine ||
-              !configured() ||
-              !(await lease('claim'))
-            ) {
-              return {
-                stop: true
-              };
-            }
-
-            state = await readState();
-
-            if (!readyJob(state)) {
-              return {
-                stop: true
-              };
-            }
-
-            let job = null;
-
-            await updateState(function (saved) {
-              const current = readyJob(saved);
-
-              if (!current) {
-                return;
-              }
-
-              if (
-                !current.frozen &&
-                current.payload.action === 'order' &&
-                saved.snapshot
-              ) {
-                current.payload.items = mergePlan(
-                  current.payload.items,
-                  saved.snapshot.tasks,
-                  current.payload.date
-                );
-              }
-
-              current.frozen = true;
-              current.state = 'sending';
-              current.note = '送信結果を確認しています。';
-              job = clone(current);
-            });
-
-            if (!job) {
-              return {
-                stop: true
-              };
-            }
-
-            try {
-              const result = await api(job.payload);
-
-              if (result.ok) {
-                let accepted = await acceptMutation(job, result);
-
-                if (!accepted) {
-                  const full = await api({
-                    action: 'load'
-                  }, true);
-
-                  if (!full.ok) {
-                    throw new Error(full.message || '保存後の一覧を確認できませんでした。');
-                  }
-
-                  requireSnapshot(full.snapshot);
-                  result.snapshot = full.snapshot;
-                  delete result.patch;
-                  accepted = await acceptMutation(job, result);
-                }
-
-                if (!accepted) {
-                  throw new Error('保存後の一覧を確認できませんでした。');
-                }
-
-                markListReceived();
-                failures = 0;
-                nextTry = 0;
-                notify('保存しました', false, 'success');
-
-                return {
-                  saved: true,
-                  stop: false
-                };
-              }
-
-              const conflict = result.status === 'conflict';
-              const blocked = result.status === 'invalid' ||
-                result.status === 'indeterminate';
-
-              await updateState(function (saved) {
-                const current = saved.jobs.find(function (entry) {
-                  return entry.id === job.id;
-                });
-
-                if (!current) {
-                  return;
-                }
-
-                current.state = conflict
-                  ? 'conflict'
-                  : blocked
-                    ? 'blocked'
-                    : 'unknown';
-
-                current.note = result.message || '後で再試行します。';
-
-                if (result.snapshot) {
-                  requireSnapshot(result.snapshot);
-                  storeSnapshot(saved, result.snapshot);
-                }
-              });
-
-              if (result.snapshot) {
-                markListReceived();
-              }
-
-              if (conflict || blocked) {
-                return {
-                  saved: false,
-                  stop: false
-                };
-              }
-
-              throw new Error(result.message || '送信を確認できませんでした。');
-            } catch (error) {
-              failures++;
-              nextTry = Date.now() + Math.min(
-                300000,
-                5000 * Math.pow(2, Math.min(failures, 6))
-              );
-
-              await updateState(function (saved) {
-                const current = saved.jobs.find(function (entry) {
-                  return entry.id === job.id;
-                });
-
-                if (
-                  current &&
-                  current.state !== 'conflict' &&
-                  current.state !== 'blocked'
-                ) {
-                  current.state = 'unknown';
-                  current.note =
-                    String(error.message || error) +
-                    '\n未反映とは限りません。同じ受付番号で再確認します。';
-                }
-              });
-
-              return {
-                saved: false,
-                stop: true
-              };
-            }
-          });
-
-          if (step.saved) {
-            changed = true;
-          }
-
-          if (step.stop) {
-            break;
-          }
-        }
-      } finally {
-        if (renewal) {
-          clearInterval(renewal);
-        }
-
-        if (ownsLease) {
-          await lease('release').catch(function () {
-            return null;
-          });
-        }
-      }
-
-      return changed;
-    }
-
-    /* ---------- 共通表示 ---------- */
-
-    function renderStatus() {
-      const parts = [];
-
-      if (!storageReady) {
-        parts.push('準備中');
-      } else if (legacyBlocked) {
-        parts.push('旧画面の未送信があります');
-      } else {
+      function onlineRequired() {
         if (!navigator.onLine) {
-          parts.push('通信なし');
+          notify('通信が必要です', true);
+          return false;
         }
 
-        if (!configured()) {
-          parts.push('接続先未設定');
-        } else if (!state.snapshot && refreshing) {
-          parts.push('読込中');
-        }
+        return true;
       }
 
-      $('status').textContent = parts.join('／');
-      $('status').hidden = !parts.length;
-
-      $('add').disabled = !storageReady || legacyBlocked;
-      $('reload').disabled =
-        !storageReady ||
-        legacyBlocked ||
-        refreshing ||
-        manualReloading;
-
-      $('reload').textContent = refreshing || manualReloading
-        ? '確認中'
-        : '最新を取得';
-
-      renderSettingsState();
-    }
-
-    function jobStateLabel(job) {
-      switch (job.state) {
-        case 'sending':
-          return '送信中';
-        case 'unknown':
-          return '再確認待ち';
-        case 'conflict':
-        case 'blocked':
-          return '確認が必要';
-        default:
-          return '送信待ち';
+      function anyDialogOpen() {
+        return $('editor').open ||
+          $('settings-dialog').open ||
+          $('conflict-dialog').open;
       }
-    }
 
-    function renderOutbox() {
-      const container = $('outbox-items');
-      container.replaceChildren();
+      function failed(text, error) {
+        notify(text, true, String(error.message || error));
+      }
 
-      const needsCheck = state.jobs.filter(function (job) {
-        return job.state === 'conflict' || job.state === 'blocked';
-      }).length;
+      client = TaskCore.create({
+        onChange: function (meta) {
+          state = client.state;
 
-      $('outbox').hidden = !state.jobs.length;
-      $('outbox-summary').textContent =
-        '送信待ち ' + state.jobs.length + '件' +
-        (needsCheck ? '・確認が必要 ' + needsCheck + '件' : '');
-
-      state.jobs.forEach(function (job) {
-        const row = make('div', null, 'job');
-        const heading = make('div', null, 'job-heading');
-        const attention = job.state === 'conflict' || job.state === 'blocked';
-
-        heading.append(
-          make('div', job.label, 'job-title'),
-          make(
-            'span',
-            jobStateLabel(job),
-            'job-state' + (attention ? ' needs-check' : '')
-          )
-        );
-
-        row.appendChild(heading);
-
-        if (job.state === 'conflict') {
-          row.appendChild(button('確認する', function () {
-            openConflict(job.id);
-          }));
-        } else if (job.state !== 'blocked' && job.state !== 'sending') {
-          row.appendChild(button('いま送る', function () {
-            nextTry = 0;
-            pump(true);
-          }));
-        }
-
-        if (
-          job.note &&
-          job.state !== 'sending'
-        ) {
-          const details = make('details');
-          details.append(
-            make('summary', '詳細'),
-            make('div', job.note, 'detail-text')
-          );
-
-          if (job.state === 'blocked') {
-            details.appendChild(make(
-              'div',
-              '自動反映を止めています。「設定」から状態をコピーして確認してください。',
-              'detail-text'
-            ));
+          if (meta.kind === 'status') {
+            renderStatus();
+          } else {
+            render();
           }
 
-          row.appendChild(details);
+          if (
+            meta.kind === 'committed' &&
+            (meta.action === 'done' || meta.action === 'undo')
+          ) {
+            scheduleHistoryRefresh();
+          }
+        },
+        onIssue: function (text, detail) {
+          notify(text, true, detail);
+        },
+        onSaved: function () {
+          notify('保存しました', false);
+        }
+      });
+
+      function renderStatus() {
+        const parts = [];
+
+        if (!client.ready) {
+          parts.push('準備中');
+        } else if (client.legacyCount) {
+          parts.push('旧画面の未送信があります');
+        } else {
+          if (!navigator.onLine) {
+            parts.push('通信なし');
+          }
+
+          if (!client.configured()) {
+            parts.push('接続先未設定');
+          }
         }
 
-        container.appendChild(row);
-      });
+        $('status').textContent = parts.join('／');
+        $('status').hidden = !parts.length;
 
-      if (needsCheck) {
-        $('outbox').open = true;
-      }
-    }
+        $('add').disabled = !client.ready || !!client.legacyCount;
+        $('reload').disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          manualReloading ||
+          !!refreshPromise ||
+          (page === 'history' && historyLoading);
 
-    function capturePlanPosition() {
-      const timeline = $('timeline');
+        $('reload').textContent =
+          manualReloading ||
+          refreshPromise ||
+          (page === 'history' && historyLoading)
+            ? '確認中'
+            : '最新を取得';
 
-      if (
-        page !== 'plan' ||
-        !timeline ||
-        timeline.dataset.date !== selectedDate
-      ) {
-        return null;
-      }
-
-      return {
-        date: selectedDate,
-        x: window.scrollX,
-        y: window.scrollY
-      };
-    }
-
-    function restorePlanPosition(position) {
-      if (
-        !position ||
-        page !== 'plan' ||
-        selectedDate !== position.date
-      ) {
-        return;
+        if ($('settings-dialog').open) {
+          renderSettingsState();
+        }
       }
 
-      window.scrollTo(position.x, position.y);
-    }
+      function jobStateLabel(job) {
+        if (job.state === 'conflict' || job.state === 'blocked') {
+          return '確認が必要';
+        }
 
-    function render() {
-      const position = drag ? null : capturePlanPosition();
+        if (job.state === 'sending') {
+          return '送信結果を確認中';
+        }
 
-      renderStatus();
-      renderOutbox();
-
-      if (drag) {
-        return;
+        return job.state === 'unknown' ? '再確認待ち' : '送信待ち';
       }
 
-      document.querySelectorAll('nav [data-page]').forEach(function (element) {
-        element.classList.toggle('active', element.dataset.page === page);
-      });
+      function renderOutbox() {
+        const container = $('outbox-items');
+        container.replaceChildren();
 
-      const content = $('content');
-      content.replaceChildren();
+        const attention = state.jobs.filter(function (job) {
+          return job.state === 'conflict' || job.state === 'blocked';
+        }).length;
 
-      const pendingAdds = state.jobs.some(function (job) {
-        return job.payload.action === 'add';
-      });
+        $('outbox').hidden = !state.jobs.length;
+        $('outbox-summary').textContent =
+          '送信待ち ' + state.jobs.length + '件' +
+          (attention ? '・確認が必要 ' + attention + '件' : '');
 
-      if (
-        !state.snapshot &&
-        (!pendingAdds || (page !== 'plan' && page !== 'tasks'))
-      ) {
-        content.appendChild(make(
-          'p',
-          configured() ? '一覧未取得' : '接続先を設定してください'
-        ));
-        return;
+        state.jobs.forEach(function (job) {
+          const row = make('div', null, 'job');
+          const heading = make('div', null, 'job-heading');
+          const needsCheck =
+            job.state === 'conflict' || job.state === 'blocked';
+
+          heading.append(
+            make('div', job.label, 'job-title'),
+            make(
+              'span',
+              jobStateLabel(job),
+              'job-state' + (needsCheck ? ' needs-check' : '')
+            )
+          );
+
+          row.appendChild(heading);
+
+          if (job.state === 'conflict') {
+            row.appendChild(button('確認する', function () {
+              openConflict(job.id);
+            }));
+          } else if (
+            job.state !== 'blocked' &&
+            job.state !== 'sending'
+          ) {
+            row.appendChild(button('いま送る', function () {
+              client.pump(true);
+            }));
+          }
+
+          if (job.note) {
+            const details = make('details');
+            details.append(
+              make('summary', '詳細'),
+              make('div', job.note, 'detail-text')
+            );
+            row.appendChild(details);
+          }
+
+          container.appendChild(row);
+        });
+
+        if (attention) {
+          $('outbox').open = true;
+        }
       }
 
-      if (!state.snapshot) {
-        content.appendChild(make('p', 'この端末の送信待ち', 'sub'));
-      }
+      function capturePosition() {
+        const timeline = $('timeline');
 
-      if (page === 'plan') {
-        renderPlan(content);
-      } else if (page === 'tasks') {
-        renderTasks(content);
-      } else if (page === 'periodic') {
-        renderPeriodic(content);
-      } else {
-        renderHistory(content);
-      }
-
-      restorePlanPosition(position);
-    }
-
-    function completeButton(task) {
-      const complete = button('', function () {
         if (
-          task.localOnly ||
+          page !== 'plan' ||
+          !timeline ||
+          timeline.dataset.date !== selectedDate
+        ) {
+          return null;
+        }
+
+        return {
+          date: selectedDate,
+          x: window.scrollX,
+          y: window.scrollY
+        };
+      }
+
+      function restorePosition(position) {
+        if (
+          position &&
+          page === 'plan' &&
+          selectedDate === position.date
+        ) {
+          window.scrollTo(position.x, position.y);
+        }
+      }
+
+      function render() {
+        const position = drag ? null : capturePosition();
+        renderStatus();
+        renderOutbox();
+
+        if (drag) {
+          return;
+        }
+
+        document.querySelectorAll('nav [data-page]').forEach(function (element) {
+          element.classList.toggle('active', element.dataset.page === page);
+        });
+
+        const content = $('content');
+        content.replaceChildren();
+
+        // 完了済みは、取得前でも読み込み状態を表示する。
+        if (page === 'history') {
+          renderHistory(content);
+          return;
+        }
+
+        const pendingAdds = state.jobs.some(function (job) {
+          return job.payload.action === 'add';
+        });
+
+        if (
+          !state.snapshot &&
+          (!pendingAdds || page === 'periodic')
+        ) {
+          content.appendChild(make(
+            'p',
+            client.configured() ? '一覧未取得' : '接続先を設定してください'
+          ));
+          return;
+        }
+
+        if (!state.snapshot) {
+          content.appendChild(make('p', 'この端末の送信待ち', 'sub'));
+        }
+
+        if (page === 'plan') {
+          renderPlan(content);
+        } else if (page === 'tasks') {
+          renderTasks(content);
+        } else {
+          renderPeriodic(content);
+        }
+
+        restorePosition(position);
+      }
+
+      function completeButton(task) {
+        const control = button('', function () {
+          if (
+            task.localOnly ||
+            drag ||
+            Date.now() < suppressClickUntil ||
+            !confirm('「' + task.title + '」を完了にしますか。')
+          ) {
+            return;
+          }
+
+          const original = taskById(state.snapshot, task.taskId);
+
+          if (!original) {
+            notify('タスクが見つかりません', true);
+            return;
+          }
+
+          client.enqueue({
+            action: 'done',
+            taskId: task.taskId,
+            expectedTask: original.version
+          }, '完了：' + task.title).catch(function (error) {
+            failed('保存できませんでした', error);
+          });
+        }, 'hit');
+
+        control.dataset.act = 'done';
+        control.disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          !!task.localOnly;
+
+        control.setAttribute('aria-label', task.title + 'を完了');
+        control.appendChild(make('span', null, 'circle'));
+        return control;
+      }
+
+      function editButton(task, className) {
+        const control = button('編集', function () {
+          if (
+            task.localOnly ||
+            drag ||
+            Date.now() < suppressClickUntil
+          ) {
+            return;
+          }
+
+          openTaskEditor(task.taskId);
+        }, className || '');
+
+        control.dataset.act = 'edit';
+        control.disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          !navigator.onLine ||
+          !!task.localOnly;
+
+        control.setAttribute('aria-label', task.title + 'を編集');
+        return control;
+      }
+
+      /* ---------- 1日の計画 ---------- */
+
+      function renderPlan(content) {
+        content.appendChild(make('h2', '1日の計画'));
+
+        const tools = make('div', null, 'toolbar');
+        const date = make('input');
+        date.type = 'date';
+        date.value = selectedDate;
+        date.setAttribute('aria-label', '計画の日付');
+
+        date.addEventListener('change', function () {
+          if (date.value) {
+            selectedDate = date.value;
+            render();
+          }
+        });
+
+        tools.append(
+          button('前日', function () {
+            selectedDate = dateShift(selectedDate, -1);
+            render();
+          }),
+          date,
+          button('今日', function () {
+            selectedDate = japanDate();
+            render();
+          }),
+          button('翌日', function () {
+            selectedDate = dateShift(selectedDate, 1);
+            render();
+          })
+        );
+
+        content.appendChild(tools);
+
+        const tasks = client.effectiveTasks().filter(function (task) {
+          return task.date === selectedDate;
+        }).sort(compareTasks);
+
+        content.appendChild(make('div', tasks.length + '件', 'sub'));
+
+        const timeline = make('div', null, 'timeline');
+        timeline.id = 'timeline';
+        timeline.dataset.date = selectedDate;
+
+        [null].concat(Array.from({
+          length: 15
+        }, function (_, index) {
+          return index + 8;
+        })).forEach(function (hour) {
+          const section = make('section', null, 'slot');
+          section.dataset.hour = hour === null ? '' : String(hour);
+          section.appendChild(make('div', hourLabel(hour), 'slot-label'));
+
+          const list = make('ul', null, 'slot-list');
+
+          tasks.filter(function (task) {
+            return task.hour === hour;
+          }).forEach(function (task) {
+            const row = make(
+              'li',
+              null,
+              'task' + (task.localOnly ? ' pending-add' : '')
+            );
+
+            row.dataset.id = task.taskId;
+            row.dataset.local = task.localOnly ? 'true' : 'false';
+
+            const text = make('div', null, 'ttl');
+            text.appendChild(make('div', task.title));
+
+            if (task.due) {
+              text.appendChild(make('div', '期限 ' + task.due, 'task-due'));
+            }
+
+            if (task.localOnly) {
+              text.appendChild(make('div', task.pendingText, 'pending-label'));
+            }
+
+            const grip = make('button', '≡', 'grip');
+            grip.type = 'button';
+            grip.dataset.act = 'grip';
+            grip.disabled = !!task.localOnly;
+            grip.setAttribute('aria-label', task.title + 'を移動');
+
+            row.append(
+              completeButton(task),
+              text,
+              editButton(task, 'plan-edit'),
+              grip
+            );
+
+            list.appendChild(row);
+          });
+
+          section.appendChild(list);
+          timeline.appendChild(section);
+        });
+
+        timeline.appendChild(make('div', '23:00', 'timeline-end'));
+
+        const line = make('div', null, 'now-line');
+        line.id = 'now-line';
+        line.hidden = true;
+        line.appendChild(make('span'));
+        timeline.appendChild(line);
+
+        content.appendChild(timeline);
+        updateNow();
+      }
+
+      function visibleItems() {
+        return Array.from(
+          document.querySelectorAll('#timeline .task[data-local="false"]')
+        ).map(function (row) {
+          const value = row.closest('.slot').dataset.hour;
+
+          return {
+            id: row.dataset.id,
+            hour: value === '' ? null : Number(value)
+          };
+        });
+      }
+
+      function clearHold() {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+        }
+
+        holdTimer = null;
+        candidate = null;
+      }
+
+      function startDrag(row, id) {
+        if (
+          !state.snapshot ||
           drag ||
-          Date.now() < suppressClickUntil ||
-          !confirm('「' + task.title + '」を完了にしますか。')
+          row.dataset.local === 'true' ||
+          !document.contains(row)
         ) {
           return;
         }
 
-        const original = taskById(state.snapshot, task.taskId);
+        clearHold();
 
-        if (!original) {
-          notify(
-            'タスクが見つかりません',
-            true,
-            '',
-            '「最新を取得」を押して確認してください。'
-          );
-          return;
+        const payload = {
+          action: 'order',
+          date: selectedDate,
+          expectedDay: dayVersion(state.snapshot, selectedDate)
+        };
+
+        dragContext = {
+          payload: payload,
+          context: client.context(payload, state.snapshot)
+        };
+
+        drag = row;
+        pointerId = id;
+        row.classList.add('dragging');
+
+        try {
+          $('content').setPointerCapture(id);
+        } catch (error) {
+          // 終了は画面全体でも受け取る。
         }
 
-        enqueue({
-          action: 'done',
-          taskId: task.taskId,
-          expectedTask: original.version
-        }, '完了：' + task.title).catch(function (error) {
-          notify('保存できませんでした', true, 'storage', error.message);
-        });
-      }, 'hit');
-
-      complete.dataset.act = 'done';
-      complete.disabled =
-        !storageReady ||
-        legacyBlocked ||
-        !!task.localOnly;
-
-      complete.setAttribute('aria-label', task.title + 'を完了');
-      complete.appendChild(make('span', null, 'circle'));
-      return complete;
-    }
-
-    function taskEditButton(task, className) {
-      const edit = button('編集', function () {
-        if (task.localOnly || drag || Date.now() < suppressClickUntil) {
-          return;
+        if (navigator.vibrate) {
+          navigator.vibrate(15);
         }
-
-        openTaskEditor(task.taskId);
-      }, className || '');
-
-      edit.dataset.act = 'edit';
-      edit.disabled =
-        !storageReady ||
-        legacyBlocked ||
-        !navigator.onLine ||
-        !!task.localOnly;
-
-      edit.setAttribute('aria-label', task.title + 'を編集');
-
-      if (task.localOnly) {
-        edit.title = '送信結果の確認後に編集できます';
-      } else if (!navigator.onLine) {
-        edit.title = '通信できるときに編集できます';
       }
 
-      return edit;
-    }
+      function stopAuto() {
+        if (autoTimer) {
+          clearInterval(autoTimer);
+        }
 
-    /* ---------- 1日の計画 ---------- */
+        autoTimer = null;
+        autoDirection = 0;
+      }
 
-    function renderPlan(content) {
-      content.appendChild(make('h2', '1日の計画'));
+      function placeDrag(x, y) {
+        const timeline = $('timeline');
 
-      const tools = make('div', null, 'toolbar');
-      const date = make('input');
-      date.type = 'date';
-      date.value = selectedDate;
-      date.setAttribute('aria-label', '計画の日付');
+        if (!drag || !timeline) {
+          return;
+        }
 
-      date.addEventListener('change', function () {
-        if (date.value) {
-          selectedDate = date.value;
+        const boundary = timeline.getBoundingClientRect();
+
+        if (x < boundary.left || x > boundary.right) {
+          return;
+        }
+
+        const slot = Array.from(timeline.querySelectorAll('.slot'))
+          .find(function (section) {
+            const rect = section.getBoundingClientRect();
+            return y >= rect.top && y < rect.bottom;
+          });
+
+        if (!slot) {
+          return;
+        }
+
+        const list = slot.querySelector('.slot-list');
+
+        const before = Array.from(list.querySelectorAll('.task'))
+          .find(function (row) {
+            if (row === drag) {
+              return false;
+            }
+
+            const rect = row.getBoundingClientRect();
+            return y < rect.top + rect.height / 2;
+          }) || null;
+
+        if (
+          drag.parentNode !== list ||
+          (before && drag.nextElementSibling !== before) ||
+          (!before && drag.nextElementSibling)
+        ) {
+          list.insertBefore(drag, before);
+          updateNow();
+        }
+      }
+
+      function autoScroll(y) {
+        autoDirection = y < 85
+          ? -10
+          : y > window.innerHeight - 100
+            ? 10
+            : 0;
+
+        if (!autoDirection) {
+          stopAuto();
+          return;
+        }
+
+        if (!autoTimer) {
+          autoTimer = setInterval(function () {
+            window.scrollBy(0, autoDirection);
+            placeDrag(pointerX, pointerY);
+          }, 16);
+        }
+      }
+
+      async function endDrag(cancelled) {
+        clearHold();
+
+        if (!drag) {
+          pointerId = null;
+          return;
+        }
+
+        const items = visibleItems();
+        const captured = dragContext;
+        const id = pointerId;
+
+        drag.classList.remove('dragging');
+        drag = null;
+        dragContext = null;
+        pointerId = null;
+        suppressClickUntil = Date.now() + 500;
+        stopAuto();
+
+        try {
+          if ($('content').hasPointerCapture(id)) {
+            $('content').releasePointerCapture(id);
+          }
+        } catch (error) {
+          // 指が離れた後はそのまま終了する。
+        }
+
+        if (cancelled) {
           render();
+          return;
+        }
+
+        try {
+          const payload = Object.assign({}, captured.payload, {
+            items: items
+          });
+
+          await client.enqueue(
+            payload,
+            payload.date + ' の時間帯・並び順',
+            captured.context
+          );
+        } catch (error) {
+          failed('移動を保存できませんでした', error);
+          render();
+        }
+      }
+
+      $('content').addEventListener('pointerdown', function (event) {
+        if (
+          page !== 'plan' ||
+          event.isPrimary === false ||
+          (event.pointerType === 'mouse' && event.button !== 0)
+        ) {
+          return;
+        }
+
+        const row = event.target.closest('.task');
+
+        if (
+          !row ||
+          row.dataset.local === 'true' ||
+          event.target.closest('[data-act="done"], [data-act="edit"]')
+        ) {
+          return;
+        }
+
+        clearHold();
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startY = event.clientY;
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+
+        if (event.target.closest('[data-act="grip"]')) {
+          event.preventDefault();
+          startDrag(row, event.pointerId);
+          return;
+        }
+
+        candidate = row;
+        const heldId = event.pointerId;
+
+        holdTimer = setTimeout(function () {
+          if (candidate === row) {
+            startDrag(row, heldId);
+          }
+        }, 600);
+      });
+
+      document.addEventListener('pointermove', function (event) {
+        if (pointerId !== null && event.pointerId !== pointerId) {
+          return;
+        }
+
+        if (!drag) {
+          if (
+            holdTimer &&
+            (
+              Math.abs(event.clientX - startX) > 8 ||
+              Math.abs(event.clientY - startY) > 8
+            )
+          ) {
+            clearHold();
+          }
+
+          return;
+        }
+
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+        placeDrag(pointerX, pointerY);
+        autoScroll(pointerY);
+      }, {
+        passive: false
+      });
+
+      document.addEventListener('touchmove', function (event) {
+        if (drag && event.cancelable) {
+          event.preventDefault();
+        }
+      }, {
+        passive: false
+      });
+
+      document.addEventListener('pointerup', function (event) {
+        if (pointerId === null || pointerId === event.pointerId) {
+          endDrag(false);
         }
       });
 
-      tools.append(
-        button('前日', function () {
-          selectedDate = dateShift(selectedDate, -1);
-          render();
-        }),
-        date,
-        button('今日', function () {
-          selectedDate = japanDate();
-          render();
-        }),
-        button('翌日', function () {
-          selectedDate = dateShift(selectedDate, 1);
-          render();
-        })
-      );
+      document.addEventListener('pointercancel', function (event) {
+        if (pointerId === null || pointerId === event.pointerId) {
+          endDrag(true);
+        }
+      });
 
-      content.appendChild(tools);
+      function updateNow() {
+        const line = $('now-line');
+        const timeline = $('timeline');
 
-      const tasks = effectiveTasks().filter(function (task) {
-        return task.date === selectedDate;
-      }).sort(compareTasks);
+        if (!line || !timeline) {
+          return;
+        }
 
-      content.appendChild(make('div', tasks.length + '件', 'sub'));
+        const now = new Date(Date.now() + 9 * 3600000);
+        const hour = now.getUTCHours();
+        const minute = now.getUTCMinutes();
+        const slot = timeline.querySelector('.slot[data-hour="' + hour + '"]');
 
-      const timeline = make('div', null, 'timeline');
-      timeline.id = 'timeline';
-      timeline.dataset.date = selectedDate;
+        if (
+          selectedDate !== now.toISOString().slice(0, 10) ||
+          hour < 8 ||
+          hour >= 23 ||
+          !slot
+        ) {
+          line.hidden = true;
+          return;
+        }
 
-      [null].concat(Array.from({
-        length: 15
-      }, function (_, index) {
-        return index + 8;
-      })).forEach(function (hour) {
-        const section = make('section', null, 'slot');
-        section.dataset.hour = hour === null ? '' : String(hour);
-        section.appendChild(make('div', hourLabel(hour), 'slot-label'));
+        line.style.top =
+          slot.offsetTop + slot.offsetHeight * minute / 60 + 'px';
 
-        const list = make('ul', null, 'slot-list');
+        line.firstElementChild.textContent =
+          String(hour).padStart(2, '0') + ':' +
+          String(minute).padStart(2, '0');
 
-        tasks.filter(function (task) {
-          return task.hour === hour;
-        }).forEach(function (task) {
-          const row = make(
-            'li',
+        line.hidden = false;
+      }
+
+      /* ---------- タスク一覧・カレンダー ---------- */
+
+      function filterTask(task) {
+        const today = japanDate();
+        const date = new Date(today + 'T12:00:00Z');
+        const weekEnd = dateShift(today, (7 - date.getUTCDay()) % 7);
+
+        switch (taskFilter) {
+          case 'today':
+            return task.date === today;
+          case 'date':
+            return task.date === filterDate;
+          case 'week':
+            return !!task.date && task.date >= today && task.date <= weekEnd;
+          case 'runoverdue':
+            return !!task.date && task.date < today;
+          case 'hasdue':
+            return !!task.due;
+          case 'overdue':
+            return !!task.due && task.due < today;
+          case 'nodate':
+            return !task.date;
+          case 'noboth':
+            return !task.date && !task.due;
+          default:
+            return true;
+        }
+      }
+
+      function taskInfo(task) {
+        const parts = [];
+
+        if (task.due) {
+          parts.push('期限 ' + task.due);
+        }
+
+        if (task.date) {
+          parts.push('実行 ' + task.date);
+        }
+
+        if (task.hour != null) {
+          parts.push(task.hour + '時');
+        }
+
+        return parts.join(' ／ ');
+      }
+
+      function renderTaskCards(content, tasks) {
+        if (!tasks.length) {
+          content.appendChild(make('p', 'タスクなし', 'sub'));
+          return;
+        }
+
+        const cards = make('div', null, 'cards');
+
+        tasks.forEach(function (task) {
+          const card = make(
+            'div',
             null,
-            'task' + (task.localOnly ? ' pending-add' : '')
+            'card' + (task.localOnly ? ' pending-add' : '')
           );
 
-          row.dataset.id = task.taskId;
-          row.dataset.local = task.localOnly ? 'true' : 'false';
+          const main = make('div', null, 'card-main');
+          main.appendChild(make('div', task.title, 'card-title'));
 
-          const text = make('div', null, 'ttl');
-          text.appendChild(make('div', task.title));
+          const info = taskInfo(task);
 
-          if (task.due) {
-            text.appendChild(make('div', '期限 ' + task.due, 'task-due'));
+          if (info) {
+            main.appendChild(make('div', info, 'sub'));
           }
 
           if (task.localOnly) {
-            text.appendChild(make('div', task.pendingText, 'pending-label'));
+            main.appendChild(make('div', task.pendingText, 'pending-label'));
           }
 
-          const grip = make('button', '≡', 'grip');
-          grip.type = 'button';
-          grip.dataset.act = 'grip';
-          grip.disabled = !!task.localOnly;
-          grip.setAttribute('aria-label', task.title + 'を移動');
-
-          row.append(
-            completeButton(task),
-            text,
-            taskEditButton(task, 'plan-edit'),
-            grip
-          );
-
-          list.appendChild(row);
+          card.append(completeButton(task), main, editButton(task));
+          cards.appendChild(card);
         });
 
-        section.appendChild(list);
-        timeline.appendChild(section);
-      });
-
-      timeline.appendChild(make('div', '23:00', 'timeline-end'));
-
-      const line = make('div', null, 'now-line');
-      line.id = 'now-line';
-      line.hidden = true;
-      line.appendChild(make('span'));
-      timeline.appendChild(line);
-
-      content.appendChild(timeline);
-      updateNow();
-    }
-
-    function visibleItems() {
-      return Array.from(
-        document.querySelectorAll('#timeline .task[data-local="false"]')
-      ).map(function (row) {
-        const value = row.closest('.slot').dataset.hour;
-
-        return {
-          id: row.dataset.id,
-          hour: value === '' ? null : Number(value)
-        };
-      });
-    }
-
-    function clearHold() {
-      if (holdTimer) {
-        clearTimeout(holdTimer);
+        content.appendChild(cards);
       }
 
-      holdTimer = null;
-      candidate = null;
-    }
+      function renderTasks(content) {
+        content.appendChild(make('h2', 'タスク一覧'));
 
-    function startDrag(row, id) {
-      if (
-        !state.snapshot ||
-        drag ||
-        row.dataset.local === 'true' ||
-        !document.contains(row)
-      ) {
-        return;
-      }
+        const switcher = make('div', null, 'view-switch');
+        switcher.setAttribute('role', 'group');
 
-      clearHold();
+        [
+          ['list', '一覧'],
+          ['calendar', 'カレンダー']
+        ].forEach(function (entry) {
+          const control = button(entry[1], function () {
+            taskView = entry[0];
+            render();
+          }, taskView === entry[0] ? 'active' : '');
 
-      const payload = {
-        action: 'order',
-        date: selectedDate,
-        expectedDay: dayVersion(state.snapshot, selectedDate)
-      };
-
-      dragContext = {
-        payload: payload,
-        context: contextFor(payload, state.snapshot)
-      };
-
-      drag = row;
-      pointerId = id;
-      row.classList.add('dragging');
-
-      try {
-        $('content').setPointerCapture(id);
-      } catch (error) {
-        // 終了は画面全体でも受け取る。
-      }
-
-      if (navigator.vibrate) {
-        navigator.vibrate(15);
-      }
-    }
-
-    function stopAuto() {
-      if (autoTimer) {
-        clearInterval(autoTimer);
-      }
-
-      autoTimer = null;
-      autoDirection = 0;
-    }
-
-    function placeDrag(x, y) {
-      const timeline = $('timeline');
-
-      if (!drag || !timeline) {
-        return;
-      }
-
-      const boundary = timeline.getBoundingClientRect();
-
-      if (x < boundary.left || x > boundary.right) {
-        return;
-      }
-
-      const slot = Array.from(timeline.querySelectorAll('.slot')).find(function (section) {
-        const rect = section.getBoundingClientRect();
-        return y >= rect.top && y < rect.bottom;
-      });
-
-      if (!slot) {
-        return;
-      }
-
-      const list = slot.querySelector('.slot-list');
-
-      const before = Array.from(list.querySelectorAll('.task')).find(function (row) {
-        if (row === drag) {
-          return false;
-        }
-
-        const rect = row.getBoundingClientRect();
-        return y < rect.top + rect.height / 2;
-      }) || null;
-
-      if (
-        drag.parentNode !== list ||
-        (before && drag.nextElementSibling !== before) ||
-        (!before && drag.nextElementSibling)
-      ) {
-        list.insertBefore(drag, before);
-        updateNow();
-      }
-    }
-
-    function autoScroll(y) {
-      autoDirection = y < 85
-        ? -10
-        : y > window.innerHeight - 100
-          ? 10
-          : 0;
-
-      if (!autoDirection) {
-        stopAuto();
-        return;
-      }
-
-      if (!autoTimer) {
-        autoTimer = setInterval(function () {
-          window.scrollBy(0, autoDirection);
-          placeDrag(pointerX, pointerY);
-        }, 16);
-      }
-    }
-
-    async function endDrag(cancelled) {
-      clearHold();
-
-      if (!drag) {
-        pointerId = null;
-        return;
-      }
-
-      const items = visibleItems();
-      const captured = dragContext;
-      const id = pointerId;
-
-      drag.classList.remove('dragging');
-      drag = null;
-      dragContext = null;
-      pointerId = null;
-      suppressClickUntil = Date.now() + 500;
-      stopAuto();
-
-      try {
-        if ($('content').hasPointerCapture(id)) {
-          $('content').releasePointerCapture(id);
-        }
-      } catch (error) {
-        // 指が離れた後はそのまま終了する。
-      }
-
-      if (cancelled) {
-        render();
-        return;
-      }
-
-      try {
-        const payload = Object.assign({}, captured.payload, {
-          items: items
+          control.setAttribute('aria-pressed', String(taskView === entry[0]));
+          switcher.appendChild(control);
         });
 
-        await enqueue(
-          payload,
-          payload.date + ' の時間帯・並び順',
-          captured.context
-        );
-      } catch (error) {
-        notify(
-          '移動を保存できませんでした',
-          true,
-          'storage',
-          '移動前の表示に戻しました。\n' + String(error.message || error)
-        );
+        content.appendChild(switcher);
 
-        render();
-      }
-    }
-
-    $('content').addEventListener('pointerdown', function (event) {
-      if (
-        page !== 'plan' ||
-        event.isPrimary === false ||
-        (event.pointerType === 'mouse' && event.button !== 0)
-      ) {
-        return;
-      }
-
-      const row = event.target.closest('.task');
-
-      if (
-        !row ||
-        row.dataset.local === 'true' ||
-        event.target.closest('[data-act="done"], [data-act="edit"]')
-      ) {
-        return;
-      }
-
-      clearHold();
-      pointerId = event.pointerId;
-      startX = event.clientX;
-      startY = event.clientY;
-      pointerX = event.clientX;
-      pointerY = event.clientY;
-
-      if (event.target.closest('[data-act="grip"]')) {
-        event.preventDefault();
-        startDrag(row, event.pointerId);
-        return;
-      }
-
-      candidate = row;
-      const heldId = event.pointerId;
-
-      holdTimer = setTimeout(function () {
-        if (candidate === row) {
-          startDrag(row, heldId);
-        }
-      }, 600);
-    });
-
-    document.addEventListener('pointermove', function (event) {
-      if (pointerId !== null && event.pointerId !== pointerId) {
-        return;
-      }
-
-      if (!drag) {
-        if (
-          holdTimer &&
-          (
-            Math.abs(event.clientX - startX) > 8 ||
-            Math.abs(event.clientY - startY) > 8
-          )
-        ) {
-          clearHold();
-        }
-
-        return;
-      }
-
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-
-      pointerX = event.clientX;
-      pointerY = event.clientY;
-      placeDrag(pointerX, pointerY);
-      autoScroll(pointerY);
-    }, {
-      passive: false
-    });
-
-    document.addEventListener('touchmove', function (event) {
-      if (drag && event.cancelable) {
-        event.preventDefault();
-      }
-    }, {
-      passive: false
-    });
-
-    document.addEventListener('pointerup', function (event) {
-      if (pointerId === null || pointerId === event.pointerId) {
-        endDrag(false);
-      }
-    });
-
-    document.addEventListener('pointercancel', function (event) {
-      if (pointerId === null || pointerId === event.pointerId) {
-        endDrag(true);
-      }
-    });
-
-    function updateNow() {
-      const line = $('now-line');
-      const timeline = $('timeline');
-
-      if (!line || !timeline) {
-        return;
-      }
-
-      const now = new Date(Date.now() + 9 * 3600000);
-      const hour = now.getUTCHours();
-      const minute = now.getUTCMinutes();
-      const slot = timeline.querySelector('.slot[data-hour="' + hour + '"]');
-
-      if (
-        selectedDate !== now.toISOString().slice(0, 10) ||
-        hour < 8 ||
-        hour >= 23 ||
-        !slot
-      ) {
-        line.hidden = true;
-        return;
-      }
-
-      line.style.top =
-        slot.offsetTop + slot.offsetHeight * minute / 60 + 'px';
-
-      line.firstElementChild.textContent =
-        String(hour).padStart(2, '0') + ':' +
-        String(minute).padStart(2, '0');
-
-      line.hidden = false;
-    }
-
-    /* ---------- タスク一覧・カレンダー ---------- */
-
-    function filterTask(task) {
-      const today = japanDate();
-      const date = new Date(today + 'T12:00:00Z');
-      const weekEnd = dateShift(today, (7 - date.getUTCDay()) % 7);
-
-      switch (taskFilter) {
-        case 'today':
-          return task.date === today;
-        case 'date':
-          return task.date === filterDate;
-        case 'week':
-          return !!task.date && task.date >= today && task.date <= weekEnd;
-        case 'runoverdue':
-          return !!task.date && task.date < today;
-        case 'hasdue':
-          return !!task.due;
-        case 'overdue':
-          return !!task.due && task.due < today;
-        case 'nodate':
-          return !task.date;
-        case 'noboth':
-          return !task.date && !task.due;
-        default:
-          return true;
-      }
-    }
-
-    function taskInfo(task) {
-      const parts = [];
-
-      if (task.due) {
-        parts.push('期限 ' + task.due);
-      }
-
-      if (task.date) {
-        parts.push('実行 ' + task.date);
-      }
-
-      if (task.hour !== null && task.hour !== undefined) {
-        parts.push(task.hour + '時');
-      }
-
-      return parts.join(' ／ ');
-    }
-
-    function renderTaskCards(content, tasks, emptyMessage) {
-      if (!tasks.length) {
-        content.appendChild(make('p', emptyMessage || 'タスクなし', 'sub'));
-        return;
-      }
-
-      const cards = make('div', null, 'cards');
-
-      tasks.forEach(function (task) {
-        const card = make(
-          'div',
-          null,
-          'card' + (task.localOnly ? ' pending-add' : '')
-        );
-
-        const main = make('div', null, 'card-main');
-        main.appendChild(make('div', task.title, 'card-title'));
-
-        const info = taskInfo(task);
-
-        if (info) {
-          main.appendChild(make('div', info, 'sub'));
-        }
-
-        if (task.localOnly) {
-          main.appendChild(make('div', task.pendingText, 'pending-label'));
-        }
-
-        card.append(
-          completeButton(task),
-          main,
-          taskEditButton(task)
-        );
-
-        cards.appendChild(card);
-      });
-
-      content.appendChild(cards);
-    }
-
-    function renderTasks(content) {
-      content.appendChild(make('h2', 'タスク一覧'));
-
-      const switcher = make('div', null, 'view-switch');
-      switcher.setAttribute('role', 'group');
-      switcher.setAttribute('aria-label', 'タスク一覧の表示');
-
-      [
-        ['list', '一覧'],
-        ['calendar', 'カレンダー']
-      ].forEach(function (entry) {
-        const control = button(entry[1], function () {
-          taskView = entry[0];
-          render();
-        }, taskView === entry[0] ? 'active' : '');
-
-        control.setAttribute('aria-pressed', String(taskView === entry[0]));
-        switcher.appendChild(control);
-      });
-
-      content.appendChild(switcher);
-
-      if (taskView === 'calendar') {
-        renderCalendar(content);
-      } else {
-        renderTaskList(content);
-      }
-    }
-
-    function renderTaskList(content) {
-      const tools = make('div', null, 'toolbar task-filters');
-      const filterField = make('label', null, 'filter-field');
-      const select = make('select');
-      select.id = 'task-filter';
-
-      const all = make('option', 'すべて');
-      all.value = 'all';
-      select.appendChild(all);
-
-      [
-        {
-          label: '期限',
-          items: [
-            ['hasdue', '期限あり（近い順）'],
-            ['overdue', '期限切れ']
-          ]
-        },
-        {
-          label: '実行日',
-          items: [
-            ['today', '今日の分'],
-            ['week', '今週の分'],
-            ['date', '日付を指定'],
-            ['runoverdue', '実行日超過']
-          ]
-        },
-        {
-          label: '未設定',
-          items: [
-            ['nodate', '実行日未定'],
-            ['noboth', '期限・実行日なし']
-          ]
-        }
-      ].forEach(function (group) {
-        const optgroup = make('optgroup');
-        optgroup.label = group.label;
-
-        group.items.forEach(function (entry) {
-          const option = make('option', entry[1]);
-          option.value = entry[0];
-          optgroup.appendChild(option);
-        });
-
-        select.appendChild(optgroup);
-      });
-
-      select.value = taskFilter;
-
-      select.addEventListener('change', function () {
-        taskFilter = select.value;
-        render();
-      });
-
-      filterField.append(make('span', '絞り込み'), select);
-      tools.appendChild(filterField);
-
-      if (taskFilter === 'date') {
-        const dateField = make('label', null, 'filter-field');
-        const input = make('input');
-        input.type = 'date';
-        input.value = filterDate;
-
-        input.addEventListener('change', function () {
-          filterDate = input.value;
-          render();
-        });
-
-        dateField.append(make('span', '実行日'), input);
-        tools.appendChild(dateField);
-      }
-
-      content.appendChild(tools);
-      const tasks = effectiveTasks().filter(filterTask);
-
-      if (taskFilter === 'hasdue') {
-        tasks.sort(function (a, b) {
-          return a.due.localeCompare(b.due) || a.row - b.row;
-        });
-      } else if (taskFilter === 'runoverdue') {
-        tasks.sort(function (a, b) {
-          return a.date.localeCompare(b.date) || compareTasks(a, b);
-        });
-      }
-
-      content.appendChild(make('p', tasks.length + '件', 'sub'));
-      renderTaskCards(content, tasks);
-    }
-
-    function moveCalendarMonth(amount) {
-      calendarMonth = monthShift(calendarMonth, amount);
-      calendarDate = calendarMonth + '-01';
-      calendarUndated = false;
-      render();
-    }
-
-    function renderCalendar(content) {
-      const tasks = effectiveTasks();
-      const counts = new Map();
-      let undatedCount = 0;
-
-      tasks.forEach(function (task) {
-        if (task.date) {
-          counts.set(task.date, (counts.get(task.date) || 0) + 1);
+        if (taskView === 'calendar') {
+          renderCalendar(content);
         } else {
-          undatedCount++;
+          renderTaskList(content);
         }
-      });
-
-      const calendar = make('section', null, 'calendar');
-      const tools = make('div', null, 'toolbar');
-
-      const monthText = Number(calendarMonth.slice(0, 4)) + '年' +
-        Number(calendarMonth.slice(5, 7)) + '月';
-
-      tools.append(
-        button('前月', function () {
-          moveCalendarMonth(-1);
-        }),
-        make('h3', monthText, 'calendar-month'),
-        button('今月', function () {
-          calendarDate = japanDate();
-          calendarMonth = calendarDate.slice(0, 7);
-          calendarUndated = false;
-          render();
-        }),
-        button('翌月', function () {
-          moveCalendarMonth(1);
-        })
-      );
-
-      calendar.appendChild(tools);
-
-      const grid = make('div', null, 'calendar-grid');
-      grid.setAttribute('role', 'group');
-      grid.setAttribute('aria-label', monthText + 'のタスク数');
-
-      ['日', '月', '火', '水', '木', '金', '土'].forEach(function (weekday) {
-        grid.appendChild(make('div', weekday, 'calendar-weekday'));
-      });
-
-      const first = new Date(calendarMonth + '-01T12:00:00Z');
-      const firstWeekday = first.getUTCDay();
-      const last = new Date(first);
-      last.setUTCMonth(last.getUTCMonth() + 1);
-      last.setUTCDate(0);
-
-      const daysInMonth = last.getUTCDate();
-      const today = japanDate();
-
-      for (let index = 0; index < firstWeekday; index++) {
-        const empty = make('div');
-        empty.setAttribute('aria-hidden', 'true');
-        grid.appendChild(empty);
       }
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = calendarMonth + '-' + String(day).padStart(2, '0');
-        const count = counts.get(date) || 0;
-        const selected = !calendarUndated && calendarDate === date;
+      function renderTaskList(content) {
+        const tools = make('div', null, 'toolbar task-filters');
+        const label = make('label', null, 'filter-field');
+        const select = make('select');
 
-        const cell = button('', function () {
-          calendarDate = date;
-          calendarUndated = false;
+        const all = make('option', 'すべて');
+        all.value = 'all';
+        select.appendChild(all);
+
+        [
+          {
+            label: '期限',
+            items: [
+              ['hasdue', '期限あり（近い順）'],
+              ['overdue', '期限切れ']
+            ]
+          },
+          {
+            label: '実行日',
+            items: [
+              ['today', '今日の分'],
+              ['week', '今週の分'],
+              ['date', '日付を指定'],
+              ['runoverdue', '実行日超過']
+            ]
+          },
+          {
+            label: '未設定',
+            items: [
+              ['nodate', '実行日未定'],
+              ['noboth', '期限・実行日なし']
+            ]
+          }
+        ].forEach(function (group) {
+          const optgroup = make('optgroup');
+          optgroup.label = group.label;
+
+          group.items.forEach(function (entry) {
+            const option = make('option', entry[1]);
+            option.value = entry[0];
+            optgroup.appendChild(option);
+          });
+
+          select.appendChild(optgroup);
+        });
+
+        select.value = taskFilter;
+
+        select.addEventListener('change', function () {
+          taskFilter = select.value;
           render();
-        }, 'calendar-day');
+        });
 
-        cell.classList.toggle('is-selected', selected);
-        cell.classList.toggle('is-today', date === today);
-        cell.setAttribute('aria-pressed', String(selected));
-        cell.setAttribute(
-          'aria-label',
-          dateLabel(date) + '、' + (count ? count + '件' : 'タスクなし')
+        label.append(make('span', '絞り込み'), select);
+        tools.appendChild(label);
+
+        if (taskFilter === 'date') {
+          const dateLabelElement = make('label', null, 'filter-field');
+          const input = make('input');
+          input.type = 'date';
+          input.value = filterDate;
+
+          input.addEventListener('change', function () {
+            filterDate = input.value;
+            render();
+          });
+
+          dateLabelElement.append(make('span', '実行日'), input);
+          tools.appendChild(dateLabelElement);
+        }
+
+        content.appendChild(tools);
+        const tasks = client.effectiveTasks().filter(filterTask);
+
+        if (taskFilter === 'hasdue') {
+          tasks.sort(function (a, b) {
+            return a.due.localeCompare(b.due) || a.row - b.row;
+          });
+        } else if (taskFilter === 'runoverdue') {
+          tasks.sort(function (a, b) {
+            return a.date.localeCompare(b.date) || compareTasks(a, b);
+          });
+        }
+
+        content.appendChild(make('p', tasks.length + '件', 'sub'));
+        renderTaskCards(content, tasks);
+      }
+
+      function moveCalendarMonth(amount) {
+        calendarMonth = monthShift(calendarMonth, amount);
+        calendarDate = calendarMonth + '-01';
+        calendarUndated = false;
+        render();
+      }
+
+      function renderCalendar(content) {
+        const tasks = client.effectiveTasks();
+        const counts = new Map();
+        let undatedCount = 0;
+
+        tasks.forEach(function (task) {
+          if (task.date) {
+            counts.set(task.date, (counts.get(task.date) || 0) + 1);
+          } else {
+            undatedCount++;
+          }
+        });
+
+        const calendar = make('section', null, 'calendar');
+        const tools = make('div', null, 'toolbar');
+
+        const monthText = Number(calendarMonth.slice(0, 4)) + '年' +
+          Number(calendarMonth.slice(5, 7)) + '月';
+
+        tools.append(
+          button('前月', function () {
+            moveCalendarMonth(-1);
+          }),
+          make('h3', monthText, 'calendar-month'),
+          button('今月', function () {
+            calendarDate = japanDate();
+            calendarMonth = calendarDate.slice(0, 7);
+            calendarUndated = false;
+            render();
+          }),
+          button('翌月', function () {
+            moveCalendarMonth(1);
+          })
         );
 
-        if (date === today) {
-          cell.setAttribute('aria-current', 'date');
+        calendar.appendChild(tools);
+
+        const grid = make('div', null, 'calendar-grid');
+        grid.setAttribute('role', 'group');
+        grid.setAttribute('aria-label', monthText + 'のタスク数');
+
+        ['日', '月', '火', '水', '木', '金', '土'].forEach(function (weekday) {
+          grid.appendChild(make('div', weekday, 'calendar-weekday'));
+        });
+
+        const first = new Date(calendarMonth + '-01T12:00:00Z');
+        const firstWeekday = first.getUTCDay();
+        const last = new Date(first);
+        last.setUTCMonth(last.getUTCMonth() + 1);
+        last.setUTCDate(0);
+
+        const daysInMonth = last.getUTCDate();
+        const today = japanDate();
+
+        for (let index = 0; index < firstWeekday; index++) {
+          grid.appendChild(make('div'));
         }
 
-        cell.append(
-          make('span', String(day), 'calendar-day-number'),
-          make('span', count ? count + '件' : '', 'calendar-count')
-        );
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = calendarMonth + '-' + String(day).padStart(2, '0');
+          const count = counts.get(date) || 0;
+          const selected = !calendarUndated && calendarDate === date;
 
-        grid.appendChild(cell);
-      }
+          const cell = button('', function () {
+            calendarDate = date;
+            calendarUndated = false;
+            render();
+          }, 'calendar-day');
 
-      const trailing = (7 - (firstWeekday + daysInMonth) % 7) % 7;
+          cell.classList.toggle('is-selected', selected);
+          cell.classList.toggle('is-today', date === today);
+          cell.setAttribute('aria-pressed', String(selected));
+          cell.setAttribute(
+            'aria-label',
+            dateLabel(date) + '、' + (count ? count + '件' : 'タスクなし')
+          );
 
-      for (let index = 0; index < trailing; index++) {
-        const empty = make('div');
-        empty.setAttribute('aria-hidden', 'true');
-        grid.appendChild(empty);
-      }
-
-      calendar.appendChild(grid);
-
-      const undated = button(
-        '実行日未定 ' + undatedCount + '件',
-        function () {
-          calendarUndated = true;
-          render();
-        },
-        'calendar-undated' + (calendarUndated ? ' is-selected' : '')
-      );
-
-      undated.setAttribute('aria-pressed', String(calendarUndated));
-      calendar.appendChild(undated);
-      content.appendChild(calendar);
-
-      const details = make('section', null, 'calendar-details');
-
-      details.appendChild(make(
-        'h3',
-        calendarUndated ? '実行日未定' : dateLabel(calendarDate)
-      ));
-
-      const shown = tasks.filter(function (task) {
-        return calendarUndated ? !task.date : task.date === calendarDate;
-      });
-
-      if (!calendarUndated) {
-        shown.sort(compareTasks);
-      }
-
-      renderTaskCards(details, shown);
-      content.appendChild(details);
-    }
-
-    /* ---------- 追加・編集 ---------- */
-
-    function field(name, label, type, value, required) {
-      const wrapper = make('label', null, 'field');
-      wrapper.appendChild(make('span', label));
-
-      const input = make('input');
-      input.name = name;
-      input.type = type;
-      input.value = value == null ? '' : String(value);
-      input.required = !!required;
-
-      if (type === 'text') {
-        input.maxLength = 200;
-      }
-
-      wrapper.appendChild(input);
-      $('editor-fields').appendChild(wrapper);
-      return input;
-    }
-
-    function selectField(name, label, options, value) {
-      const wrapper = make('label', null, 'field');
-      wrapper.appendChild(make('span', label));
-      const select = make('select');
-      select.name = name;
-
-      options.forEach(function (entry) {
-        const option = make('option', entry[1]);
-        option.value = String(entry[0]);
-        select.appendChild(option);
-      });
-
-      select.value = String(value);
-      wrapper.appendChild(select);
-      $('editor-fields').appendChild(wrapper);
-      return select;
-    }
-
-    function showEditor(title, handler, submitLabel) {
-      editorPlanPosition = capturePlanPosition();
-      $('editor-title').textContent = title;
-      $('editor-fields').replaceChildren();
-      $('editor-note').textContent = '';
-      $('editor-note').hidden = true;
-      $('editor-submit').textContent = submitLabel || '保存';
-      $('editor-submit').disabled = false;
-      $('editor-cancel').disabled = false;
-      editorContext = handler;
-      $('editor').showModal();
-    }
-
-    function openAdd() {
-      showEditor(
-        'タスクを追加',
-        async function (form) {
-          const title = String(form.get('title') || '').trim();
-          const due = String(form.get('due') || '');
-          const date = String(form.get('date') || '');
-
-          if (!title || title.length > 200) {
-            throw new Error('件名は1～200文字で入力してください。');
+          if (date === today) {
+            cell.setAttribute('aria-current', 'date');
           }
 
-          await enqueue({
-            action: 'add',
-            title: title,
-            due: due,
-            date: date
-          }, '追加：' + title +
-            ' ／ ' + (date ? '実行日：' + date : '実行日未定') +
-            (due ? ' ／ 期限：' + due : '')
+          cell.append(
+            make('span', String(day), 'calendar-day-number'),
+            make('span', count ? count + '件' : '', 'calendar-count')
           );
 
-          notify(
-            date
-              ? '追加先：' + dateLabel(date) + '（送信待ち）'
-              : '追加先：実行日未定（送信待ち）',
-            false,
-            'local'
-          );
-        },
-        '追加'
-      );
+          grid.appendChild(cell);
+        }
 
-      const titleInput = field('title', '件名＊', 'text', '', true);
-      field('due', '期限', 'date', '', false);
-      field('date', '実行日', 'date', '', false);
-      titleInput.focus();
-    }
+        const trailing = (7 - (firstWeekday + daysInMonth) % 7) % 7;
 
-    function onlineRequired() {
-      if (!navigator.onLine) {
-        notify('通信が必要です', true);
-        return false;
-      }
+        for (let index = 0; index < trailing; index++) {
+          grid.appendChild(make('div'));
+        }
 
-      return true;
-    }
+        calendar.appendChild(grid);
 
-    function openTaskEditor(id) {
-      if (!onlineRequired()) {
-        return;
-      }
-
-      const original = taskById(state.snapshot, id);
-
-      const visibleTask = effectiveTasks().find(function (task) {
-        return task.taskId === id && !task.localOnly;
-      });
-
-      if (!original || !visibleTask) {
-        notify(
-          'タスクが見つかりません',
-          true,
-          '',
-          '「最新を取得」を押して確認してください。'
+        const undated = button(
+          '実行日未定 ' + undatedCount + '件',
+          function () {
+            calendarUndated = true;
+            render();
+          },
+          'calendar-undated' + (calendarUndated ? ' is-selected' : '')
         );
-        return;
+
+        undated.setAttribute('aria-pressed', String(calendarUndated));
+        calendar.appendChild(undated);
+        content.appendChild(calendar);
+
+        const details = make('section', null, 'calendar-details');
+
+        details.appendChild(make(
+          'h3',
+          calendarUndated ? '実行日未定' : dateLabel(calendarDate)
+        ));
+
+        const shown = tasks.filter(function (task) {
+          return calendarUndated ? !task.date : task.date === calendarDate;
+        });
+
+        if (!calendarUndated) {
+          shown.sort(compareTasks);
+        }
+
+        renderTaskCards(details, shown);
+        content.appendChild(details);
       }
 
-      const captured = clone(visibleTask);
+      /* ---------- 追加・編集 ---------- */
 
-      const basePayload = {
-        action: 'edit',
-        taskId: id,
-        expectedTask: original.version
-      };
+      function field(name, label, type, value, required) {
+        const wrapper = make('label', null, 'field');
+        wrapper.appendChild(make('span', label));
 
-      const context = contextFor(basePayload, state.snapshot);
+        const input = make('input');
+        input.name = name;
+        input.type = type;
+        input.value = value == null ? '' : String(value);
+        input.required = !!required;
 
-      showEditor(
-        'タスクを編集',
-        async function (form) {
+        if (type === 'text') {
+          input.maxLength = 200;
+        }
+
+        wrapper.appendChild(input);
+        $('editor-fields').appendChild(wrapper);
+        return input;
+      }
+
+      function selectField(name, label, options, value) {
+        const wrapper = make('label', null, 'field');
+        wrapper.appendChild(make('span', label));
+        const select = make('select');
+        select.name = name;
+
+        options.forEach(function (entry) {
+          const option = make('option', entry[1]);
+          option.value = String(entry[0]);
+          select.appendChild(option);
+        });
+
+        select.value = String(value);
+        wrapper.appendChild(select);
+        $('editor-fields').appendChild(wrapper);
+        return select;
+      }
+
+      function showEditor(title, handler, submitLabel) {
+        editorPosition = capturePosition();
+        editorHandler = handler;
+        editorSaving = false;
+        $('editor-title').textContent = title;
+        $('editor-fields').replaceChildren();
+        $('editor-note').textContent = '';
+        $('editor-note').hidden = true;
+        $('editor-submit').textContent = submitLabel || '保存';
+        $('editor-submit').disabled = false;
+        $('editor-cancel').disabled = false;
+        $('editor').showModal();
+      }
+
+      function openAdd() {
+        showEditor(
+          'タスクを追加',
+          async function (form) {
+            const title = String(form.get('title') || '').trim();
+            const due = String(form.get('due') || '');
+            const date = String(form.get('date') || '');
+
+            if (!title || title.length > 200) {
+              throw new Error('件名は1～200文字で入力してください。');
+            }
+
+            await client.enqueue({
+              action: 'add',
+              title: title,
+              due: due,
+              date: date
+            }, '追加：' + title +
+              ' ／ ' + (date ? '実行日：' + date : '実行日未定') +
+              (due ? ' ／ 期限：' + due : '')
+            );
+
+            notify(
+              date
+                ? '追加先：' + dateLabel(date) + '（送信待ち）'
+                : '追加先：実行日未定（送信待ち）'
+            );
+          },
+          '追加'
+        );
+
+        const title = field('title', '件名＊', 'text', '', true);
+        field('due', '期限', 'date', '', false);
+        field('date', '実行日', 'date', '', false);
+        title.focus();
+      }
+
+      function openTaskEditor(id) {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        const original = taskById(state.snapshot, id);
+        const visible = client.effectiveTasks().find(function (task) {
+          return task.taskId === id && !task.localOnly;
+        });
+
+        if (!original || !visible) {
+          notify('タスクが見つかりません', true);
+          return;
+        }
+
+        const captured = clone(visible);
+
+        const payload = {
+          action: 'edit',
+          taskId: id,
+          expectedTask: original.version
+        };
+
+        const context = client.context(payload);
+
+        showEditor('タスクを編集', async function (form) {
           if (!navigator.onLine) {
             throw new Error('通信が戻ってから保存してください。入力は残しています。');
           }
@@ -3596,1367 +2256,1314 @@
             throw new Error('件名は1～200文字で入力してください。');
           }
 
-          await enqueue(Object.assign({}, basePayload, {
+          await client.enqueue(Object.assign({}, payload, {
             title: title,
             due: due,
             date: date
           }), '編集：' + title, context);
 
-          let message = '送信待ち';
-
-          if (captured.date !== date) {
-            message = date
-              ? dateLabel(date) + 'へ変更（送信待ち）'
-              : '実行日未定へ変更（送信待ち）';
-          }
-
-          notify(message, false, 'local');
-        }
-      );
-
-      const titleInput = field('title', '件名＊', 'text', captured.title, true);
-      field('due', '期限', 'date', captured.due, false);
-      field('date', '実行日', 'date', captured.date, false);
-      titleInput.focus();
-    }
-
-    let editorComposing = false;
-    let editorImeUntil = 0;
-
-    $('editor-form').addEventListener('compositionstart', function () {
-      editorComposing = true;
-    });
-
-    $('editor-form').addEventListener('compositionend', function () {
-      editorComposing = false;
-      editorImeUntil = performance.now() + 100;
-    });
-
-    $('editor-form').addEventListener('keydown', function (event) {
-      if (event.isComposing || event.keyCode === 229) {
-        editorImeUntil = performance.now() + 100;
-      }
-
-      if (event.key === 'Enter' && event.repeat) {
-        event.preventDefault();
-      }
-    });
-
-    $('editor-form').addEventListener('submit', async function (event) {
-      event.preventDefault();
-
-      if (
-        !editorContext ||
-        $('editor-submit').disabled ||
-        editorComposing ||
-        performance.now() < editorImeUntil
-      ) {
-        return;
-      }
-
-      const handler = editorContext;
-      const form = new FormData($('editor-form'));
-
-      $('editor-submit').disabled = true;
-      $('editor-cancel').disabled = true;
-      $('editor-note').hidden = true;
-
-      try {
-        await handler(form);
-        $('editor').close();
-      } catch (error) {
-        $('editor-note').textContent = String(error.message || error);
-        $('editor-note').hidden = false;
-      } finally {
-        $('editor-submit').disabled = false;
-        $('editor-cancel').disabled = false;
-      }
-    });
-
-    $('editor-cancel').addEventListener('click', function () {
-      $('editor').close();
-    });
-
-    $('editor').addEventListener('cancel', function (event) {
-      if ($('editor-submit').disabled) {
-        event.preventDefault();
-      }
-    });
-
-    $('editor').addEventListener('close', function () {
-      const position = editorPlanPosition;
-      editorPlanPosition = null;
-      editorContext = null;
-      editorComposing = false;
-
-      restorePlanPosition(position);
-
-      requestAnimationFrame(function () {
-        restorePlanPosition(position);
-      });
-    });
-
-    /* ---------- 定期タスク ---------- */
-
-    function renderPeriodic(content) {
-      const periodic = state.snapshot.periodic;
-      const supported = periodicSupported();
-      content.appendChild(make('h2', '定期タスク'));
-
-      if (!supported) {
-        content.appendChild(make('p', '保存先の更新が必要です', 'form-error'));
-      }
-
-      const tools = make('div', null, 'toolbar');
-
-      const add = button('定期タスクを追加', function () {
-        openPeriodicEditor(null);
-      });
-
-      const preview = button('今日の分を下見', previewPeriodic);
-      const automatic = button(
-        '毎日の自動追加：' + (periodic.automatic ? '入' : '切'),
-        toggleAutomatic
-      );
-
-      [add, preview, automatic].forEach(function (element) {
-        element.disabled =
-          !navigator.onLine ||
-          !storageReady ||
-          legacyBlocked ||
-          !supported;
-      });
-
-      tools.append(add, preview, automatic);
-      content.appendChild(tools);
-
-      const cards = make('div', null, 'cards');
-
-      periodic.items.forEach(function (item) {
-        const card = make('div', null, 'card');
-        const main = make('div', null, 'card-main');
-        const schedule = [item.freq || '不定期'];
-
-        if (item.next) {
-          schedule.push('次回 ' + item.next);
-        }
-
-        main.append(
-          make('div', item.name, 'card-title'),
-          make('div', schedule.join(' ／ '), 'sub')
-        );
-
-        if (
-          supported &&
-          item.dueRule &&
-          item.dueRule.type !== 'none'
-        ) {
-          const deadline = ['期限 ' + dueRuleLabel(item.dueRule)];
-
-          if (item.nextDue) {
-            deadline.push('次回 ' + item.nextDue);
-          }
-
-          main.appendChild(make('div', deadline.join(' ／ '), 'sub'));
-        }
-
-        const actions = make('div', null, 'card-actions');
-
-        const edit = button('編集', function () {
-          openPeriodicEditor(item);
-        });
-
-        const send = button('今すぐ1件追加', async function () {
-          if (!onlineRequired() || !requirePeriodicSupport()) {
-            return;
-          }
-
-          if (!confirm(
-            '「' + item.name + '」を今日の時間未定に追加しますか。\n\n' +
-            '期限：' + dueRuleLabel(item.dueRule) + '\n' +
-            '基準日：今日'
-          )) {
-            return;
-          }
-
-          try {
-            await enqueue({
-              action: 'periodicSend',
-              row: item.row,
-              expectedPeriodic: periodic.version
-            }, '定期追加：' + item.name);
-          } catch (error) {
-            notify('保存できませんでした', true, 'storage', error.message);
-          }
-        });
-
-        edit.disabled =
-          !navigator.onLine ||
-          !storageReady ||
-          legacyBlocked ||
-          !supported;
-
-        send.disabled = edit.disabled;
-        actions.append(edit, send);
-        card.append(main, actions);
-        cards.appendChild(card);
-      });
-
-      if (!periodic.items.length) {
-        content.appendChild(make('p', '定期タスクなし', 'sub'));
-      }
-
-      content.appendChild(cards);
-    }
-
-    function addDueRuleFields(value) {
-      const rule = value || {
-        type: 'none'
-      };
-
-      const type = selectField(
-        'dueType',
-        '期限',
-        [
-          ['none', 'なし'],
-          ['offset', '基準日から○日後'],
-          ['weekly', '毎週○曜日'],
-          ['monthly', '毎月○日'],
-          ['monthEnd', '毎月末']
-        ],
-        rule.type
-      );
-
-      const days = field(
-        'dueDays',
-        '何日後＊',
-        'number',
-        rule.days == null ? 0 : rule.days,
-        false
-      );
-
-      days.min = '0';
-      days.max = '3650';
-      days.step = '1';
-
-      const weekday = selectField(
-        'dueWeekday',
-        '曜日＊',
-        [
-          [1, '月曜日'],
-          [2, '火曜日'],
-          [3, '水曜日'],
-          [4, '木曜日'],
-          [5, '金曜日'],
-          [6, '土曜日'],
-          [0, '日曜日']
-        ],
-        rule.weekday == null ? 5 : rule.weekday
-      );
-
-      const day = field(
-        'dueDay',
-        '日＊',
-        'number',
-        rule.day == null ? 15 : rule.day,
-        false
-      );
-
-      day.min = '1';
-      day.max = '31';
-      day.step = '1';
-
-      function updateFields() {
-        [
-          [days, 'offset'],
-          [weekday, 'weekly'],
-          [day, 'monthly']
-        ].forEach(function (entry) {
-          const active = type.value === entry[1];
-          entry[0].closest('.field').hidden = !active;
-          entry[0].disabled = !active;
-          entry[0].required = active;
-        });
-      }
-
-      type.addEventListener('change', updateFields);
-      updateFields();
-    }
-
-    function dueRuleFromForm(form) {
-      const type = String(form.get('dueType') || 'none');
-
-      function integer(name, minimum, maximum, label) {
-        const raw = String(form.get(name) == null ? '' : form.get(name)).trim();
-        const value = Number(raw);
-
-        if (
-          !raw ||
-          !Number.isInteger(value) ||
-          value < minimum ||
-          value > maximum
-        ) {
-          throw new Error(
-            label + 'は' + minimum + '～' + maximum + 'の整数にしてください。'
+          notify(
+            captured.date === date
+              ? '送信待ち'
+              : date
+                ? dateLabel(date) + 'へ変更（送信待ち）'
+                : '実行日未定へ変更（送信待ち）'
           );
-        }
-
-        return value;
-      }
-
-      switch (type) {
-        case 'none':
-          return {
-            type: 'none'
-          };
-        case 'offset':
-          return {
-            type: 'offset',
-            days: integer('dueDays', 0, 3650, '何日後')
-          };
-        case 'weekly':
-          return {
-            type: 'weekly',
-            weekday: integer('dueWeekday', 0, 6, '曜日')
-          };
-        case 'monthly':
-          return {
-            type: 'monthly',
-            day: integer('dueDay', 1, 31, '期限の日')
-          };
-        case 'monthEnd':
-          return {
-            type: 'monthEnd'
-          };
-        default:
-          throw new Error('期限の決め方を選び直してください。');
-      }
-    }
-
-    function openPeriodicEditor(item) {
-      if (!onlineRequired() || !requirePeriodicSupport()) {
-        return;
-      }
-
-      const value = item || {
-        row: 0,
-        name: '',
-        freq: '毎日',
-        next: japanDate(),
-        dueRule: {
-          type: 'none'
-        }
-      };
-
-      const payload = {
-        action: 'periodicSave',
-        row: value.row,
-        expectedPeriodic: state.snapshot.periodic.version
-      };
-
-      const captured = contextFor(payload, state.snapshot);
-
-      showEditor(
-        item ? '定期タスクを編集' : '定期タスクを追加',
-        async function (form) {
-          if (!navigator.onLine) {
-            throw new Error('通信が戻ってから保存してください。');
-          }
-
-          const name = String(form.get('name') || '').trim();
-
-          if (!name || name.length > 200) {
-            throw new Error('タスク名は1～200文字で入力してください。');
-          }
-
-          await enqueue(Object.assign({}, payload, {
-            name: name,
-            freq: String(form.get('freq') || '').trim(),
-            next: String(form.get('next') || ''),
-            dueRule: dueRuleFromForm(form)
-          }), '定期設定：' + name, captured);
-
-          notify('送信待ち', false, 'local');
-        }
-      );
-
-      field('name', 'タスク名＊', 'text', value.name, true);
-      const freq = field('freq', '頻度＊', 'text', value.freq, true);
-      freq.placeholder = '毎日・毎週月曜日・毎月15日';
-
-      const options = make('datalist');
-      options.id = 'frequency-options';
-
-      [
-        '毎日',
-        '毎週月曜日',
-        '毎週火曜日',
-        '毎週水曜日',
-        '毎週木曜日',
-        '毎週金曜日',
-        '毎週土曜日',
-        '毎週日曜日',
-        '毎月',
-        '不定期'
-      ].forEach(function (text) {
-        const option = make('option');
-        option.value = text;
-        options.appendChild(option);
-      });
-
-      freq.setAttribute('list', options.id);
-      $('editor-fields').appendChild(options);
-
-      const next = field(
-        'next',
-        '次回追加予定日',
-        'date',
-        value.next,
-        false
-      );
-
-      function updateNextRequired() {
-        const required = freq.value.trim() !== '不定期';
-        next.required = required;
-        next.closest('.field').querySelector('span').textContent =
-          '次回追加予定日' + (required ? '＊' : '');
-      }
-
-      freq.addEventListener('input', updateNextRequired);
-      updateNextRequired();
-      addDueRuleFields(value.dueRule);
-    }
-
-    async function previewPeriodic() {
-      if (!onlineRequired() || !requirePeriodicSupport()) {
-        return;
-      }
-
-      try {
-        const result = await readServer({
-          action: 'preview'
         });
 
-        if (!requirePeriodicSupport()) {
+        const title = field('title', '件名＊', 'text', captured.title, true);
+        field('due', '期限', 'date', captured.due, false);
+        field('date', '実行日', 'date', captured.date, false);
+        title.focus();
+      }
+
+      $('editor-form').addEventListener('compositionstart', function () {
+        editorComposing = true;
+      });
+
+      $('editor-form').addEventListener('compositionend', function () {
+        editorComposing = false;
+        editorImeUntil = performance.now() + 100;
+      });
+
+      $('editor-form').addEventListener('keydown', function (event) {
+        if (event.isComposing || event.keyCode === 229) {
+          editorImeUntil = performance.now() + 100;
+        }
+
+        if (event.key === 'Enter' && event.repeat) {
+          event.preventDefault();
+        }
+      });
+
+      $('editor-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        if (
+          !editorHandler ||
+          editorSaving ||
+          editorComposing ||
+          performance.now() < editorImeUntil
+        ) {
           return;
         }
 
-        const preview = result.preview;
+        const handler = editorHandler;
+        const form = new FormData($('editor-form'));
+        editorSaving = true;
+        $('editor-submit').disabled = true;
+        $('editor-cancel').disabled = true;
+        $('editor-note').hidden = true;
 
-        const text = '【下見】' + preview.items.length + '件\n\n' +
-          preview.items.map(function (item) {
-            return '・' + item.name +
-              '\n  追加予定日：' + item.next +
-              ' ／ 期限：' + (item.due || 'なし');
-          }).join('\n') +
-          (preview.errors.length
-            ? '\n\n確認が必要：\n' + preview.errors.join('\n')
-            : '');
-
-        if (!preview.items.length) {
-          alert(text);
-          return;
+        try {
+          await handler(form);
+          $('editor').close();
+        } catch (error) {
+          $('editor-note').textContent = String(error.message || error);
+          $('editor-note').hidden = false;
+        } finally {
+          editorSaving = false;
+          $('editor-submit').disabled = false;
+          $('editor-cancel').disabled = false;
         }
-
-        if (confirm(text + '\n\n今日の時間未定に追加しますか。')) {
-          await enqueue({
-            action: 'periodicRun',
-            expectedPeriodic: preview.version,
-            date: preview.date
-          }, '定期タスク ' + preview.items.length + '件を追加');
-        }
-      } catch (error) {
-        if (messageKind !== 'read') {
-          notify('下見できませんでした', true, '', error.message);
-        }
-      }
-    }
-
-    async function toggleAutomatic() {
-      if (!onlineRequired()) {
-        return;
-      }
-
-      const periodic = state.snapshot.periodic;
-      const enabled = !periodic.automatic;
-
-      if (!confirm('毎日の自動追加を「' + (enabled ? '入' : '切') + '」にしますか。')) {
-        return;
-      }
-
-      try {
-        await enqueue({
-          action: 'automatic',
-          expectedPeriodic: periodic.version,
-          enabled: enabled
-        }, '毎日の自動追加を' + (enabled ? '入' : '切') + 'にする');
-      } catch (error) {
-        notify('保存できませんでした', true, 'storage', error.message);
-      }
-    }
-
-    /* ---------- 完了済み ---------- */
-
-    function loadHistory(more) {
-      if (historyPromise) {
-        return historyPromise;
-      }
-
-      if (!onlineRequired() || !configured()) {
-        return Promise.resolve(null);
-      }
-
-      const offset = more ? historyData.items.length : 0;
-
-      historyPromise = readServer({
-        action: 'history',
-        offset: offset
-      }, function (result) {
-        historyData = {
-          total: result.history.total,
-          items: more
-            ? historyData.items.concat(result.history.items)
-            : result.history.items
-        };
-      }).catch(function () {
-        return null;
-      }).finally(function () {
-        historyPromise = null;
       });
 
-      return historyPromise;
-    }
+      $('editor-cancel').addEventListener('click', function () {
+        $('editor').close();
+      });
 
-    async function undoDone() {
-      if (!onlineRequired()) {
-        return;
-      }
+      $('editor').addEventListener('cancel', function (event) {
+        if (editorSaving) {
+          event.preventDefault();
+        }
+      });
 
-      if (state.jobs.length) {
-        notify(
-          '未送信の確認が必要です',
-          true,
-          '',
-          '先に送信を完了するか、確認が必要な変更を解決してください。'
+      $('editor').addEventListener('close', function () {
+        const position = editorPosition;
+        editorHandler = null;
+        editorPosition = null;
+        editorComposing = false;
+        restorePosition(position);
+
+        requestAnimationFrame(function () {
+          restorePosition(position);
+        });
+      });
+
+      /* ---------- 定期タスク ---------- */
+
+      function renderPeriodic(content) {
+        const periodic = state.snapshot.periodic;
+        const supported = periodicSupported();
+        content.appendChild(make('h2', '定期タスク'));
+
+        if (!supported) {
+          content.appendChild(make('p', '保存先の更新が必要です', 'form-error'));
+        }
+
+        const tools = make('div', null, 'toolbar');
+        const add = button('定期タスクを追加', function () {
+          openPeriodicEditor(null);
+        });
+
+        const today = button(
+          periodicAdding ? '確認中' : '今日の分を追加',
+          addTodayPeriodic
         );
-        return;
-      }
 
-      const undo = state.snapshot.undo;
-
-      if (!undo.count) {
-        notify('戻せる完了はありません');
-        return;
-      }
-
-      if (!confirm(undo.count + '件を戻しますか。\n\n' + undo.titles.join('\n'))) {
-        return;
-      }
-
-      try {
-        await enqueue({
-          action: 'undo',
-          expectedUndo: undo.version
-        }, '直前の完了を戻す');
-      } catch (error) {
-        notify('保存できませんでした', true, 'storage', error.message);
-      }
-    }
-
-    function renderHistory(content) {
-      content.appendChild(make('h2', '完了済み'));
-
-      const tools = make('div', null, 'toolbar');
-      const undo = button('直前の完了を戻す', undoDone);
-      undo.disabled = !navigator.onLine || !state.snapshot.undo.count;
-
-      const reload = button('読み直す', function () {
-        loadHistory(false);
-      });
-
-      reload.disabled = !navigator.onLine;
-      tools.append(undo, reload);
-      content.appendChild(tools);
-
-      const cards = make('div', null, 'cards');
-
-      historyData.items.forEach(function (item) {
-        const card = make('div', null, 'card');
-        const main = make('div', null, 'card-main');
-        main.appendChild(make('div', item.title, 'card-title'));
-
-        if (item.doneAt) {
-          main.appendChild(make('div', '完了 ' + item.doneAt, 'sub'));
-        }
-
-        card.appendChild(main);
-        cards.appendChild(card);
-      });
-
-      content.appendChild(cards);
-
-      if (historyData.items.length < historyData.total) {
-        const more = button('さらに表示', function () {
-          loadHistory(true);
-        });
-
-        more.disabled = !navigator.onLine;
-        content.appendChild(more);
-      }
-    }
-
-    /* ---------- 食い違いの確認 ---------- */
-
-    function relatedJobs(rootId) {
-      const ids = new Set([rootId]);
-      let changed = true;
-
-      while (changed) {
-        changed = false;
-
-        state.jobs.forEach(function (job) {
-          if (
-            !ids.has(job.id) &&
-            job.causes.some(function (id) {
-              return ids.has(id);
-            })
-          ) {
-            ids.add(job.id);
-            changed = true;
-          }
-        });
-      }
-
-      return state.jobs.filter(function (job) {
-        return ids.has(job.id);
-      }).sort(function (a, b) {
-        return a.sequence - b.sequence;
-      });
-    }
-
-    function describePayload(payload, local) {
-      const snapshot = state.snapshot;
-
-      if (payload.action === 'order') {
-        const tasks = local ? effectiveTasks() : snapshot.tasks;
-
-        return tasks.filter(function (task) {
-          return task.date === payload.date && !task.localOnly;
-        }).sort(compareTasks).map(function (task) {
-          return hourLabel(task.hour) + '：' + task.title;
-        }).join('\n') || 'この日のタスクはありません。';
-      }
-
-      if (payload.taskId) {
-        const task = taskById(snapshot, payload.taskId);
-
-        if (!local) {
-          return task
-            ? task.title +
-              '\n期限：' + (task.due || '未設定') +
-              '\n実行日：' + (task.date || '未設定') +
-              '\n' + hourLabel(task.hour)
-            : '現在のタスク一覧にはありません。';
-        }
-
-        if (payload.action === 'done') {
-          return 'このタスクを完了にする';
-        }
-
-        return payload.title +
-          '\n期限：' + (payload.due || '未設定') +
-          '\n実行日：' + (payload.date || '未設定');
-      }
-
-      if (payload.action === 'periodicSave') {
-        const item = snapshot.periodic.items.find(function (entry) {
-          return entry.row === payload.row;
-        });
-
-        if (!local) {
-          return item
-            ? item.name +
-              '\n' + item.freq +
-              '\n次回追加予定日：' + (item.next || '未設定') +
-              '\n期限：' + dueRuleLabel(item.dueRule)
-            : '既存の対象はありません。';
-        }
-
-        const localRule = Object.prototype.hasOwnProperty.call(payload, 'dueRule')
-          ? payload.dueRule
-          : item
-            ? item.dueRule
-            : null;
-
-        return payload.name +
-          '\n' + payload.freq +
-          '\n次回追加予定日：' + (payload.next || '未設定') +
-          '\n期限：' + dueRuleLabel(localRule);
-      }
-
-      return local
-        ? '確認した操作を実行する'
-        : '最新の内容を確認してから、操作し直してください。';
-    }
-
-    async function openConflict(id) {
-      await refresh();
-
-      const job = state.jobs.find(function (entry) {
-        return entry.id === id;
-      });
-
-      if (!job || job.state !== 'conflict') {
-        return;
-      }
-
-      conflictId = id;
-      const related = relatedJobs(id);
-
-      $('conflict-note').textContent =
-        job.note + '\n関連する未送信 ' + related.length +
-        '件が対象です。「保存済みを使う」を選ぶと、対象の端末側変更は反映しません。';
-
-      $('conflict-server').replaceChildren(
-        make('p', describePayload(job.payload, false))
-      );
-
-      $('conflict-local').replaceChildren(
-        make('p', describePayload(job.payload, true)),
-        make('p', related.map(function (entry) {
-          return '・' + entry.label;
-        }).join('\n'))
-      );
-
-      const canApply = ['order', 'edit', 'done', 'periodicSave']
-        .indexOf(job.payload.action) >= 0;
-
-      $('conflict-apply').hidden = !canApply;
-
-      if (!canApply) {
-        $('conflict-note').textContent +=
-          '\nこの操作は、保存済みを使った後で下見・確認からやり直してください。';
-      }
-
-      $('conflict-dialog').showModal();
-    }
-
-    async function resolveConflict(useLocal) {
-      const root = state.jobs.find(function (job) {
-        return job.id === conflictId;
-      });
-
-      if (!root || root.state !== 'conflict') {
-        $('conflict-dialog').close();
-        return;
-      }
-
-      const related = relatedJobs(root.id);
-      const ids = new Set(related.map(function (job) {
-        return job.id;
-      }));
-
-      if (related.some(function (job) {
-        return job.id !== root.id && job.frozen;
-      })) {
-        notify(
-          '関連する送信結果を確認中です',
-          true,
-          '',
-          '少し待ってから開き直してください。'
+        const automatic = button(
+          '毎日の自動追加：' + (periodic.automatic ? '入' : '切'),
+          toggleAutomatic
         );
-        return;
-      }
 
-      try {
-        await updateState(function (saved) {
-          if (!saved.jobs.some(function (job) {
-            return job.id === root.id && job.state === 'conflict';
-          })) {
-            return;
+        [add, today, automatic].forEach(function (control) {
+          control.disabled =
+            !navigator.onLine ||
+            !supported ||
+            !!client.legacyCount;
+        });
+
+        today.disabled = today.disabled || periodicAdding;
+        tools.append(add, today, automatic);
+        content.appendChild(tools);
+
+        const cards = make('div', null, 'cards');
+
+        periodic.items.forEach(function (item) {
+          const card = make('div', null, 'card');
+          const main = make('div', null, 'card-main');
+          const schedule = [item.freq || '不定期'];
+
+          if (item.next) {
+            schedule.push('次回 ' + item.next);
           }
 
-          if (!useLocal) {
-            saved.jobs = saved.jobs.filter(function (job) {
-              return !ids.has(job.id);
-            });
+          main.append(
+            make('div', item.name, 'card-title'),
+            make('div', schedule.join(' ／ '), 'sub')
+          );
 
-            return;
+          if (item.dueRule && item.dueRule.type !== 'none') {
+            const deadline = ['期限 ' + dueRuleLabel(item.dueRule)];
+
+            if (item.nextDue) {
+              deadline.push('次回 ' + item.nextDue);
+            }
+
+            main.appendChild(make('div', deadline.join(' ／ '), 'sub'));
           }
 
-          const replacements = new Map();
+          const actions = make('div', null, 'card-actions');
 
-          related.forEach(function (job) {
-            replacements.set(job.id, uuid());
+          const edit = button('編集', function () {
+            openPeriodicEditor(item);
           });
 
-          saved.jobs.forEach(function (job) {
-            if (!ids.has(job.id)) {
+          const send = button('今すぐ1件追加', async function () {
+            if (!onlineRequired()) {
               return;
             }
 
-            const payload = job.payload;
-            const newId = replacements.get(job.id);
-
-            job.id = newId;
-            payload.requestId = newId;
-            job.frozen = false;
-            job.state = 'saved';
-            job.note = '';
-            job.causes = job.causes.map(function (id) {
-              return replacements.get(id) || id;
-            });
-
-            if (payload.action === 'order') {
-              payload.expectedDay = dayVersion(saved.snapshot, payload.date);
-              payload.items = mergePlan(
-                payload.items,
-                saved.snapshot.tasks,
-                payload.date
-              );
+            if (!confirm(
+              '「' + item.name + '」を今日の時間未定に追加しますか。\n' +
+              '期限：' + dueRuleLabel(item.dueRule) + '\n基準日：今日'
+            )) {
+              return;
             }
 
-            if (payload.taskId) {
-              const task = taskById(saved.snapshot, payload.taskId);
-              payload.expectedTask = task ? task.version : '';
-            }
-
-            if (payload.expectedPeriodic) {
-              payload.expectedPeriodic = saved.snapshot.periodic.version;
-            }
-
-            if (payload.expectedUndo) {
-              payload.expectedUndo = saved.snapshot.undo.version;
+            try {
+              await client.enqueue({
+                action: 'periodicSend',
+                row: item.row,
+                expectedPeriodic: periodic.version
+              }, '定期追加：' + item.name);
+            } catch (error) {
+              failed('保存できませんでした', error);
             }
           });
+
+          edit.disabled = send.disabled =
+            !navigator.onLine ||
+            !supported ||
+            !!client.legacyCount;
+
+          actions.append(edit, send);
+          card.append(main, actions);
+          cards.appendChild(card);
         });
 
-        $('conflict-dialog').close();
+        content.appendChild(cards);
 
-        notify(
-          useLocal ? '送信待ち' : '保存済みの内容を使います',
-          false,
-          'local'
-        );
-
-        pump(true);
-      } catch (error) {
-        notify('処理できませんでした', true, '', error.message);
-      }
-    }
-
-    $('conflict-close').addEventListener('click', function () {
-      $('conflict-dialog').close();
-    });
-
-    $('conflict-remote').addEventListener('click', function () {
-      resolveConflict(false);
-    });
-
-    $('conflict-apply').addEventListener('click', function () {
-      resolveConflict(true);
-    });
-
-    /* ---------- 設定と点検 ---------- */
-
-    function communicationLabel() {
-      if (!lastCommunication) {
-        return '未取得';
-      }
-
-      const names = {
-        add: '追加',
-        edit: '編集',
-        order: '配置',
-        done: '完了',
-        load: '一覧取得',
-        history: '完了済み取得',
-        preview: '定期タスク下見',
-        check: '点検',
-        periodicSave: '定期設定',
-        periodicSend: '定期追加',
-        periodicRun: '予定分の追加',
-        automatic: '自動追加設定',
-        undo: '完了取り消し'
-      };
-
-      return (names[lastCommunication.action] || lastCommunication.action) +
-        '／往復 ' + (lastCommunication.milliseconds / 1000).toFixed(2) + '秒' +
-        '／保存先処理 ' +
-        (lastCommunication.serverMs == null
-          ? '未取得'
-          : (lastCommunication.serverMs / 1000).toFixed(2) + '秒');
-    }
-
-    function renderSettingsState() {
-      const target = $('settings-state');
-
-      if (!target) {
-        return;
-      }
-
-      const checks = state.jobs.filter(function (job) {
-        return job.state === 'conflict' || job.state === 'blocked';
-      }).length;
-
-      const rows = [
-        ['通信', navigator.onLine ? 'あり' : 'なし'],
-        ['未送信', state.jobs.length + '件'],
-        ['確認が必要', checks + '件'],
-        [
-          '前回確認',
-          fetchedAtLabel(state.snapshot ? state.snapshot.fetchedAt : '') +
-            '（日本時間）'
-        ],
-        ['画面', VERSION],
-        [
-          '保存先の改修版',
-          state.snapshot ? state.snapshot.build || '未取得' : '未取得'
-        ],
-        ['オフライン保存', settingsCacheVersion],
-        ['直近の通信', communicationLabel()],
-        ['取得エラー', lastReadError || 'なし']
-      ];
-
-      target.replaceChildren();
-
-      rows.forEach(function (row) {
-        target.append(
-          make('dt', row[0]),
-          make('dd', row[1])
-        );
-      });
-    }
-
-    function openSettings() {
-      $('url').value = localStorage.getItem(URL_KEY) || '';
-      $('token').value = localStorage.getItem(TOKEN_KEY) || '';
-      renderSettingsState();
-      $('settings-dialog').showModal();
-
-      workerVersion().then(function (version) {
-        settingsCacheVersion = version;
-        renderSettingsState();
-      });
-    }
-
-    $('settings-save').addEventListener('click', async function () {
-      const oldUrl = localStorage.getItem(URL_KEY) || '';
-      const oldToken = localStorage.getItem(TOKEN_KEY) || '';
-      const newUrl = $('url').value.trim();
-      const newToken = $('token').value.trim();
-
-      if (state.jobs.length && oldUrl && oldUrl !== newUrl) {
-        alert('未送信があるため、接続先は変更できません。先に未送信を解決してください。');
-        return;
-      }
-
-      if (
-        (oldUrl !== newUrl || oldToken !== newToken) &&
-        (refreshPromise || pumpPromise || historyPromise)
-      ) {
-        alert('読み込みや送信が終わってから、設定を保存してください。');
-        return;
-      }
-
-      try {
-        localStorage.setItem(URL_KEY, newUrl);
-        localStorage.setItem(TOKEN_KEY, newToken);
-        verifiedConnection = '';
-        verifiedFeatures = {};
-        $('settings-dialog').close();
-
-        if (oldUrl !== newUrl) {
-          lastReadError = '';
-          receivedThisSession = false;
-          historyData = {
-            items: [],
-            total: 0
-          };
-
-          await updateState(function (saved) {
-            saved.snapshot = null;
-            saved.transitions = [];
-          });
+        if (!periodic.items.length) {
+          content.appendChild(make('p', '定期タスクなし', 'sub'));
         }
-
-        notify('設定を保存しました', false, 'success');
-        await refresh();
-        pump(true);
-      } catch (error) {
-        notify('設定を保存できませんでした', true, '', error.message);
-      }
-    });
-
-    $('settings-close').addEventListener('click', function () {
-      $('settings-dialog').close();
-    });
-
-    $('check').addEventListener('click', async function () {
-      if (!onlineRequired()) {
-        return;
       }
 
-      try {
-        const result = await readServer({
-          action: 'check'
-        }, null, true);
-
-        alert(
-          '改修版：' + (result.build || result.snapshot.build || '未対応') +
-          '\n\n' + result.checks.join('\n')
-        );
-      } catch (error) {
-        alert(String(error.message || error));
-      }
-    });
-
-    function workerVersion() {
-      return new Promise(function (resolve) {
+      async function addTodayPeriodic() {
         if (
-          !navigator.serviceWorker ||
-          !navigator.serviceWorker.controller ||
-          !window.MessageChannel
+          periodicAdding ||
+          !onlineRequired() ||
+          !periodicSupported()
         ) {
-          resolve('確認できません');
           return;
         }
 
-        const message = new MessageChannel();
-
-        const timer = setTimeout(function () {
-          message.port1.close();
-          resolve('確認できません');
-        }, 2000);
-
-        message.port1.onmessage = function (event) {
-          clearTimeout(timer);
-          message.port1.close();
-          resolve(event.data.cacheName || '確認できません');
-        };
-
-        navigator.serviceWorker.controller.postMessage({
-          type: 'TASK_VERSION'
-        }, [message.port2]);
-      });
-    }
-
-    $('copy').addEventListener('click', async function () {
-      const cacheVersion = await workerVersion();
-      settingsCacheVersion = cacheVersion;
-      renderSettingsState();
-
-      const acquisition = refreshing
-        ? '読み込み中'
-        : lastReadError
-          ? '失敗'
-          : receivedThisSession
-            ? '成功'
-            : 'この起動後は未確認';
-
-      const text = [
-        '画面：' + VERSION,
-        '保存先の版：' + (state.snapshot ? state.snapshot.app : '未取得'),
-        '保存先の改修版：' +
-          (state.snapshot ? state.snapshot.build || '未対応' : '未取得'),
-        '定期タスクの期限：' + (periodicSupported() ? '対応済み' : '未確認'),
-        'オフライン保存：' + cacheVersion,
-        '通信：' + (navigator.onLine ? 'あり' : 'なし'),
-        '一覧取得：' + acquisition,
-        '前回確認（日本時間）：' +
-          fetchedAtLabel(state.snapshot ? state.snapshot.fetchedAt : ''),
-        '取得エラー：' + (lastReadError || 'なし'),
-        '未送信：' + state.jobs.length + ' 件',
-        '確認が必要：' + state.jobs.filter(function (job) {
-          return job.state === 'conflict' || job.state === 'blocked';
-        }).length + ' 件',
-        '保存先のタスク：' + (state.snapshot ? state.snapshot.tasks.length : 0) + ' 件',
-        '定期タスク：' + (state.snapshot ? state.snapshot.periodic.items.length : 0) + ' 件',
-        '直近の通信：' + communicationLabel()
-      ].join('\n');
-
-      try {
-        await navigator.clipboard.writeText(text);
-        alert('コピーしました。');
-      } catch (error) {
-        prompt('この内容をコピーしてください。', text);
-      }
-    });
-
-    /* ---------- 自動確認 ---------- */
-
-    function anyDialogOpen() {
-      return $('editor').open ||
-        $('settings-dialog').open ||
-        $('conflict-dialog').open;
-    }
-
-    async function autoRefresh() {
-      if (
-        autoChecking ||
-        document.hidden ||
-        !storageReady ||
-        legacyBlocked ||
-        !navigator.onLine ||
-        !configured() ||
-        drag ||
-        holdTimer ||
-        anyDialogOpen() ||
-        refreshPromise ||
-        pumpPromise ||
-        historyPromise ||
-        manualReloading ||
-        Date.now() < nextAutoRead
-      ) {
-        return;
-      }
-
-      autoChecking = true;
-      let accepted = false;
-
-      try {
-        const saved = await readState();
-
-        if (saved.savedAt !== state.savedAt) {
-          state = saved;
-          render();
-        }
-
-        if (saved.jobs.length) {
-          return;
-        }
-
-        accepted = await autoReadTicket(false);
-
-        if (!accepted) {
-          return;
-        }
-
-        if (page === 'history') {
-          await loadHistory(false);
-        } else {
-          await refresh();
-        }
-      } catch (error) {
-        console.error(error);
-        nextAutoRead = Date.now() + 60000;
-      } finally {
-        if (accepted) {
-          await autoReadTicket(true).catch(function () {
-            return null;
-          });
-        }
-
-        autoChecking = false;
-      }
-    }
-
-    /* ---------- 操作・起動 ---------- */
-
-    document.querySelectorAll('nav [data-page]').forEach(function (element) {
-      element.addEventListener('click', function () {
-        if (drag) {
-          return;
-        }
-
-        page = element.dataset.page;
+        periodicAdding = true;
         render();
 
+        try {
+          // 確認に必要な対象を取得する。下見専用画面は設けない。
+          const result = await client.read({
+            action: 'preview'
+          });
+
+          if (!result || !result.preview) {
+            throw new Error('追加対象を確認できませんでした。');
+          }
+
+          const preview = result.preview;
+          const errors = preview.errors || [];
+
+          if (!preview.items.length) {
+            notify(
+              errors.length ? '設定の確認が必要です' : '追加対象はありません',
+              !!errors.length,
+              errors.join('\n')
+            );
+            return;
+          }
+
+          const text =
+            preview.items.length + '件を今日の時間未定に追加しますか。' +
+            (errors.length
+              ? '\n\n次の設定は追加されません。\n' + errors.join('\n')
+              : '');
+
+          if (!confirm(text)) {
+            return;
+          }
+
+          await client.enqueue({
+            action: 'periodicRun',
+            expectedPeriodic: preview.version,
+            date: preview.date
+          }, '今日の定期タスク ' + preview.items.length + '件を追加');
+        } catch (error) {
+          failed('追加対象を確認できませんでした', error);
+        } finally {
+          periodicAdding = false;
+          render();
+        }
+      }
+
+      function addDueFields(value) {
+        const rule = value || {
+          type: 'none'
+        };
+
+        const type = selectField(
+          'dueType',
+          '期限',
+          [
+            ['none', 'なし'],
+            ['offset', '基準日から○日後'],
+            ['weekly', '毎週○曜日'],
+            ['monthly', '毎月○日'],
+            ['monthEnd', '毎月末']
+          ],
+          rule.type
+        );
+
+        const days = field(
+          'dueDays',
+          '何日後＊',
+          'number',
+          rule.days == null ? 0 : rule.days,
+          false
+        );
+
+        days.min = '0';
+        days.max = '3650';
+        days.step = '1';
+
+        const weekday = selectField(
+          'dueWeekday',
+          '曜日＊',
+          [
+            [1, '月曜日'],
+            [2, '火曜日'],
+            [3, '水曜日'],
+            [4, '木曜日'],
+            [5, '金曜日'],
+            [6, '土曜日'],
+            [0, '日曜日']
+          ],
+          rule.weekday == null ? 5 : rule.weekday
+        );
+
+        const day = field(
+          'dueDay',
+          '日＊',
+          'number',
+          rule.day == null ? 15 : rule.day,
+          false
+        );
+
+        day.min = '1';
+        day.max = '31';
+        day.step = '1';
+
+        function update() {
+          [
+            [days, 'offset'],
+            [weekday, 'weekly'],
+            [day, 'monthly']
+          ].forEach(function (entry) {
+            const active = type.value === entry[1];
+            entry[0].closest('.field').hidden = !active;
+            entry[0].disabled = !active;
+            entry[0].required = active;
+          });
+        }
+
+        type.addEventListener('change', update);
+        update();
+      }
+
+      function dueRuleFromForm(form) {
+        const type = String(form.get('dueType') || 'none');
+
+        function integer(name, minimum, maximum) {
+          const raw = String(form.get(name) == null ? '' : form.get(name)).trim();
+          const value = Number(raw);
+
+          if (
+            !raw ||
+            !Number.isInteger(value) ||
+            value < minimum ||
+            value > maximum
+          ) {
+            throw new Error(
+              '期限は' + minimum + '～' + maximum + 'の整数で指定してください。'
+            );
+          }
+
+          return value;
+        }
+
+        switch (type) {
+          case 'none':
+            return {
+              type: 'none'
+            };
+          case 'offset':
+            return {
+              type: 'offset',
+              days: integer('dueDays', 0, 3650)
+            };
+          case 'weekly':
+            return {
+              type: 'weekly',
+              weekday: integer('dueWeekday', 0, 6)
+            };
+          case 'monthly':
+            return {
+              type: 'monthly',
+              day: integer('dueDay', 1, 31)
+            };
+          case 'monthEnd':
+            return {
+              type: 'monthEnd'
+            };
+          default:
+            throw new Error('期限を選び直してください。');
+        }
+      }
+
+      function openPeriodicEditor(item) {
+        if (!onlineRequired() || !periodicSupported()) {
+          return;
+        }
+
+        const value = item || {
+          row: 0,
+          name: '',
+          freq: '毎日',
+          next: japanDate(),
+          dueRule: {
+            type: 'none'
+          }
+        };
+
+        const payload = {
+          action: 'periodicSave',
+          row: value.row,
+          expectedPeriodic: state.snapshot.periodic.version
+        };
+
+        const captured = client.context(payload);
+
+        showEditor(
+          item ? '定期タスクを編集' : '定期タスクを追加',
+          async function (form) {
+            if (!navigator.onLine) {
+              throw new Error('通信が戻ってから保存してください。');
+            }
+
+            const name = String(form.get('name') || '').trim();
+
+            if (!name || name.length > 200) {
+              throw new Error('タスク名は1～200文字で入力してください。');
+            }
+
+            await client.enqueue(Object.assign({}, payload, {
+              name: name,
+              freq: String(form.get('freq') || '').trim(),
+              next: String(form.get('next') || ''),
+              dueRule: dueRuleFromForm(form)
+            }), '定期設定：' + name, captured);
+
+            notify('送信待ち');
+          }
+        );
+
+        field('name', 'タスク名＊', 'text', value.name, true);
+        const freq = field('freq', '頻度＊', 'text', value.freq, true);
+        freq.placeholder = '毎日・毎週月曜日・毎月15日';
+
+        const options = make('datalist');
+        options.id = 'frequency-options';
+
+        [
+          '毎日',
+          '毎週月曜日',
+          '毎週火曜日',
+          '毎週水曜日',
+          '毎週木曜日',
+          '毎週金曜日',
+          '毎週土曜日',
+          '毎週日曜日',
+          '毎月',
+          '不定期'
+        ].forEach(function (text) {
+          const option = make('option');
+          option.value = text;
+          options.appendChild(option);
+        });
+
+        freq.setAttribute('list', options.id);
+        $('editor-fields').appendChild(options);
+
+        const next = field('next', '次回追加予定日', 'date', value.next, false);
+
+        function updateRequired() {
+          const required = freq.value.trim() !== '不定期';
+          next.required = required;
+          next.closest('.field').querySelector('span').textContent =
+            '次回追加予定日' + (required ? '＊' : '');
+        }
+
+        freq.addEventListener('input', updateRequired);
+        updateRequired();
+        addDueFields(value.dueRule);
+      }
+
+      async function toggleAutomatic() {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        const periodic = state.snapshot.periodic;
+        const enabled = !periodic.automatic;
+
+        if (!confirm(
+          '毎日の自動追加を「' + (enabled ? '入' : '切') + '」にしますか。'
+        )) {
+          return;
+        }
+
+        try {
+          await client.enqueue({
+            action: 'automatic',
+            expectedPeriodic: periodic.version,
+            enabled: enabled
+          }, '毎日の自動追加を' + (enabled ? '入' : '切') + 'にする');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      /* ---------- 完了済み ---------- */
+
+      function scheduleHistoryRefresh() {
+        if (page !== 'history') {
+          return;
+        }
+
+        if (historyLoading) {
+          historyAgain = true;
+          return;
+        }
+
+        if (historyRefreshTimer) {
+          clearTimeout(historyRefreshTimer);
+        }
+
+        historyRefreshTimer = setTimeout(function () {
+          historyRefreshTimer = null;
+
+          if (page === 'history') {
+            loadHistory(false);
+          }
+        }, 200);
+      }
+
+      function loadHistory(more, background) {
+        if (historyPromise) {
+          return historyPromise;
+        }
+
+        if (!client.ready) {
+          historyLoading = true;
+          render();
+          return Promise.resolve(null);
+        }
+
+        if (!navigator.onLine || !client.configured()) {
+          historyLoading = false;
+          historyError = navigator.onLine
+            ? '接続先と合い言葉を設定してください。'
+            : '通信がありません。通信が戻ると再取得します。';
+          historyFailedMore = !!more;
+          render();
+          return Promise.resolve(null);
+        }
+
+        const offset = more ? historyData.items.length : 0;
+        historyLoading = true;
+        historyError = '';
+        historyFailedMore = !!more;
+        render();
+
+        historyPromise = client.read({
+          action: 'history',
+          offset: offset
+        }, {
+          background: !!background
+        }).then(function (result) {
+          if (!result) {
+            return null;
+          }
+
+          if (
+            !result.history ||
+            !Array.isArray(result.history.items)
+          ) {
+            throw new Error('完了済みの一覧を読み取れませんでした。');
+          }
+
+          historyData = {
+            total: result.history.total,
+            items: more
+              ? historyData.items.concat(result.history.items)
+              : result.history.items,
+            loaded: true
+          };
+
+          historyError = '';
+          return result;
+        }).catch(function (error) {
+          historyError = String(error.message || error);
+          return null;
+        }).finally(function () {
+          historyLoading = false;
+          historyPromise = null;
+          nextAutoRead = Date.now() + (historyError ? 60000 : 20000);
+          render();
+
+          if (historyAgain) {
+            historyAgain = false;
+
+            if (page === 'history' && navigator.onLine) {
+              scheduleHistoryRefresh();
+            }
+          }
+        });
+
+        return historyPromise;
+      }
+
+      function renderHistory(content) {
+        content.appendChild(make('h2', '完了済み'));
+
+        const tools = make('div', null, 'toolbar');
+        const undo = button('直前の完了を戻す', undoDone);
+        const count = state.snapshot && state.snapshot.undo
+          ? state.snapshot.undo.count
+          : 0;
+
+        undo.disabled = !navigator.onLine || !count;
+
+        const reload = button(
+          historyLoading ? '読込中' : '読み直す',
+          function () {
+            loadHistory(false);
+          }
+        );
+
+        reload.disabled =
+          !navigator.onLine ||
+          !client.ready ||
+          historyLoading;
+
+        tools.append(undo, reload);
+        content.appendChild(tools);
+
+        if (historyLoading) {
+          const loading = make('p', '読み込み中…', 'loading');
+          loading.setAttribute('role', 'status');
+          content.appendChild(loading);
+        }
+
+        const pending = state.jobs.filter(function (job) {
+          return job.payload.action === 'done' ||
+            job.payload.action === 'undo';
+        }).length;
+
+        if (pending) {
+          content.appendChild(make(
+            'p',
+            '完了・取り消しの反映待ち ' + pending + '件',
+            'status'
+          ));
+        }
+
+        if (historyError) {
+          const box = make('div', null, 'notice error');
+          box.appendChild(make('p', '完了済みを読み込めませんでした'));
+
+          const retry = button('再試行', function () {
+            loadHistory(historyFailedMore);
+          });
+
+          retry.disabled = !navigator.onLine || historyLoading;
+          box.appendChild(retry);
+
+          const details = make('details');
+          details.append(
+            make('summary', '詳細'),
+            make('div', historyError, 'detail-text')
+          );
+
+          box.appendChild(details);
+          content.appendChild(box);
+        }
+
+        if (
+          historyData.loaded &&
+          !historyData.items.length &&
+          !historyLoading &&
+          !historyError
+        ) {
+          content.appendChild(make('p', '完了済みなし', 'sub'));
+        }
+
+        const cards = make('div', null, 'cards');
+
+        historyData.items.forEach(function (item) {
+          const card = make('div', null, 'card');
+          const main = make('div', null, 'card-main');
+          main.appendChild(make('div', item.title, 'card-title'));
+
+          if (item.doneAt) {
+            main.appendChild(make('div', '完了 ' + item.doneAt, 'sub'));
+          }
+
+          card.appendChild(main);
+          cards.appendChild(card);
+        });
+
+        content.appendChild(cards);
+
+        if (historyData.items.length < historyData.total) {
+          const more = button('さらに表示', function () {
+            loadHistory(true);
+          });
+
+          more.disabled = !navigator.onLine || historyLoading;
+          content.appendChild(more);
+        }
+      }
+
+      async function undoDone() {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        if (state.jobs.length) {
+          notify('先に送信待ちを確認してください', true);
+          return;
+        }
+
+        const undo = state.snapshot && state.snapshot.undo;
+
+        if (!undo || !undo.count) {
+          notify('戻せる完了はありません');
+          return;
+        }
+
+        if (!confirm(
+          undo.count + '件を戻しますか。\n\n' + undo.titles.join('\n')
+        )) {
+          return;
+        }
+
+        try {
+          await client.enqueue({
+            action: 'undo',
+            expectedUndo: undo.version
+          }, '直前の完了を戻す');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      /* ---------- 変更の食い違い ---------- */
+
+      function describePayload(payload, local) {
+        if (!state.snapshot) {
+          return '一覧を取得してください。';
+        }
+
+        if (payload.action === 'order') {
+          const tasks = local
+            ? client.effectiveTasks()
+            : state.snapshot.tasks;
+
+          return tasks.filter(function (task) {
+            return task.date === payload.date && !task.localOnly;
+          }).sort(compareTasks).map(function (task) {
+            return hourLabel(task.hour) + '：' + task.title;
+          }).join('\n') || 'この日のタスクはありません。';
+        }
+
+        if (payload.taskId) {
+          const task = taskById(state.snapshot, payload.taskId);
+
+          if (!local) {
+            return task
+              ? task.title +
+                '\n期限：' + (task.due || '未設定') +
+                '\n実行日：' + (task.date || '未設定') +
+                '\n' + hourLabel(task.hour)
+              : '現在の一覧にはありません。';
+          }
+
+          return payload.action === 'done'
+            ? 'このタスクを完了にする'
+            : payload.title +
+              '\n期限：' + (payload.due || '未設定') +
+              '\n実行日：' + (payload.date || '未設定');
+        }
+
+        if (payload.action === 'periodicSave') {
+          const item = state.snapshot.periodic.items.find(function (entry) {
+            return entry.row === payload.row;
+          });
+
+          if (!local) {
+            return item
+              ? item.name +
+                '\n' + item.freq +
+                '\n次回：' + (item.next || '未設定') +
+                '\n期限：' + dueRuleLabel(item.dueRule)
+              : '既存の対象はありません。';
+          }
+
+          return payload.name +
+            '\n' + payload.freq +
+            '\n次回：' + (payload.next || '未設定') +
+            '\n期限：' + dueRuleLabel(
+              Object.prototype.hasOwnProperty.call(payload, 'dueRule')
+                ? payload.dueRule
+                : item && item.dueRule
+            );
+        }
+
+        return local
+          ? 'この操作を実行する'
+          : '保存済みの内容を確認してから操作し直してください。';
+      }
+
+      async function openConflict(id) {
+        await refresh();
+
+        const job = state.jobs.find(function (entry) {
+          return entry.id === id && entry.state === 'conflict';
+        });
+
+        if (!job || !state.snapshot) {
+          return;
+        }
+
+        conflictId = id;
+        const related = client.relatedJobs(id);
+        conflictReviewed = related.map(function (entry) {
+          return entry.id;
+        });
+
+        $('conflict-note').textContent =
+          job.note + '\n関連する未送信 ' + related.length +
+          '件が対象です。「保存済みを使う」を選ぶと、対象の端末側変更は反映しません。';
+
+        $('conflict-server').replaceChildren(
+          make('p', describePayload(job.payload, false))
+        );
+
+        $('conflict-local').replaceChildren(
+          make('p', describePayload(job.payload, true)),
+          make('p', related.map(function (entry) {
+            return '・' + entry.label;
+          }).join('\n'))
+        );
+
+        $('conflict-apply').hidden =
+          ['order', 'edit', 'done', 'periodicSave']
+            .indexOf(job.payload.action) < 0;
+
+        if ($('conflict-apply').hidden) {
+          $('conflict-note').textContent +=
+            '\n保存済みを使った後、必要な操作をやり直してください。';
+        }
+
+        $('conflict-dialog').showModal();
+      }
+
+      async function resolveConflict(useLocal) {
+        try {
+          await client.resolveConflict(
+            conflictId,
+            useLocal,
+            conflictReviewed
+          );
+
+          $('conflict-dialog').close();
+          notify(useLocal ? '送信待ち' : '保存済みの内容を使います');
+        } catch (error) {
+          failed('確認が必要です', error);
+        }
+      }
+
+      $('conflict-close').onclick = function () {
+        $('conflict-dialog').close();
+      };
+
+      $('conflict-remote').onclick = function () {
+        resolveConflict(false);
+      };
+
+      $('conflict-apply').onclick = function () {
+        resolveConflict(true);
+      };
+
+      /* ---------- 設定・点検 ---------- */
+
+      function seconds(value) {
+        return Number.isFinite(value)
+          ? (value / 1000).toFixed(2) + '秒'
+          : '未取得';
+      }
+
+      function sendTiming() {
+        const info = state.lastSend;
+
+        if (!info) {
+          return '未取得';
+        }
+
+        const names = {
+          add: '追加',
+          done: '完了',
+          edit: '編集',
+          order: '配置',
+          undo: '取り消し',
+          periodicSave: '定期設定',
+          periodicSend: '定期追加',
+          periodicRun: '今日の定期追加',
+          automatic: '自動追加設定'
+        };
+
+        return (names[info.action] || info.action) +
+          '\n開始まで ' + seconds(info.waitMs) +
+          '\n返答まで ' + seconds(info.roundTripMs) +
+          '\n保存先処理 ' + seconds(info.serverMs);
+      }
+
+      function stateRows() {
+        return [
+          ['通信', navigator.onLine ? 'あり' : 'なし'],
+          ['未送信', state.jobs.length + '件'],
+          [
+            '確認が必要',
+            state.jobs.filter(function (job) {
+              return job.state === 'conflict' || job.state === 'blocked';
+            }).length + '件'
+          ],
+          [
+            '前回確認',
+            timeLabel(state.snapshot ? state.snapshot.fetchedAt : '') +
+              '（日本時間）'
+          ],
+          ['画面', VERSION],
+          [
+            '保存先の改修版',
+            state.snapshot ? state.snapshot.build || '未取得' : '未取得'
+          ],
+          ['オフライン保存', cacheVersion],
+          ['送信の引き継ぎ', client.fastHandoff ? '自動' : '従来方式'],
+          [
+            '旧画面の送信記録',
+            client.legacyWaitUntil > Date.now()
+              ? '終了確認待ち'
+              : '待ちなし'
+          ],
+          ['直近の送信', sendTiming()],
+          ['取得エラー', client.lastReadError || 'なし']
+        ];
+      }
+
+      function renderSettingsState() {
+        const target = $('settings-state');
+        target.replaceChildren();
+
+        stateRows().forEach(function (row) {
+          target.append(make('dt', row[0]), make('dd', row[1]));
+        });
+      }
+
+      function workerVersion() {
+        return new Promise(function (resolve) {
+          if (
+            !navigator.serviceWorker ||
+            !navigator.serviceWorker.controller ||
+            !window.MessageChannel
+          ) {
+            resolve('確認できません');
+            return;
+          }
+
+          const channel = new MessageChannel();
+
+          const timer = setTimeout(function () {
+            channel.port1.close();
+            resolve('確認できません');
+          }, 2000);
+
+          channel.port1.onmessage = function (event) {
+            clearTimeout(timer);
+            channel.port1.close();
+            resolve(event.data.cacheName || '確認できません');
+          };
+
+          navigator.serviceWorker.controller.postMessage({
+            type: 'TASK_VERSION'
+          }, [channel.port2]);
+        });
+      }
+
+      async function openSettings() {
+        const config = client.config();
+        $('url').value = config.url;
+        $('token').value = config.token;
+        renderSettingsState();
+        $('settings-dialog').showModal();
+        cacheVersion = await workerVersion();
+        renderSettingsState();
+      }
+
+      $('settings-save').onclick = async function () {
+        const previous = client.config();
+        const url = $('url').value.trim();
+        const token = $('token').value.trim();
+
+        if (state.jobs.length && previous.url && previous.url !== url) {
+          alert('未送信があるため、接続先は変更できません。');
+          return;
+        }
+
+        if (
+          (url !== previous.url || token !== previous.token) &&
+          (
+            client.pumpPromise ||
+            refreshPromise ||
+            historyPromise ||
+            checking
+          )
+        ) {
+          alert('通信が終わってから保存してください。');
+          return;
+        }
+
+        try {
+          localStorage.setItem('gasUrl_v1', url);
+          localStorage.setItem('gasTok_v1', token);
+          client.resetConnection();
+
+          if (url !== previous.url) {
+            historyData = {
+              items: [],
+              total: 0,
+              loaded: false
+            };
+
+            await client.mutate(function (saved) {
+              saved.snapshot = null;
+              saved.transitions = [];
+              saved.lastNetworkAt = 0;
+            });
+          }
+
+          $('settings-dialog').close();
+          notify('設定を保存しました');
+          await refresh();
+          client.pump(false);
+        } catch (error) {
+          failed('設定を保存できませんでした', error);
+        }
+      };
+
+      $('settings-close').onclick = function () {
+        $('settings-dialog').close();
+      };
+
+      $('check').onclick = async function () {
+        if (!onlineRequired() || checking) {
+          return;
+        }
+
+        checking = true;
+        $('check').disabled = true;
+
+        try {
+          const result = await client.read({
+            action: 'check'
+          }, {
+            forceFull: true
+          });
+
+          alert(
+            '改修版：' + (result.build || '未取得') +
+            '\n\n' + result.checks.join('\n')
+          );
+        } catch (error) {
+          alert(String(error.message || error));
+        } finally {
+          checking = false;
+          $('check').disabled = false;
+        }
+      };
+
+      $('copy').onclick = async function () {
+        cacheVersion = await workerVersion();
+        renderSettingsState();
+
+        const text = stateRows().map(function (row) {
+          return row[0] + '：' + row[1];
+        }).join('\n');
+
+        try {
+          await navigator.clipboard.writeText(text);
+          alert('コピーしました。');
+        } catch (error) {
+          prompt('この内容をコピーしてください。', text);
+        }
+      };
+
+      /* ---------- 取得・起動 ---------- */
+
+      function refresh(background) {
+        if (refreshPromise) {
+          return refreshPromise;
+        }
+
+        if (
+          !client.ready ||
+          client.legacyCount ||
+          !client.configured() ||
+          !navigator.onLine ||
+          drag
+        ) {
+          return Promise.resolve(false);
+        }
+
+        refreshPromise = client.read({
+          action: 'load'
+        }, {
+          background: !!background
+        }).then(function (result) {
+          if (result && messageKind === 'read') {
+            notify('');
+          }
+
+          return !!result;
+        }).catch(function (error) {
+          notify(
+            '一覧を取得できませんでした',
+            true,
+            String(error.message || error),
+            'read'
+          );
+          return false;
+        }).finally(function () {
+          refreshPromise = null;
+          nextAutoRead = Date.now() + (client.lastReadError ? 60000 : 20000);
+          renderStatus();
+        });
+
+        renderStatus();
+        return refreshPromise;
+      }
+
+      async function automaticRead() {
+        if (
+          autoBusy ||
+          document.hidden ||
+          !client.ready ||
+          client.legacyCount ||
+          !client.configured() ||
+          !navigator.onLine ||
+          drag ||
+          holdTimer ||
+          anyDialogOpen() ||
+          refreshPromise ||
+          historyPromise ||
+          manualReloading ||
+          periodicAdding ||
+          state.jobs.length ||
+          Date.now() < nextAutoRead
+        ) {
+          return;
+        }
+
+        const active = document.activeElement;
+
+        if (
+          active &&
+          $('content').contains(active) &&
+          ['INPUT', 'SELECT', 'TEXTAREA'].indexOf(active.tagName) >= 0
+        ) {
+          return;
+        }
+
+        autoBusy = true;
+
+        try {
+          if (page === 'history') {
+            await loadHistory(false, true);
+          } else {
+            await refresh(true);
+          }
+        } finally {
+          autoBusy = false;
+        }
+      }
+
+      document.querySelectorAll('nav [data-page]').forEach(function (element) {
+        element.addEventListener('click', function () {
+          if (drag) {
+            return;
+          }
+
+          page = element.dataset.page;
+
+          if (page === 'history') {
+            loadHistory(false);
+          } else {
+            render();
+          }
+        });
+      });
+
+      $('add').onclick = openAdd;
+      $('settings').onclick = openSettings;
+
+      $('message-close').onclick = function () {
+        notify('');
+      };
+
+      $('reload').onclick = async function () {
+        if (manualReloading || !onlineRequired()) {
+          return;
+        }
+
+        manualReloading = true;
+        renderStatus();
+
+        try {
+          if (page === 'history') {
+            client.pump(true);
+            await loadHistory(false);
+          } else {
+            await client.pump(true);
+            await refresh();
+          }
+        } finally {
+          manualReloading = false;
+          renderStatus();
+        }
+      };
+
+      window.addEventListener('online', function () {
         if (page === 'history') {
           loadHistory(false);
+        } else if (!anyDialogOpen()) {
+          refresh();
         }
       });
-    });
 
-    $('add').addEventListener('click', openAdd);
-    $('settings').addEventListener('click', openSettings);
+      window.addEventListener('offline', render);
 
-    $('reload').addEventListener('click', async function () {
-      if (manualReloading) {
-        return;
-      }
-
-      if (!navigator.onLine) {
-        notify(
-          '通信なし',
-          true,
-          '',
-          '端末に保存した内容を表示しています。'
-        );
-        return;
-      }
-
-      manualReloading = true;
-      nextTry = 0;
-      renderStatus();
-
-      try {
-        await pump(true);
-
-        if (page === 'history') {
-          const result = await loadHistory(false);
-
-          if (result) {
-            notify('更新しました', false, 'success');
+      document.addEventListener('visibilitychange', async function () {
+        if (document.hidden) {
+          if (drag || holdTimer) {
+            endDrag(true);
           }
-        } else if (await refresh()) {
-          notify('更新しました', false, 'success');
+
+          return;
         }
-      } finally {
-        manualReloading = false;
-        renderStatus();
-      }
-    });
 
-    window.addEventListener('online', async function () {
-      renderStatus();
-      nextTry = 0;
-      await pump(true);
-      refresh();
-    });
+        if (!client.ready) {
+          return;
+        }
 
-    window.addEventListener('offline', render);
-    window.addEventListener('resize', updateNow);
+        try {
+          await client.reloadLocal();
+          client.pump(false);
 
-    document.addEventListener('visibilitychange', async function () {
-      if (document.hidden) {
+          if (!anyDialogOpen()) {
+            if (page === 'history') {
+              loadHistory(false);
+            } else {
+              refresh();
+            }
+          }
+        } catch (error) {
+          failed('端末の記録を読み取れません', error);
+        }
+      });
+
+      window.addEventListener('blur', function () {
         if (drag || holdTimer) {
           endDrag(true);
         }
+      });
 
-        return;
+      window.addEventListener('resize', updateNow);
+      setInterval(automaticRead, 5000);
+
+      setInterval(function () {
+        updateNow();
+        const today = japanDate();
+
+        if (today !== lastDateSeen) {
+          lastDateSeen = today;
+
+          if (!drag && !anyDialogOpen()) {
+            render();
+          }
+        }
+      }, 60000);
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js', {
+          updateViaCache: 'none'
+        }).then(function (registration) {
+          return registration.update();
+        }).catch(function (error) {
+          failed('画面の更新を確認できません', error);
+        });
       }
 
-      if (storageReady) {
+      (async function () {
         try {
-          state = await readState();
+          await client.start();
           render();
-          await pump(true);
 
-          if (!anyDialogOpen()) {
-            refresh();
+          if (page === 'history') {
+            client.pump(false);
+            await loadHistory(false);
+          } else if (client.configured() && !client.legacyCount) {
+            const changed = await client.pump(false);
+
+            if (!changed || !state.snapshot) {
+              await refresh();
+            }
           }
         } catch (error) {
-          notify(
-            '端末の記録を読み取れません',
-            true,
-            'storage',
-            'データは消さずに開き直してください。\n' +
-            String(error.message || error)
-          );
+          failed('端末への保存を準備できません', error);
         }
-      }
-    });
-
-    window.addEventListener('blur', function () {
-      if (drag || holdTimer) {
-        endDrag(true);
-      }
-    });
-
-    setInterval(function () {
-      pump(false);
-    }, 15000);
-
-    setInterval(autoRefresh, 5000);
-
-    setInterval(function () {
-      updateNow();
-      const today = japanDate();
-
-      if (today !== lastDateSeen) {
-        lastDateSeen = today;
-
-        if (!drag && !anyDialogOpen()) {
-          render();
-        }
-      }
-    }, 60000);
-
-    async function start() {
-      try {
-        db = await openDatabase();
-        state = await readState();
-
-        const oldCount = await oldPendingCount();
-        legacyBlocked = oldCount > 0;
-        storageReady = true;
-
-        if (legacyBlocked) {
-          notify(
-            '旧画面の未送信があります',
-            true,
-            'legacy',
-            '以前の画面に未送信が ' + oldCount +
-            '件残っています。記録は消していません。旧画面で送信を完了してください。'
-          );
-        }
-
-        if ('BroadcastChannel' in window) {
-          channel = new BroadcastChannel('task-unified-state');
-
-          channel.onmessage = async function () {
-            try {
-              state = await readState();
-              render();
-            } catch (error) {
-              notify(
-                '端末の記録を読み取れません',
-                true,
-                'storage',
-                'データは消さずに開き直してください。\n' +
-                String(error.message || error)
-              );
-            }
-          };
-        }
-
-        render();
-
-        if (!legacyBlocked && configured()) {
-          const changed = await pump(true);
-
-          if (!changed || !state.snapshot) {
-            await refresh();
-          }
-        } else if (!configured()) {
-          notify(
-            '接続先を設定してください',
-            true,
-            'setup',
-            '「設定」に接続先と合い言葉を保存してください。'
-          );
-        }
-      } catch (error) {
-        storageReady = false;
-
-        notify(
-          '端末への保存を準備できません',
-          true,
-          'storage',
-          '変更操作を止めています。\n' + String(error.message || error)
-        );
-
-        renderStatus();
-      }
-    }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js', {
-        updateViaCache: 'none'
-      }).then(function (registration) {
-        return registration.update();
-      }).catch(function () {
-        notify(
-          '画面の更新を確認できません',
-          true,
-          'worker',
-          '通信できる状態で開き直してください。端末の記録は消していません。'
-        );
-      });
-    }
-
-    start();
+      })();
+    })();
   </script>
 </body>
 </html>
