@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = 'v4.9';
+  const VERSION = 'v4.10';
   const STORAGE_KEY = 'wishes-v1';
   const CHANNEL_NAME = 'task-wishes-v1';
 
@@ -33,6 +33,7 @@
     return {
       snapshot: null,
       jobs: [],
+      transitions: [],
       sequence: 0,
       savedAt: 0,
       lastNetworkAt: 0
@@ -52,6 +53,24 @@
         '「したいこと」の端末記録を読み取れません。データは消さないでください。'
       );
     }
+
+    if (!Object.prototype.hasOwnProperty.call(value, 'transitions')) {
+      value.transitions = [];
+    }
+
+    if (!Array.isArray(value.transitions)) {
+      throw new Error('変更の記録を読み取れません。データは消さないでください。');
+    }
+
+    value.jobs.forEach(function (job) {
+      if (!Array.isArray(job.causes)) {
+        job.causes = [];
+      }
+
+      if (typeof job.frozen !== 'boolean') {
+        job.frozen = job.state !== 'saved';
+      }
+    });
 
     return value;
   }
@@ -86,14 +105,74 @@
     saved.snapshot = snapshot;
   }
 
+  function jobWishId(job) {
+    return job.payload.action === 'wishAdd'
+      ? job.payload.requestId || job.id
+      : job.payload.wishId || '';
+  }
+
+  function contextFor(id, jobs) {
+    return {
+      wishId: id,
+      causes: jobs.filter(function (job) {
+        return jobWishId(job) === id;
+      }).map(function (job) {
+        return job.id;
+      })
+    };
+  }
+
+  function advance(payload, transition) {
+    if (
+      transition &&
+      payload.wishId === transition.wishId &&
+      payload.expectedWish === transition.before
+    ) {
+      payload.expectedWish = transition.after;
+    }
+  }
+
   function readyJob(saved, force) {
     const now = Date.now();
+    const ids = new Set(saved.jobs.map(function (job) {
+      return job.id;
+    }));
 
     return saved.jobs.slice().sort(function (a, b) {
       return a.sequence - b.sequence;
     }).find(function (job) {
       return ['saved', 'sending', 'unknown'].indexOf(job.state) >= 0 &&
-        (force || !job.retryAt || job.retryAt <= now);
+        (force || !job.retryAt || job.retryAt <= now) &&
+        !job.causes.some(function (id) {
+          return ids.has(id);
+        });
+    });
+  }
+
+  function relatedJobs(jobs, id) {
+    const ids = new Set([id]);
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+
+      jobs.forEach(function (job) {
+        if (
+          !ids.has(job.id) &&
+          job.causes.some(function (cause) {
+            return ids.has(cause);
+          })
+        ) {
+          ids.add(job.id);
+          changed = true;
+        }
+      });
+    }
+
+    return jobs.filter(function (job) {
+      return ids.has(job.id);
+    }).sort(function (a, b) {
+      return a.sequence - b.sequence;
     });
   }
 
@@ -328,7 +407,11 @@
       return this.readPromise;
     }
 
-    async enqueue(payload, label) {
+    context(id) {
+      return contextFor(id, this.state.jobs);
+    }
+
+    async enqueue(payload, label, captured) {
       if (!this.ready || this.transport.legacyCount) {
         throw new Error('端末保存の準備ができていません。');
       }
@@ -336,14 +419,41 @@
       const id = uuid();
 
       await this.mutate(function (saved) {
-        if (
-          payload.wishId &&
-          saved.jobs.some(function (job) {
-            return job.payload.wishId === payload.wishId;
-          })
-        ) {
-          throw new Error('この項目の送信結果を確認中です。');
+        if (payload.wishId) {
+          const related = saved.jobs.filter(function (job) {
+            return jobWishId(job) === payload.wishId;
+          });
+
+          if (related.some(function (job) {
+            return job.payload.action === 'wishAdd';
+          })) {
+            throw new Error('新規追加の送信結果を確認してから編集してください。');
+          }
+
+          if (related.some(function (job) {
+            return job.state === 'conflict' || job.state === 'blocked';
+          })) {
+            throw new Error('この項目には、確認が必要な変更が残っています。');
+          }
         }
+
+        const current = contextFor(payload.wishId || '', saved.jobs);
+
+        const causes = captured
+          ? Array.from(new Set(
+            captured.causes.concat(current.causes)
+          ))
+          : current.causes;
+
+        const data = Object.assign({}, clone(payload), {
+          requestId: id
+        });
+
+        saved.transitions.forEach(function (entry) {
+          if (causes.indexOf(entry.id) >= 0) {
+            advance(data, entry.transition);
+          }
+        });
 
         saved.sequence++;
 
@@ -351,10 +461,10 @@
           id: id,
           sequence: saved.sequence,
           createdAt: Date.now(),
-          payload: Object.assign({}, clone(payload), {
-            requestId: id
-          }),
+          payload: data,
           label: label,
+          causes: causes,
+          frozen: false,
           state: 'saved',
           note: '',
           retryAt: 0,
@@ -373,6 +483,15 @@
       }, 'したいこと：' + title);
     }
 
+    edit(id, title, expectedWish, captured) {
+      return this.enqueue({
+        action: 'wishEdit',
+        wishId: id,
+        title: title,
+        expectedWish: expectedWish
+      }, '件名変更：' + title, captured);
+    }
+
     setDone(item, done) {
       const original = this.state.snapshot &&
         this.state.snapshot.items.find(function (entry) {
@@ -389,7 +508,7 @@
         action: done ? 'wishDone' : 'wishRestore',
         wishId: original.wishId,
         expectedWish: original.version
-      }, (done ? '達成：' : '戻す：') + original.title);
+      }, (done ? '達成：' : '戻す：') + item.title);
     }
 
     effectiveItems() {
@@ -404,6 +523,7 @@
         return a.sequence - b.sequence;
       }).forEach(function (job) {
         const payload = job.payload;
+        let item;
 
         if (payload.action === 'wishAdd') {
           if (!map.has(job.id)) {
@@ -419,17 +539,27 @@
             });
           }
 
-          map.get(job.id).pending = true;
-          map.get(job.id).jobId = job.id;
+          item = map.get(job.id);
+          item.pendingAdd = true;
         } else {
-          const item = map.get(payload.wishId);
+          item = map.get(payload.wishId);
 
           if (item) {
-            item.done = payload.action === 'wishDone';
-            item.doneAt = item.done ? job.createdAt : 0;
-            item.pending = true;
-            item.jobId = job.id;
+            if (payload.action === 'wishEdit') {
+              item.title = payload.title;
+            } else {
+              item.done = payload.action === 'wishDone';
+              item.doneAt = item.done ? job.createdAt : 0;
+            }
           }
+        }
+
+        if (item) {
+          item.pending = true;
+          item.jobId = job.id;
+          item.needsCheck = item.needsCheck ||
+            job.state === 'conflict' ||
+            job.state === 'blocked';
         }
       });
 
@@ -517,6 +647,7 @@
           return;
         }
 
+        current.frozen = true;
         current.state = 'sending';
         current.note = '';
         current.retryAt = 0;
@@ -536,11 +667,37 @@
           requireSnapshot(result.wishSnapshot);
 
           await this.mutate(function (saved) {
+            const exists = saved.jobs.some(function (entry) {
+              return entry.id === job.id;
+            });
+
             storeSnapshot(saved, result.wishSnapshot);
+            saved.lastNetworkAt = Date.now();
+
+            if (!exists) {
+              return;
+            }
+
+            saved.jobs.forEach(function (entry) {
+              if (
+                entry.id !== job.id &&
+                !entry.frozen &&
+                entry.causes.indexOf(job.id) >= 0
+              ) {
+                advance(entry.payload, result.wishTransition);
+              }
+            });
+
             saved.jobs = saved.jobs.filter(function (entry) {
               return entry.id !== job.id;
             });
-            saved.lastNetworkAt = Date.now();
+
+            saved.transitions.push({
+              id: job.id,
+              transition: result.wishTransition || null
+            });
+
+            saved.transitions = saved.transitions.slice(-100);
           });
 
           this.lastError = '';
@@ -589,7 +746,11 @@
             return entry.id === job.id;
           });
 
-          if (!current) {
+          if (
+            !current ||
+            current.state === 'conflict' ||
+            current.state === 'blocked'
+          ) {
             return;
           }
 
@@ -612,40 +773,80 @@
       }
     }
 
-    async resolveConflict(id, useLocal, reviewedVersion) {
+    relatedJobs(id) {
+      return relatedJobs(this.state.jobs, id);
+    }
+
+    async resolveConflict(id, useLocal, reviewedVersion, reviewedIds) {
       await this.mutate(function (saved) {
-        const index = saved.jobs.findIndex(function (job) {
+        const root = saved.jobs.find(function (job) {
           return job.id === id && job.state === 'conflict';
         });
 
-        if (index < 0) {
+        if (!root) {
           return;
         }
+
+        const related = relatedJobs(saved.jobs, id);
+        const actual = related.map(function (job) {
+          return job.id;
+        }).sort();
+
+        const reviewed = (reviewedIds || [id]).slice().sort();
+
+        if (JSON.stringify(actual) !== JSON.stringify(reviewed)) {
+          throw new Error('関連する変更が増えました。確認画面を開き直してください。');
+        }
+
+        if (related.some(function (job) {
+          return job.id !== id && job.frozen;
+        })) {
+          throw new Error('関連する送信結果を確認中です。少し待ってください。');
+        }
+
+        const ids = new Set(actual);
 
         if (!useLocal) {
-          saved.jobs.splice(index, 1);
+          saved.jobs = saved.jobs.filter(function (job) {
+            return !ids.has(job.id);
+          });
           return;
         }
-
-        const job = saved.jobs[index];
 
         const item = saved.snapshot &&
           saved.snapshot.items.find(function (entry) {
-            return entry.wishId === job.payload.wishId;
+            return entry.wishId === root.payload.wishId;
           });
 
         if (!item || item.version !== reviewedVersion) {
           throw new Error('内容が変わりました。確認画面を開き直してください。');
         }
 
-        const newId = uuid();
-        job.id = newId;
-        job.payload.requestId = newId;
-        job.payload.expectedWish = item.version;
-        job.state = 'saved';
-        job.note = '';
-        job.retryAt = 0;
-        job.attempts = 0;
+        const replacements = new Map();
+
+        related.forEach(function (job) {
+          replacements.set(job.id, uuid());
+        });
+
+        saved.jobs.forEach(function (job) {
+          if (!ids.has(job.id)) {
+            return;
+          }
+
+          const newId = replacements.get(job.id);
+          job.id = newId;
+          job.payload.requestId = newId;
+          job.payload.expectedWish = item.version;
+          job.frozen = false;
+          job.state = 'saved';
+          job.note = '';
+          job.retryAt = 0;
+          job.attempts = 0;
+
+          job.causes = job.causes.map(function (cause) {
+            return replacements.get(cause) || cause;
+          });
+        });
       });
 
       this.pump(false);
