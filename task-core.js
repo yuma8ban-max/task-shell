@@ -2,7 +2,10 @@
 (function () {
   'use strict';
 
+  // 既存の小窓が確認する接続互換性の番号。
   const VERSION = 'v4.8';
+  const BUILD = 'v4.10.1';
+
   const SERVER_VERSION = 'v4.3';
   const SYNC_PROTOCOL = 'task-sync-v1';
   const DB_NAME = 'taskapp-unified';
@@ -11,7 +14,35 @@
   const CHANNEL_NAME = 'task-unified-state';
   const NETWORK_LOCK = 'taskapp-unified-remote-v1';
   const REQUEST_TIMEOUT_MS = 60000;
+  const DIAGNOSTIC_KEY = 'read-receipt-checks-v1';
+  const DIAGNOSTIC_LIMIT = 8;
+  const RESPONSE_INFO = Symbol('response-info');
   const SKIPPED = Symbol('skipped');
+
+  const READ_ACTIONS = [
+    'load',
+    'history',
+    'preview',
+    'check'
+  ];
+
+  const KNOWN_STATUSES = [
+    'saved',
+    'committed',
+    'duplicate',
+    'recovered',
+    'done',
+    'already',
+    'denied',
+    'invalid',
+    'error',
+    'busy',
+    'conflict',
+    'indeterminate',
+    'needs_setup',
+    'badmode',
+    'nosetup'
+  ];
 
   function uuid() {
     if (window.crypto && window.crypto.randomUUID) {
@@ -64,6 +95,557 @@
     return value;
   }
 
+  function isObject(value) {
+    return !!value &&
+      typeof value === 'object' &&
+      !Array.isArray(value);
+  }
+
+  function valueType(value) {
+    if (value === undefined) {
+      return 'なし';
+    }
+
+    if (value === null) {
+      return 'null';
+    }
+
+    if (Array.isArray(value)) {
+      return '配列';
+    }
+
+    switch (typeof value) {
+      case 'object':
+        return '項目の組';
+      case 'string':
+        return '文字列';
+      case 'number':
+        return '数値';
+      case 'boolean':
+        return '真偽値';
+      default:
+        return 'その他';
+    }
+  }
+
+  function safeVersion(value) {
+    if (
+      typeof value === 'string' &&
+      /^v\d+(?:\.\d+){0,4}(?:-\d+)?$/.test(value) &&
+      value.length <= 40
+    ) {
+      return value;
+    }
+
+    return value == null ? 'なし' : '指定外';
+  }
+
+  function safeContentType(value) {
+    const type = String(value || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase();
+
+    return [
+      'application/json',
+      'text/json',
+      'text/plain',
+      'text/html'
+    ].indexOf(type) >= 0
+      ? type
+      : type
+        ? 'その他'
+        : 'なし';
+  }
+
+  function safeStatus(value) {
+    return KNOWN_STATUSES.indexOf(value) >= 0
+      ? value
+      : value == null
+        ? 'なし'
+        : '指定外';
+  }
+
+  function safeAction(value) {
+    return READ_ACTIONS.indexOf(value) >= 0
+      ? value
+      : 'その他';
+  }
+
+  function summarizeResponse(result, transport) {
+    const source = isObject(result) ? result : {};
+    const snapshot = isObject(source.snapshot) ? source.snapshot : {};
+    const periodic = isObject(snapshot.periodic) ? snapshot.periodic : {};
+    const history = isObject(source.history) ? source.history : {};
+    const preview = isObject(source.preview) ? source.preview : {};
+    const info = transport || {};
+
+    return {
+      format: info.format || '未確認',
+      httpStatus: Number.isInteger(info.httpStatus)
+        ? info.httpStatus
+        : null,
+      contentType: info.contentType || 'なし',
+      rootType: valueType(result),
+      ok: typeof source.ok === 'boolean' ? source.ok : null,
+      status: safeStatus(source.status),
+      app: safeVersion(source.app),
+      build: safeVersion(source.build || snapshot.build),
+      unchanged: source.unchanged === true,
+      fields: [
+        {
+          name: 'snapshot',
+          type: valueType(source.snapshot)
+        },
+        {
+          name: 'snapshot.tasks',
+          type: valueType(snapshot.tasks)
+        },
+        {
+          name: 'snapshot.days',
+          type: valueType(snapshot.days)
+        },
+        {
+          name: 'snapshot.periodic',
+          type: valueType(snapshot.periodic)
+        },
+        {
+          name: 'snapshot.periodic.items',
+          type: valueType(periodic.items)
+        },
+        {
+          name: 'snapshot.undo',
+          type: valueType(snapshot.undo)
+        },
+        {
+          name: 'patch',
+          type: valueType(source.patch)
+        },
+        {
+          name: 'history.items',
+          type: valueType(history.items)
+        },
+        {
+          name: 'preview.items',
+          type: valueType(preview.items)
+        },
+        {
+          name: 'checks',
+          type: valueType(source.checks)
+        }
+      ],
+      taskCount: Array.isArray(snapshot.tasks)
+        ? snapshot.tasks.length
+        : null
+    };
+  }
+
+  function receiveError(code, message, info, retryFull, issues) {
+    const error = new Error(message);
+    error.receiveCode = code;
+    error.receiveInfo = info || null;
+    error.retryFull = retryFull === true;
+    error.receiveIssues = issues || [];
+    return error;
+  }
+
+  function snapshotIssues(snapshot) {
+    const issues = [];
+
+    function expect(path, value, condition, expected) {
+      if (!condition && issues.length < 20) {
+        issues.push({
+          field: path,
+          expected: expected,
+          actual: valueType(value)
+        });
+      }
+    }
+
+    expect(
+      'snapshot',
+      snapshot,
+      isObject(snapshot),
+      '項目の組'
+    );
+
+    if (!isObject(snapshot)) {
+      return issues;
+    }
+
+    expect(
+      'snapshot.tasks',
+      snapshot.tasks,
+      Array.isArray(snapshot.tasks),
+      '配列'
+    );
+
+    expect(
+      'snapshot.days',
+      snapshot.days,
+      isObject(snapshot.days),
+      '項目の組'
+    );
+
+    expect(
+      'snapshot.emptyDay',
+      snapshot.emptyDay,
+      typeof snapshot.emptyDay === 'string' && !!snapshot.emptyDay,
+      '空でない文字列'
+    );
+
+    expect(
+      'snapshot.today',
+      snapshot.today,
+      typeof snapshot.today === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(snapshot.today),
+      '日付の文字列'
+    );
+
+    expect(
+      'snapshot.fetchedAt',
+      snapshot.fetchedAt,
+      typeof snapshot.fetchedAt === 'string' &&
+        Number.isFinite(Date.parse(snapshot.fetchedAt)),
+      '取得日時の文字列'
+    );
+
+    expect(
+      'snapshot.periodic',
+      snapshot.periodic,
+      isObject(snapshot.periodic),
+      '項目の組'
+    );
+
+    if (isObject(snapshot.periodic)) {
+      expect(
+        'snapshot.periodic.items',
+        snapshot.periodic.items,
+        Array.isArray(snapshot.periodic.items),
+        '配列'
+      );
+
+      expect(
+        'snapshot.periodic.version',
+        snapshot.periodic.version,
+        typeof snapshot.periodic.version === 'string' &&
+          !!snapshot.periodic.version,
+        '空でない文字列'
+      );
+
+      expect(
+        'snapshot.periodic.automatic',
+        snapshot.periodic.automatic,
+        typeof snapshot.periodic.automatic === 'boolean',
+        '真偽値'
+      );
+    }
+
+    expect(
+      'snapshot.undo',
+      snapshot.undo,
+      isObject(snapshot.undo),
+      '項目の組'
+    );
+
+    if (isObject(snapshot.undo)) {
+      expect(
+        'snapshot.undo.version',
+        snapshot.undo.version,
+        typeof snapshot.undo.version === 'string' &&
+          !!snapshot.undo.version,
+        '空でない文字列'
+      );
+
+      expect(
+        'snapshot.undo.count',
+        snapshot.undo.count,
+        Number.isInteger(snapshot.undo.count) &&
+          snapshot.undo.count >= 0,
+        '0以上の整数'
+      );
+
+      expect(
+        'snapshot.undo.titles',
+        snapshot.undo.titles,
+        Array.isArray(snapshot.undo.titles) &&
+          snapshot.undo.titles.every(function (title) {
+            return typeof title === 'string';
+          }),
+        '文字列の配列'
+      );
+    }
+
+    if (Array.isArray(snapshot.tasks)) {
+      snapshot.tasks.forEach(function (task, index) {
+        if (issues.length >= 20) {
+          return;
+        }
+
+        const prefix = 'snapshot.tasks[' + index + ']';
+
+        expect(prefix, task, isObject(task), '項目の組');
+
+        if (!isObject(task)) {
+          return;
+        }
+
+        expect(
+          prefix + '.taskId',
+          task.taskId,
+          typeof task.taskId === 'string' && !!task.taskId,
+          '空でない文字列'
+        );
+
+        expect(
+          prefix + '.title',
+          task.title,
+          typeof task.title === 'string',
+          '文字列'
+        );
+
+        expect(
+          prefix + '.due',
+          task.due,
+          typeof task.due === 'string',
+          '文字列'
+        );
+
+        expect(
+          prefix + '.date',
+          task.date,
+          typeof task.date === 'string',
+          '文字列'
+        );
+
+        expect(
+          prefix + '.hour',
+          task.hour,
+          task.hour === null ||
+            (
+              Number.isInteger(task.hour) &&
+              task.hour >= 8 &&
+              task.hour <= 22
+            ),
+          'nullまたは8～22の整数'
+        );
+
+        expect(
+          prefix + '.order',
+          task.order,
+          task.order === null ||
+            (
+              typeof task.order === 'number' &&
+              Number.isFinite(task.order)
+            ),
+          'nullまたは数値'
+        );
+
+        expect(
+          prefix + '.row',
+          task.row,
+          Number.isInteger(task.row) && task.row >= 2,
+          '2以上の整数'
+        );
+
+        expect(
+          prefix + '.version',
+          task.version,
+          typeof task.version === 'string' && !!task.version,
+          '空でない文字列'
+        );
+      });
+    }
+
+    return issues;
+  }
+
+  function requireSnapshot(snapshot, info) {
+    const issues = snapshotIssues(snapshot);
+
+    if (issues.length) {
+      throw receiveError(
+        'snapshot-shape',
+        '保存先の返答に、必要なタスク一覧が含まれていません。',
+        info || summarizeResponse({
+          snapshot: snapshot
+        }),
+        true,
+        issues
+      );
+    }
+  }
+
+  function validateReadResponse(action, result, forceFull) {
+    const info = result[RESPONSE_INFO] || summarizeResponse(result);
+
+    if (!result.ok) {
+      throw receiveError(
+        'server-rejection',
+        String(result.message || '一覧を取得できませんでした。'),
+        info,
+        false
+      );
+    }
+
+    if (result.unchanged === true) {
+      const issues = [];
+
+      if (action !== 'load') {
+        issues.push({
+          field: 'unchanged',
+          expected: '一覧取得以外では使用しない',
+          actual: 'true'
+        });
+      }
+
+      if (forceFull) {
+        issues.push({
+          field: 'snapshot',
+          expected: '全体取得要求への一覧',
+          actual: '変更なしの返答'
+        });
+      }
+
+      if (
+        typeof result.revision !== 'string' ||
+        !result.revision
+      ) {
+        issues.push({
+          field: 'revision',
+          expected: '空でない文字列',
+          actual: valueType(result.revision)
+        });
+      }
+
+      if (
+        typeof result.fetchedAt !== 'string' ||
+        !Number.isFinite(Date.parse(result.fetchedAt))
+      ) {
+        issues.push({
+          field: 'fetchedAt',
+          expected: '取得日時の文字列',
+          actual: valueType(result.fetchedAt)
+        });
+      }
+
+      if (issues.length) {
+        throw receiveError(
+          'unchanged-shape',
+          '変更なしという返答を、現在の一覧と照合できませんでした。',
+          info,
+          true,
+          issues
+        );
+      }
+
+      return;
+    }
+
+    requireSnapshot(result.snapshot, info);
+
+    const issues = [];
+
+    function expect(path, value, condition, expected) {
+      if (!condition) {
+        issues.push({
+          field: path,
+          expected: expected,
+          actual: valueType(value)
+        });
+      }
+    }
+
+    if (action === 'history') {
+      expect(
+        'history',
+        result.history,
+        isObject(result.history),
+        '項目の組'
+      );
+
+      if (isObject(result.history)) {
+        expect(
+          'history.items',
+          result.history.items,
+          Array.isArray(result.history.items),
+          '配列'
+        );
+
+        expect(
+          'history.total',
+          result.history.total,
+          Number.isInteger(result.history.total) &&
+            result.history.total >= 0,
+          '0以上の整数'
+        );
+      }
+    }
+
+    if (action === 'preview') {
+      expect(
+        'preview',
+        result.preview,
+        isObject(result.preview),
+        '項目の組'
+      );
+
+      if (isObject(result.preview)) {
+        expect(
+          'preview.items',
+          result.preview.items,
+          Array.isArray(result.preview.items),
+          '配列'
+        );
+
+        expect(
+          'preview.errors',
+          result.preview.errors,
+          Array.isArray(result.preview.errors),
+          '配列'
+        );
+
+        expect(
+          'preview.version',
+          result.preview.version,
+          typeof result.preview.version === 'string' &&
+            !!result.preview.version,
+          '空でない文字列'
+        );
+
+        expect(
+          'preview.date',
+          result.preview.date,
+          typeof result.preview.date === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(result.preview.date),
+          '日付の文字列'
+        );
+      }
+    }
+
+    if (action === 'check') {
+      expect(
+        'checks',
+        result.checks,
+        Array.isArray(result.checks) &&
+          result.checks.every(function (item) {
+            return typeof item === 'string';
+          }),
+        '文字列の配列'
+      );
+    }
+
+    if (issues.length) {
+      throw receiveError(
+        'read-extra-shape',
+        '保存先の返答に、この画面の表示に必要な情報が含まれていません。',
+        info,
+        true,
+        issues
+      );
+    }
+  }
+
   function compareTasks(a, b) {
     const hourA = a.hour == null ? 7 : a.hour;
     const hourB = b.hour == null ? 7 : b.hour;
@@ -88,21 +670,6 @@
 
   function dayVersion(snapshot, date) {
     return snapshot.days[date] || snapshot.emptyDay;
-  }
-
-  function requireSnapshot(snapshot) {
-    if (
-      !snapshot ||
-      !Array.isArray(snapshot.tasks) ||
-      !snapshot.days ||
-      !snapshot.periodic ||
-      !Array.isArray(snapshot.periodic.items) ||
-      !snapshot.undo
-    ) {
-      throw new Error(
-        '保存先の返答に、必要なタスク一覧が含まれていません。'
-      );
-    }
   }
 
   function mergePlan(items, tasks, date) {
@@ -487,6 +1054,16 @@
       this.verifiedConnection = '';
       this.verifiedFeatures = {};
       this.legacyWaitUntil = 0;
+
+      this.readStatus = {
+        phase: 'idle',
+        action: '',
+        attempt: 0
+      };
+
+      this.readDiagnostics = [];
+      this.diagnosticWarning = '';
+
       this.fastHandoff = !!(
         navigator.locks &&
         typeof navigator.locks.request === 'function'
@@ -553,6 +1130,35 @@
       }
     }
 
+    setReadStatus(phase, action, attempt) {
+      this.readStatus = {
+        phase: phase,
+        action: safeAction(action),
+        attempt: attempt || 0
+      };
+
+      this.emit({
+        kind: 'read-state'
+      });
+    }
+
+    readStatusLabel() {
+      switch (this.readStatus.phase) {
+        case 'reading':
+          return '読み込み中';
+        case 'retrying':
+          return '一覧全体で再確認中';
+        case 'success':
+          return this.readStatus.attempt === 2
+            ? '再確認で取得成功'
+            : '取得成功';
+        case 'failed':
+          return '前回の取得に失敗';
+        default:
+          return 'この起動後は未確認';
+      }
+    }
+
     async start() {
       if (!window.indexedDB) {
         throw new Error('この端末では保存を利用できません。');
@@ -585,15 +1191,24 @@
       this.db.onversionchange = () => {
         this.ready = false;
         this.db.close();
+
         this.issue(
           '画面を開き直してください',
           '端末の保存先が変更されました。入力途中の内容は消さずに確認してください。'
         );
+
         this.emit();
       };
 
       this.state = await this.readState();
       this.legacyCount = await oldPendingCount();
+
+      try {
+        this.readDiagnostics = await this.readDiagnosticRecords();
+      } catch (error) {
+        this.diagnosticWarning = '以前の受信点検記録を読み取れませんでした。';
+      }
+
       this.ready = true;
 
       if ('BroadcastChannel' in window) {
@@ -605,6 +1220,19 @@
           }
 
           try {
+            if (
+              event.data &&
+              event.data.type === 'read-diagnostics-changed'
+            ) {
+              this.readDiagnostics = await this.readDiagnosticRecords();
+
+              this.emit({
+                kind: 'diagnostic'
+              });
+
+              return;
+            }
+
             this.state = await this.readState();
 
             const meta = event.data && event.data.meta
@@ -645,9 +1273,11 @@
           event.key === null
         ) {
           this.resetConnection();
+
           this.emit({
             kind: 'status'
           });
+
           this.pump(false);
         }
       });
@@ -793,6 +1423,195 @@
       });
     }
 
+    readDiagnosticRecords() {
+      return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction('data', 'readonly');
+        const request = transaction.objectStore('data').get(DIAGNOSTIC_KEY);
+
+        transaction.oncomplete = function () {
+          const records = request.result;
+
+          resolve(
+            Array.isArray(records)
+              ? records.slice(-DIAGNOSTIC_LIMIT)
+              : []
+          );
+        };
+
+        transaction.onerror = transaction.onabort = function () {
+          reject(transaction.error || new Error('点検記録を読み取れませんでした。'));
+        };
+      });
+    }
+
+    async saveReadDiagnostic(record) {
+      const safeRecord = clone(record);
+
+      try {
+        const records = await new Promise((resolve, reject) => {
+          const transaction = this.db.transaction('data', 'readwrite');
+          const store = transaction.objectStore('data');
+          const request = store.get(DIAGNOSTIC_KEY);
+          let next;
+
+          request.onsuccess = function () {
+            const previous = Array.isArray(request.result)
+              ? request.result
+              : [];
+
+            next = previous.filter(function (entry) {
+              return entry.id !== safeRecord.id;
+            });
+
+            next.push(safeRecord);
+            next = next.slice(-DIAGNOSTIC_LIMIT);
+            store.put(next, DIAGNOSTIC_KEY);
+          };
+
+          transaction.oncomplete = function () {
+            resolve(next);
+          };
+
+          transaction.onerror = transaction.onabort = function () {
+            reject(transaction.error || new Error('点検記録を保存できませんでした。'));
+          };
+        });
+
+        this.readDiagnostics = records;
+        this.diagnosticWarning = '';
+
+        if (this.channel) {
+          this.channel.postMessage({
+            type: 'read-diagnostics-changed'
+          });
+        }
+      } catch (error) {
+        this.readDiagnostics = this.readDiagnostics.filter(function (entry) {
+          return entry.id !== safeRecord.id;
+        });
+
+        this.readDiagnostics.push(safeRecord);
+        this.readDiagnostics = this.readDiagnostics.slice(-DIAGNOSTIC_LIMIT);
+        this.diagnosticWarning =
+          '受信点検を端末に保存できませんでした。この画面を閉じると記録が失われる場合があります。';
+      }
+
+      this.emit({
+        kind: 'diagnostic'
+      });
+    }
+
+    readDiagnosticText() {
+      const records = this.readDiagnostics.slice().reverse();
+      const actionNames = {
+        load: '一覧取得',
+        history: '完了済み取得',
+        preview: '定期タスクの対象確認',
+        check: '動作の点検'
+      };
+
+      const outcomeNames = {
+        retrying: '再確認中',
+        recovered: '再確認で取得成功',
+        failed: '取得失敗'
+      };
+
+      const codeNames = {
+        'non-json': 'JSONではない返答',
+        'response-envelope': '返答全体の形式不一致',
+        'server-version': '保存先の版の不一致',
+        'snapshot-shape': 'タスク一覧の形式不一致',
+        'unchanged-shape': '変更なしの返答の形式不一致',
+        'read-extra-shape': '画面別情報の形式不一致',
+        'cached-list-mismatch': '端末の一覧と変更なしの返答を照合できない',
+        'server-rejection': '保存先が要求を受け付けなかった',
+        'http': '通信の応答番号が正常ではない',
+        'network': '接続失敗',
+        'timeout': '応答待ち時間超過',
+        'interrupted': '通信中断',
+        'other': '取得または端末保存の処理で失敗'
+      };
+
+      const lines = [
+        '受信点検の版：' + BUILD
+      ];
+
+      if (this.diagnosticWarning) {
+        lines.push(this.diagnosticWarning);
+      }
+
+      if (!records.length) {
+        lines.push('異常な返答の記録：なし');
+        return lines.join('\n');
+      }
+
+      records.forEach(function (record, index) {
+        const time = Date.parse(record.at || '');
+        const label = Number.isFinite(time)
+          ? new Date(time + 9 * 3600000)
+            .toISOString()
+            .slice(0, 19)
+            .replace('T', ' ')
+          : '日時不明';
+
+        lines.push(
+          '',
+          '【' + (index + 1) + '】' + label + '（日本時間）',
+          '操作：' + (actionNames[record.action] || 'その他'),
+          '結果：' + (outcomeNames[record.outcome] || '未確定')
+        );
+
+        record.attempts.forEach(function (attempt) {
+          const info = attempt.response || {};
+
+          lines.push(
+            '・' + attempt.number + '回目' +
+              '／全体取得要求：' + (attempt.full ? 'あり' : 'なし') +
+              '／' + (attempt.accepted ? '受理' : '不受理'),
+            '  判定：' + (
+              attempt.accepted
+                ? '必要な情報を確認'
+                : codeNames[attempt.code] || 'その他'
+            ),
+            '  返答種別：' + (info.format || '未確認'),
+            '  応答番号：' + (
+              info.httpStatus == null ? '未取得' : info.httpStatus
+            ),
+            '  Content-Type：' + (info.contentType || 'なし'),
+            '  ok：' + (
+              info.ok === null || info.ok === undefined
+                ? 'なし'
+                : String(info.ok)
+            ),
+            '  status：' + (info.status || 'なし'),
+            '  app：' + (info.app || 'なし'),
+            '  build：' + (info.build || 'なし'),
+            '  unchanged：' + String(info.unchanged === true)
+          );
+
+          if (Number.isInteger(info.taskCount)) {
+            lines.push('  返答内のタスク件数：' + info.taskCount);
+          }
+
+          (attempt.issues || []).forEach(function (issue) {
+            lines.push(
+              '  不足・不一致：' + issue.field +
+              '／期待=' + issue.expected +
+              '／受信=' + issue.actual
+            );
+          });
+
+          if (!attempt.accepted) {
+            (info.fields || []).forEach(function (field) {
+              lines.push('  ' + field.name + '：' + field.type);
+            });
+          }
+        });
+      });
+
+      return lines.join('\n');
+    }
+
     senderRecord(action, webLock) {
       return new Promise((resolve, reject) => {
         const transaction = this.db.transaction('data', 'readwrite');
@@ -876,9 +1695,11 @@
 
           if (!claim.ok) {
             this.legacyWaitUntil = claim.until;
+
             this.emit({
               kind: 'status'
             });
+
             return SKIPPED;
           }
 
@@ -966,13 +1787,26 @@
       }
 
       if (!navigator.onLine) {
-        throw new Error('通信がありません。');
+        throw receiveError(
+          'network',
+          '通信がありません。',
+          summarizeResponse(undefined, {
+            format: '返答なし'
+          }),
+          false
+        );
       }
 
       const config = this.config();
       const controller = new AbortController();
       const started = performance.now();
       let timedOut = false;
+
+      let transport = {
+        format: '返答なし',
+        httpStatus: null,
+        contentType: 'なし'
+      };
 
       this.controllers.add(controller);
 
@@ -997,10 +1831,19 @@
           signal: controller.signal
         });
 
+        transport = {
+          format: '本文読取前',
+          httpStatus: response.status,
+          contentType: safeContentType(response.headers.get('Content-Type'))
+        };
+
         if (!response.ok) {
-          const error = new Error(
+          const error = receiveError(
+            'http',
             '保存先から正常な返答を受け取れませんでした' +
-            '（応答番号：' + response.status + '）。'
+              '（応答番号：' + response.status + '）。',
+            summarizeResponse(undefined, transport),
+            false
           );
 
           error.httpStatus = response.status;
@@ -1013,28 +1856,63 @@
         try {
           result = JSON.parse(text);
         } catch (error) {
-          throw new Error('保存先の返答を読み取れませんでした。');
+          transport.format = !text.trim()
+            ? '空の返答'
+            : /^\s*</.test(text)
+              ? 'HTML形式'
+              : 'JSON以外の文字列';
+
+          throw receiveError(
+            'non-json',
+            '保存先の返答をタスクデータとして読み取れませんでした。',
+            summarizeResponse(undefined, transport),
+            true
+          );
         }
 
+        transport.format = 'JSON';
+        const info = summarizeResponse(result, transport);
+
         if (
-          !result ||
+          !isObject(result) ||
           typeof result.ok !== 'boolean'
         ) {
-          throw new Error('保存先の返答の形式を確認できませんでした。');
+          throw receiveError(
+            'response-envelope',
+            '保存先の返答の形式を確認できませんでした。',
+            info,
+            true,
+            [{
+              field: 'ok',
+              expected: '真偽値',
+              actual: isObject(result)
+                ? valueType(result.ok)
+                : '返答全体が項目の組ではない'
+            }]
+          );
         }
 
         if (result.ok && result.app !== SERVER_VERSION) {
           this.resetConnection();
-          throw new Error('この画面に対応する保存先ではありません。');
+
+          throw receiveError(
+            'server-version',
+            'この画面に対応する保存先ではありません。',
+            info,
+            false
+          );
         }
 
         if (result.ok) {
           const source = result.snapshot || result.patch || result;
-
           this.verifiedConnection = config.url + '\n' + config.token;
-          this.verifiedFeatures =
-            source.features || this.verifiedFeatures;
+          this.verifiedFeatures = source.features || this.verifiedFeatures;
         }
+
+        Object.defineProperty(result, RESPONSE_INFO, {
+          value: info,
+          enumerable: false
+        });
 
         this.lastCommunication = {
           action: payload.action,
@@ -1051,15 +1929,34 @@
         }
 
         if (timedOut) {
-          throw new Error('保存先の応答を60秒以内に受け取れませんでした。');
+          throw receiveError(
+            'timeout',
+            '保存先の応答を60秒以内に受け取れませんでした。',
+            summarizeResponse(undefined, transport),
+            false
+          );
+        }
+
+        if (error && error.receiveCode) {
+          throw error;
         }
 
         if (error && error.name === 'AbortError') {
-          throw new Error('通信が途中で中断されました。');
+          throw receiveError(
+            'interrupted',
+            '通信が途中で中断されました。',
+            summarizeResponse(undefined, transport),
+            false
+          );
         }
 
         if (error && error.name === 'TypeError') {
-          throw new Error('保存先に接続できませんでした。');
+          throw receiveError(
+            'network',
+            '保存先に接続できませんでした。',
+            summarizeResponse(undefined, transport),
+            false
+          );
         }
 
         throw error;
@@ -1069,8 +1966,11 @@
       }
     }
 
-    markReceived() {
-      this.lastReadError = '';
+    markReceived(clearReadError) {
+      if (clearReadError === true) {
+        this.lastReadError = '';
+      }
+
       this.received = true;
 
       this.emit({
@@ -1081,14 +1981,15 @@
     async acceptRead(result) {
       if (result.unchanged) {
         return this.mutate(function (saved) {
-          applyAddLinks(saved, result.addLinks);
-
           if (
             !saved.snapshot ||
-            saved.snapshot.revision !== result.revision
+            saved.snapshot.revision !== result.revision ||
+            snapshotIssues(saved.snapshot).length
           ) {
             return false;
           }
+
+          applyAddLinks(saved, result.addLinks);
 
           const oldTime = Date.parse(saved.snapshot.fetchedAt || '');
           const newTime = Date.parse(result.fetchedAt || '');
@@ -1110,7 +2011,10 @@
         });
       }
 
-      requireSnapshot(result.snapshot);
+      requireSnapshot(
+        result.snapshot,
+        result[RESPONSE_INFO]
+      );
 
       await this.mutate(function (saved) {
         storeSnapshot(saved, result.snapshot);
@@ -1120,11 +2024,121 @@
       return true;
     }
 
+    async performRead(payload, settings) {
+      let full = !!settings.forceFull;
+      let diagnostic = null;
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        let response = null;
+
+        this.setReadStatus(
+          attempt === 1 ? 'reading' : 'retrying',
+          payload.action,
+          attempt
+        );
+
+        try {
+          response = await this.request(payload, full);
+          validateReadResponse(payload.action, response, full);
+
+          const accepted = await this.acceptRead(response);
+
+          if (!accepted) {
+            throw receiveError(
+              'cached-list-mismatch',
+              '端末の一覧と、保存先の「変更なし」という返答を照合できませんでした。',
+              response[RESPONSE_INFO],
+              true,
+              [{
+                field: 'local.snapshot',
+                expected: '返答の版と一致する有効な一覧',
+                actual: '照合できない'
+              }]
+            );
+          }
+
+          if (diagnostic) {
+            diagnostic.attempts.push({
+              number: attempt,
+              full: full,
+              accepted: true,
+              code: '',
+              response: response[RESPONSE_INFO] ||
+                summarizeResponse(response),
+              issues: []
+            });
+
+            diagnostic.outcome = 'recovered';
+            await this.saveReadDiagnostic(diagnostic);
+          }
+
+          this.markReceived(true);
+          this.setReadStatus('success', payload.action, attempt);
+          return response;
+        } catch (error) {
+          if (this.paused) {
+            throw error;
+          }
+
+          if (!diagnostic) {
+            diagnostic = {
+              id: uuid(),
+              at: new Date().toISOString(),
+              action: safeAction(payload.action),
+              outcome: 'failed',
+              attempts: []
+            };
+          }
+
+          diagnostic.attempts.push({
+            number: attempt,
+            full: full,
+            accepted: false,
+            code: error.receiveCode || 'other',
+            response: error.receiveInfo ||
+              (
+                response
+                  ? response[RESPONSE_INFO] || summarizeResponse(response)
+                  : summarizeResponse(undefined, {
+                    format: '返答を確認できない'
+                  })
+              ),
+            issues: error.receiveIssues || []
+          });
+
+          if (attempt === 1 && error.retryFull === true) {
+            diagnostic.outcome = 'retrying';
+            await this.saveReadDiagnostic(diagnostic);
+            full = true;
+            continue;
+          }
+
+          diagnostic.outcome = 'failed';
+          await this.saveReadDiagnostic(diagnostic);
+
+          const message = attempt === 2
+            ? '一覧全体で再確認しましたが、取得できませんでした。\n' +
+              String(error.message || error)
+            : String(error.message || error);
+
+          this.lastReadError = message;
+          this.setReadStatus('failed', payload.action, attempt);
+          throw new Error(message);
+        }
+      }
+
+      throw new Error('一覧を取得できませんでした。');
+    }
+
     async read(payload, options) {
       const settings = options || {};
 
       if (!this.ready || this.legacyCount) {
         throw new Error('端末保存の準備ができていません。');
+      }
+
+      if (READ_ACTIONS.indexOf(payload.action) < 0) {
+        throw new Error('読み取り用の操作ではありません。');
       }
 
       try {
@@ -1138,27 +2152,8 @@
             return SKIPPED;
           }
 
-          let response = await this.request(
-            payload,
-            !!settings.forceFull
-          );
-
-          if (!response.ok) {
-            throw new Error(response.message || '取得できませんでした。');
-          }
-
-          if (!(await this.acceptRead(response))) {
-            response = await this.request(payload, true);
-
-            if (!response.ok) {
-              throw new Error(response.message || '取得できませんでした。');
-            }
-
-            await this.acceptRead(response);
-          }
-
-          this.markReceived();
-          return response;
+          // 自動再確認は読み取り要求だけ。更新操作は再実行しない。
+          return this.performRead(payload, settings);
         }, {
           opportunistic: !!settings.background
         });
@@ -1167,9 +2162,10 @@
       } catch (error) {
         if (!this.paused) {
           this.lastReadError = String(error.message || error);
-          this.emit({
-            kind: 'status'
-          });
+
+          if (this.readStatus.phase !== 'failed') {
+            this.setReadStatus('failed', payload.action, 0);
+          }
         }
 
         throw error;
@@ -1363,7 +2359,6 @@
           await this.acceptRead(checked);
         }
 
-        // 通常の追加には、事前の一覧取得を挟まない。
         const result = await this.request(job.payload, false);
 
         if (result.ok) {
@@ -1390,7 +2385,8 @@
             throw new Error('保存後の一覧を確認できませんでした。');
           }
 
-          this.markReceived();
+          // 更新の成功だけで、直前の一覧取得エラーを消さない。
+          this.markReceived(false);
 
           this.signal({
             kind: 'committed',
@@ -1442,7 +2438,6 @@
         throw new Error(result.message || '送信を確認できませんでした。');
       } catch (error) {
         if (this.paused) {
-          // 画面終了時は同じ受付番号を残し、別の画面に引き継ぐ。
           throw error;
         }
 
@@ -1547,6 +2542,7 @@
         return false;
       }).finally(() => {
         this.pumpPromise = null;
+
         this.emit({
           kind: 'status'
         });
@@ -1740,6 +2736,7 @@
 
   window.TaskCore = {
     VERSION: VERSION,
+    BUILD: BUILD,
     create: function (options) {
       return new TaskClient(options);
     },
