@@ -679,6 +679,15 @@
       white-space: pre-wrap;
     }
 
+    .diagnostic-text {
+      max-height: 380px;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
     .loading {
       color: #1559ad;
       font-size: 15px;
@@ -798,7 +807,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.10</span>
+        <span class="version">v4.10.1</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button" disabled>タスクを追加</button>
         <button id="reload" type="button" disabled>最新を取得</button>
@@ -867,6 +876,11 @@
     </details>
 
     <details class="settings-section">
+      <summary>一覧取得の点検記録</summary>
+      <div id="receipt-log" class="diagnostic-text"></div>
+    </details>
+
+    <details class="settings-section">
       <summary>使い方</summary>
       <ul>
         <li>＊は必須項目です。期限・実行日は空欄でも追加できます。</li>
@@ -883,6 +897,8 @@
         <li>小窓は追加後も残ります。閉じるときは右上の×を使ってください。</li>
         <li>通常画面が開いていれば、小窓を閉じた後の送信確認を引き継ぎます。</li>
         <li>表示中のページを約20秒ごとを目安に確認します。</li>
+        <li>一覧として扱えない返答を受け取った場合は、一覧全体を1回だけ再取得します。正常な一覧を受け取るまでは前回の表示を残します。</li>
+        <li>一覧取得の点検記録には、合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
         <li>iPhoneショートカットの未送信は「ファイル」アプリで管理します。この画面の送信待ちとは別です。</li>
       </ul>
     </details>
@@ -915,13 +931,13 @@
     </div>
   </dialog>
 
-  <script src="./task-core.js?v=4.8"></script>
+  <script src="./task-core.js?v=4.10.1"></script>
   <script src="./wish-client.js?v=4.10"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.10';
+      const VERSION = 'v4.10.1';
 
       function $(id) {
         return document.getElementById(id);
@@ -930,8 +946,9 @@
       if (
         !window.TaskCore ||
         TaskCore.VERSION !== 'v4.8' ||
+        TaskCore.BUILD !== VERSION ||
         !window.WishClient ||
-        WishClient.VERSION !== VERSION
+        WishClient.VERSION !== 'v4.10'
       ) {
         $('status').textContent =
           '画面の準備ができません。task-core.js と wish-client.js を確認してください。';
@@ -1030,6 +1047,18 @@
       }
 
       function notify(text, error, detail, kind) {
+        // 一覧取得エラーを、別操作の成功通知で上書きしない。
+        if (
+          text &&
+          !error &&
+          messageKind === 'read' &&
+          !$('message').hidden &&
+          client &&
+          client.lastReadError
+        ) {
+          return;
+        }
+
         if (messageTimer) {
           clearTimeout(messageTimer);
           messageTimer = null;
@@ -1144,12 +1173,55 @@
         return state.jobs.length + wishJobs().length;
       }
 
+      function retryingRead(action) {
+        return client &&
+          client.readStatus.phase === 'retrying' &&
+          (!action || client.readStatus.action === action);
+      }
+
+      function updateReadLabels() {
+        const historyLabel = $('history-loading-label');
+
+        if (historyLabel) {
+          historyLabel.textContent = retryingRead('history')
+            ? '一覧全体で再確認中…'
+            : '読み込み中…';
+        }
+
+        const periodicButton = $('periodic-today');
+
+        if (periodicButton && periodicAdding) {
+          periodicButton.textContent = retryingRead('preview')
+            ? '再確認中'
+            : '確認中';
+        }
+
+        if (checking) {
+          $('check').textContent = retryingRead('check')
+            ? '再確認中'
+            : '点検中';
+        }
+      }
+
       client = TaskCore.create({
         onChange: function (meta) {
           state = client.state;
 
-          if (meta.kind === 'status') {
+          if (
+            meta.kind === 'status' ||
+            meta.kind === 'read-state' ||
+            meta.kind === 'diagnostic'
+          ) {
             renderStatus();
+            updateReadLabels();
+
+            if (
+              meta.kind === 'read-state' &&
+              client.readStatus.phase === 'success' &&
+              messageKind === 'read'
+            ) {
+              notify('');
+            }
           } else {
             render();
           }
@@ -1165,7 +1237,9 @@
           notify(text, true, detail);
         },
         onSaved: function () {
-          notify('保存しました', false);
+          if (!client.lastReadError) {
+            notify('保存しました', false);
+          }
         }
       });
 
@@ -1199,6 +1273,10 @@
           if (!client.configured()) {
             parts.push('接続先未設定');
           }
+
+          if (retryingRead('load')) {
+            parts.push('一覧全体で再確認中…');
+          }
         }
 
         $('status').textContent = parts.join('／');
@@ -1211,7 +1289,7 @@
         $('add').disabled =
           !client.ready ||
           !!client.legacyCount ||
-          (page === 'wishes' && !wishes.ready);
+          (page === 'wishes' && (!wishes || !wishes.ready));
 
         const loading = page === 'history'
           ? historyLoading
@@ -1225,8 +1303,11 @@
           manualReloading ||
           loading;
 
-        $('reload').textContent =
-          manualReloading || loading ? '確認中' : '最新を取得';
+        $('reload').textContent = retryingRead() && loading
+          ? '再確認中'
+          : manualReloading || loading
+            ? '確認中'
+            : '最新を取得';
 
         if ($('settings-dialog').open) {
           renderSettingsState();
@@ -2800,9 +2881,13 @@
         });
 
         const today = button(
-          periodicAdding ? '確認中' : '今日の分を追加',
+          periodicAdding
+            ? retryingRead('preview') ? '再確認中' : '確認中'
+            : '今日の分を追加',
           addTodayPeriodic
         );
+
+        today.id = 'periodic-today';
 
         const automatic = button(
           '毎日の自動追加：' + (periodic.automatic ? '入' : '切'),
@@ -3312,7 +3397,13 @@
         content.appendChild(tools);
 
         if (historyLoading) {
-          const loading = make('p', '読み込み中…', 'loading');
+          const loading = make(
+            'p',
+            retryingRead('history') ? '一覧全体で再確認中…' : '読み込み中…',
+            'loading'
+          );
+
+          loading.id = 'history-loading-label';
           loading.setAttribute('role', 'status');
           content.appendChild(loading);
         }
@@ -3612,11 +3703,14 @@
               '（日本時間）'
           ],
           ['画面', VERSION],
+          ['共通処理', TaskCore.BUILD],
           [
             '保存先の改修版',
             state.snapshot ? state.snapshot.build || '未取得' : '未取得'
           ],
           ['オフライン保存', cacheVersion],
+          ['一覧の確認', client.readStatusLabel()],
+          ['受信点検の記録', client.readDiagnostics.length + '件'],
           ['送信の引き継ぎ', client.fastHandoff ? '自動' : '従来方式'],
           [
             '旧画面の送信記録',
@@ -3637,6 +3731,8 @@
         stateRows().forEach(function (row) {
           target.append(make('dt', row[0]), make('dd', row[1]));
         });
+
+        $('receipt-log').textContent = client.readDiagnosticText();
       }
 
       function workerVersion() {
@@ -3755,6 +3851,7 @@
 
         checking = true;
         $('check').disabled = true;
+        $('check').textContent = '点検中';
 
         try {
           const result = await client.read({
@@ -3772,6 +3869,7 @@
         } finally {
           checking = false;
           $('check').disabled = false;
+          $('check').textContent = '動作の点検';
         }
       };
 
@@ -3781,7 +3879,9 @@
 
         const text = stateRows().map(function (row) {
           return row[0] + '：' + row[1];
-        }).join('\n');
+        }).join('\n') +
+          '\n\n【一覧取得の点検記録】\n' +
+          client.readDiagnosticText();
 
         try {
           await navigator.clipboard.writeText(text);
@@ -3822,9 +3922,12 @@
           notify(
             '一覧を取得できませんでした',
             true,
-            String(error.message || error),
+            String(error.message || error) +
+              '\n前回取得した一覧と、端末の未送信は残しています。' +
+              '\n「設定」→「状態をコピー」で点検記録を確認できます。',
             'read'
           );
+
           return false;
         }).finally(function () {
           refreshPromise = null;
