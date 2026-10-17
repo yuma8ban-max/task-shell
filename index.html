@@ -798,7 +798,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.9</span>
+        <span class="version">v4.10</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button" disabled>タスクを追加</button>
         <button id="reload" type="button" disabled>最新を取得</button>
@@ -874,14 +874,15 @@
         <li>新規タスクは送信待ちとして先に表示します。編集・完了・移動は送信結果の確認後に使えます。</li>
         <li>左の丸で完了、編集ボタンで件名・期限・実行日を変更します。</li>
         <li>≡をつかむか、件名部分を0.6秒長押しすると移動できます。</li>
-        <li>時間帯は目安です。実行日を変えても設定済みの時間帯は残ります。</li>
+        <li>実行日を変えても設定済みの時間帯は残ります。</li>
         <li>定期タスクの頻度は、毎日・毎週月曜日・毎月15日・3日ごとなどを指定できます。「不定期」は自動追加の対象外です。</li>
         <li>予定分の期限は本来の追加予定日が基準です。個別の「今すぐ1件追加」は押した日が基準です。</li>
         <li>期限の0日後は基準日当日です。日数には土日も含みます。その月にない指定日は月末です。</li>
-        <li>「したいこと」は通常タスクと別です。丸を押すと達成済みに移り、「戻す」で戻せます。</li>
+        <li>「したいこと」の編集では件名だけを変更します。達成状態は変わりません。</li>
+        <li>「したいこと」の編集は通信がないときも端末に保存します。新規追加の送信待ちや、確認が必要な項目は先に送信結果を確認してください。</li>
         <li>小窓は追加後も残ります。閉じるときは右上の×を使ってください。</li>
         <li>通常画面が開いていれば、小窓を閉じた後の送信確認を引き継ぎます。</li>
-        <li>通常画面では、表示中のページを約20秒ごとを目安に確認します。</li>
+        <li>表示中のページを約20秒ごとを目安に確認します。</li>
         <li>iPhoneショートカットの未送信は「ファイル」アプリで管理します。この画面の送信待ちとは別です。</li>
       </ul>
     </details>
@@ -915,12 +916,12 @@
   </dialog>
 
   <script src="./task-core.js?v=4.8"></script>
-  <script src="./wish-client.js?v=4.9"></script>
+  <script src="./wish-client.js?v=4.10"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.9';
+      const VERSION = 'v4.10';
 
       function $(id) {
         return document.getElementById(id);
@@ -1602,6 +1603,14 @@
         content.appendChild(achieved);
       }
 
+      function wishUnavailable(item) {
+        return !wishes.ready ||
+          !!client.legacyCount ||
+          !!item.localOnly ||
+          !!item.pendingAdd ||
+          !!item.needsCheck;
+      }
+
       function wishCard(item) {
         const row = make(
           'div',
@@ -1621,42 +1630,50 @@
 
           main.appendChild(make(
             'div',
-            job ? jobStateLabel(job) : '送信待ち',
+            item.needsCheck
+              ? '確認が必要'
+              : job
+                ? jobStateLabel(job)
+                : '送信待ち',
             'pending-label'
           ));
         }
+
+        const actions = make('div', null, 'card-actions');
+
+        const edit = button('編集', function () {
+          openWishEditor(item.wishId);
+        });
+
+        edit.disabled = wishUnavailable(item);
+        edit.setAttribute('aria-label', item.title + 'を編集');
+        actions.appendChild(edit);
 
         if (item.done) {
           const restore = button('戻す', function () {
             changeWish(item, false);
           });
 
-          restore.disabled =
-            !!item.pending ||
-            !wishes.ready ||
-            !!client.legacyCount;
-
-          row.append(main, restore);
+          restore.disabled = wishUnavailable(item);
+          actions.appendChild(restore);
+          row.append(main, actions);
         } else {
           const done = button('', function () {
             changeWish(item, true);
           }, 'hit');
 
           done.setAttribute('aria-label', item.title + 'を達成済みにする');
-          done.disabled =
-            !!item.pending ||
-            !wishes.ready ||
-            !!client.legacyCount;
-
+          done.disabled = wishUnavailable(item);
           done.appendChild(make('span', null, 'circle'));
-          row.append(done, main);
+
+          row.append(done, main, actions);
         }
 
         return row;
       }
 
       async function changeWish(item, done) {
-        if (item.pending) {
+        if (wishUnavailable(item)) {
           return;
         }
 
@@ -1694,6 +1711,42 @@
         field('title', '件名＊', 'text', '', true).focus();
       }
 
+      function openWishEditor(id) {
+        const original = wishes.state.snapshot &&
+          wishes.state.snapshot.items.find(function (item) {
+            return item.wishId === id;
+          });
+
+        const visible = wishes.effectiveItems().find(function (item) {
+          return item.wishId === id;
+        });
+
+        if (!original || !visible || wishUnavailable(visible)) {
+          notify('先にこの項目の送信結果を確認してください', true);
+          return;
+        }
+
+        const capturedVersion = original.version;
+        const context = wishes.context(id);
+
+        showEditor(
+          'したいことを編集',
+          async function (form) {
+            const title = String(form.get('title') || '').trim();
+
+            if (!title || title.length > 200) {
+              throw new Error('件名は1～200文字で入力してください。');
+            }
+
+            await wishes.edit(id, title, capturedVersion, context);
+            notify('送信待ち');
+          }
+        );
+
+        const title = field('title', '件名＊', 'text', visible.title, true);
+        title.focus();
+      }
+
       async function openWishConflict(id) {
         try {
           await wishes.read(false);
@@ -1714,11 +1767,22 @@
           return entry.wishId === job.payload.wishId;
         });
 
+        const local = wishes.effectiveItems().find(function (entry) {
+          return entry.wishId === job.payload.wishId;
+        });
+
+        const related = wishes.relatedJobs(id);
+
         conflictSource = 'wishes';
         conflictId = id;
+        conflictReviewed = related.map(function (entry) {
+          return entry.id;
+        });
         wishReviewedVersion = item ? item.version : '';
 
-        $('conflict-note').textContent = job.note;
+        $('conflict-note').textContent =
+          job.note + '\n関連する未送信 ' + related.length +
+          '件が対象です。「保存済みを使う」を選ぶと、対象の端末側変更は反映しません。';
 
         $('conflict-server').replaceChildren(make(
           'p',
@@ -1727,12 +1791,17 @@
             : '対象が見つかりません。'
         ));
 
-        $('conflict-local').replaceChildren(make(
-          'p',
-          job.payload.action === 'wishDone'
-            ? '達成済みにする'
-            : 'したいことに戻す'
-        ));
+        $('conflict-local').replaceChildren(
+          make(
+            'p',
+            local
+              ? local.title + '\n' + (local.done ? '達成済み' : '未達成')
+              : '対象が見つかりません。'
+          ),
+          make('p', related.map(function (entry) {
+            return '・' + entry.label;
+          }).join('\n'))
+        );
 
         $('conflict-apply').hidden = !item;
         $('conflict-dialog').showModal();
@@ -3469,7 +3538,8 @@
             await wishes.resolveConflict(
               conflictId,
               useLocal,
-              wishReviewedVersion
+              wishReviewedVersion,
+              conflictReviewed
             );
           } else {
             await client.resolveConflict(
@@ -3654,6 +3724,7 @@
 
             await wishes.mutate(function (saved) {
               saved.snapshot = null;
+              saved.transitions = [];
               saved.lastNetworkAt = 0;
             });
           }
