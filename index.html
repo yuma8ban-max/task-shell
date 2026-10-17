@@ -685,6 +685,29 @@
       line-height: 1.6;
     }
 
+    .wish-list {
+      max-width: 780px;
+    }
+
+    .wish-completed {
+      max-width: 780px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .wish-completed summary {
+      margin-bottom: 14px;
+    }
+
+    .wish-achieved {
+      color: #46576a;
+    }
+
+    .wish-achieved .card-title {
+      text-decoration: line-through;
+    }
+
     [hidden] {
       display: none !important;
     }
@@ -706,7 +729,7 @@
         left: 0;
         z-index: 30;
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 2px;
         height: auto;
         padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
@@ -716,7 +739,7 @@
 
       nav button {
         min-width: 0;
-        padding: 10px 3px;
+        padding: 10px 2px;
         text-align: center;
         font-size: 11px;
         white-space: nowrap;
@@ -769,12 +792,13 @@
       <button type="button" data-page="tasks">タスク一覧</button>
       <button type="button" data-page="periodic">定期タスク</button>
       <button type="button" data-page="history">完了済み</button>
+      <button type="button" data-page="wishes">したいこと</button>
     </nav>
 
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.8</span>
+        <span class="version">v4.9</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button" disabled>タスクを追加</button>
         <button id="reload" type="button" disabled>最新を取得</button>
@@ -854,9 +878,11 @@
         <li>定期タスクの頻度は、毎日・毎週月曜日・毎月15日・3日ごとなどを指定できます。「不定期」は自動追加の対象外です。</li>
         <li>予定分の期限は本来の追加予定日が基準です。個別の「今すぐ1件追加」は押した日が基準です。</li>
         <li>期限の0日後は基準日当日です。日数には土日も含みます。その月にない指定日は月末です。</li>
+        <li>「したいこと」は通常タスクと別です。丸を押すと達成済みに移り、「戻す」で戻せます。</li>
         <li>小窓は追加後も残ります。閉じるときは右上の×を使ってください。</li>
-        <li>小窓を閉じても通常画面が開いていれば送信確認を引き継ぎます。両方閉じている間は、次に開くまで送信が進まないことがあります。</li>
-        <li>通常画面を表示中は、約20秒ごとを目安に変更を確認します。編集中・移動中・未送信があるときは控えます。</li>
+        <li>通常画面が開いていれば、小窓を閉じた後の送信確認を引き継ぎます。</li>
+        <li>通常画面では、表示中のページを約20秒ごとを目安に確認します。</li>
+        <li>iPhoneショートカットの未送信は「ファイル」アプリで管理します。この画面の送信待ちとは別です。</li>
       </ul>
     </details>
 
@@ -889,19 +915,25 @@
   </dialog>
 
   <script src="./task-core.js?v=4.8"></script>
+  <script src="./wish-client.js?v=4.9"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.8';
+      const VERSION = 'v4.9';
 
       function $(id) {
         return document.getElementById(id);
       }
 
-      if (!window.TaskCore || TaskCore.VERSION !== VERSION) {
+      if (
+        !window.TaskCore ||
+        TaskCore.VERSION !== 'v4.8' ||
+        !window.WishClient ||
+        WishClient.VERSION !== VERSION
+      ) {
         $('status').textContent =
-          '画面の準備ができません。task-core.js を置いてから再読み込みしてください。';
+          '画面の準備ができません。task-core.js と wish-client.js を確認してください。';
         return;
       }
 
@@ -912,6 +944,7 @@
 
       let state = TaskCore.emptyState();
       let client = null;
+      let wishes = null;
       let page = 'plan';
       let selectedDate = japanDate();
       let taskView = 'list';
@@ -941,6 +974,11 @@
       let historyAgain = false;
       let historyRefreshTimer = null;
 
+      let wishLoading = false;
+      let wishError = '';
+      let wishReadPromise = null;
+      let achievedOpen = false;
+
       let editorHandler = null;
       let editorPosition = null;
       let editorComposing = false;
@@ -949,7 +987,9 @@
       let periodicAdding = false;
 
       let conflictId = null;
+      let conflictSource = 'tasks';
       let conflictReviewed = [];
+      let wishReviewedVersion = '';
       let messageTimer = null;
       let messageKind = '';
       let cacheVersion = '未確認';
@@ -1095,6 +1135,14 @@
         notify(text, true, String(error.message || error));
       }
 
+      function wishJobs() {
+        return wishes ? wishes.state.jobs : [];
+      }
+
+      function allPendingCount() {
+        return state.jobs.length + wishJobs().length;
+      }
+
       client = TaskCore.create({
         onChange: function (meta) {
           state = client.state;
@@ -1120,6 +1168,21 @@
         }
       });
 
+      wishes = WishClient.create({
+        transport: client,
+        onChange: function () {
+          if (page === 'wishes') {
+            render();
+          } else {
+            renderOutbox();
+            renderStatus();
+          }
+        },
+        onIssue: function (text, detail) {
+          notify(text, true, detail);
+        }
+      });
+
       function renderStatus() {
         const parts = [];
 
@@ -1140,20 +1203,29 @@
         $('status').textContent = parts.join('／');
         $('status').hidden = !parts.length;
 
-        $('add').disabled = !client.ready || !!client.legacyCount;
+        $('add').textContent = page === 'wishes'
+          ? 'したいことを追加'
+          : 'タスクを追加';
+
+        $('add').disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          (page === 'wishes' && !wishes.ready);
+
+        const loading = page === 'history'
+          ? historyLoading
+          : page === 'wishes'
+            ? wishLoading
+            : !!refreshPromise;
+
         $('reload').disabled =
           !client.ready ||
           !!client.legacyCount ||
           manualReloading ||
-          !!refreshPromise ||
-          (page === 'history' && historyLoading);
+          loading;
 
         $('reload').textContent =
-          manualReloading ||
-          refreshPromise ||
-          (page === 'history' && historyLoading)
-            ? '確認中'
-            : '最新を取得';
+          manualReloading || loading ? '確認中' : '最新を取得';
 
         if ($('settings-dialog').open) {
           renderSettingsState();
@@ -1176,16 +1248,30 @@
         const container = $('outbox-items');
         container.replaceChildren();
 
-        const attention = state.jobs.filter(function (job) {
-          return job.state === 'conflict' || job.state === 'blocked';
+        const entries = state.jobs.map(function (job) {
+          return {
+            source: 'tasks',
+            job: job
+          };
+        }).concat(wishJobs().map(function (job) {
+          return {
+            source: 'wishes',
+            job: job
+          };
+        }));
+
+        const attention = entries.filter(function (entry) {
+          return entry.job.state === 'conflict' ||
+            entry.job.state === 'blocked';
         }).length;
 
-        $('outbox').hidden = !state.jobs.length;
+        $('outbox').hidden = !entries.length;
         $('outbox-summary').textContent =
-          '送信待ち ' + state.jobs.length + '件' +
+          '送信待ち ' + entries.length + '件' +
           (attention ? '・確認が必要 ' + attention + '件' : '');
 
-        state.jobs.forEach(function (job) {
+        entries.forEach(function (entry) {
+          const job = entry.job;
           const row = make('div', null, 'job');
           const heading = make('div', null, 'job-heading');
           const needsCheck =
@@ -1204,14 +1290,22 @@
 
           if (job.state === 'conflict') {
             row.appendChild(button('確認する', function () {
-              openConflict(job.id);
+              if (entry.source === 'wishes') {
+                openWishConflict(job.id);
+              } else {
+                openConflict(job.id);
+              }
             }));
           } else if (
             job.state !== 'blocked' &&
             job.state !== 'sending'
           ) {
             row.appendChild(button('いま送る', function () {
-              client.pump(true);
+              if (entry.source === 'wishes') {
+                wishes.pump(true);
+              } else {
+                client.pump(true);
+              }
             }));
           }
 
@@ -1262,6 +1356,12 @@
 
       function render() {
         const position = drag ? null : capturePosition();
+        const oldAchieved = $('wish-achieved');
+
+        if (oldAchieved) {
+          achievedOpen = oldAchieved.open;
+        }
+
         renderStatus();
         renderOutbox();
 
@@ -1276,9 +1376,13 @@
         const content = $('content');
         content.replaceChildren();
 
-        // 完了済みは、取得前でも読み込み状態を表示する。
         if (page === 'history') {
           renderHistory(content);
+          return;
+        }
+
+        if (page === 'wishes') {
+          renderWishes(content);
           return;
         }
 
@@ -1372,6 +1476,266 @@
 
         control.setAttribute('aria-label', task.title + 'を編集');
         return control;
+      }
+
+      /* ---------- したいこと ---------- */
+
+      function loadWishes(background) {
+        if (wishReadPromise) {
+          return wishReadPromise;
+        }
+
+        if (!wishes.ready) {
+          wishLoading = true;
+          render();
+          return Promise.resolve(null);
+        }
+
+        if (!navigator.onLine || !client.configured()) {
+          wishLoading = false;
+          wishError = !navigator.onLine
+            ? '通信がありません。端末に保存した内容を表示しています。'
+            : '接続先と合い言葉を設定してください。';
+          render();
+          return Promise.resolve(null);
+        }
+
+        wishLoading = true;
+        wishError = '';
+        render();
+
+        wishReadPromise = wishes.read(!!background).catch(function (error) {
+          wishError = String(error.message || error);
+          return null;
+        }).finally(function () {
+          wishLoading = false;
+          wishReadPromise = null;
+          nextAutoRead = Date.now() + (wishError ? 60000 : 20000);
+          render();
+        });
+
+        return wishReadPromise;
+      }
+
+      function renderWishes(content) {
+        content.appendChild(make('h2', 'したいこと'));
+
+        if (wishLoading || !wishes.ready) {
+          const loading = make('p', '読み込み中…', 'loading');
+          loading.setAttribute('role', 'status');
+          content.appendChild(loading);
+        }
+
+        if (wishError) {
+          const box = make('div', null, 'notice error');
+          box.appendChild(make(
+            'p',
+            navigator.onLine ? '一覧を取得できませんでした' : '通信なし'
+          ));
+
+          const retry = button('再試行', function () {
+            loadWishes(false);
+          });
+
+          retry.disabled = !navigator.onLine || wishLoading;
+          box.appendChild(retry);
+
+          const details = make('details');
+          details.append(
+            make('summary', '詳細'),
+            make('div', wishError, 'detail-text')
+          );
+
+          box.appendChild(details);
+          content.appendChild(box);
+        }
+
+        const items = wishes.effectiveItems();
+
+        const active = items.filter(function (item) {
+          return !item.done;
+        }).sort(function (a, b) {
+          return a.row - b.row;
+        });
+
+        const completed = items.filter(function (item) {
+          return item.done;
+        }).sort(function (a, b) {
+          return b.doneAt - a.doneAt || b.row - a.row;
+        });
+
+        const list = make('div', null, 'cards wish-list');
+
+        active.forEach(function (item) {
+          list.appendChild(wishCard(item));
+        });
+
+        content.appendChild(list);
+
+        if (
+          !active.length &&
+          !wishLoading &&
+          wishes.state.snapshot
+        ) {
+          content.appendChild(make('p', 'まだありません', 'sub'));
+        }
+
+        const achieved = make('details', null, 'wish-completed');
+        achieved.id = 'wish-achieved';
+        achieved.open = achievedOpen;
+        achieved.appendChild(make('summary', '達成済み ' + completed.length + '件'));
+
+        const doneList = make('div', null, 'cards');
+
+        completed.forEach(function (item) {
+          doneList.appendChild(wishCard(item));
+        });
+
+        achieved.appendChild(doneList);
+
+        achieved.addEventListener('toggle', function () {
+          if (document.contains(achieved)) {
+            achievedOpen = achieved.open;
+          }
+        });
+
+        content.appendChild(achieved);
+      }
+
+      function wishCard(item) {
+        const row = make(
+          'div',
+          null,
+          'card' +
+            (item.done ? ' wish-achieved' : '') +
+            (item.pending ? ' pending-add' : '')
+        );
+
+        const main = make('div', null, 'card-main');
+        main.appendChild(make('div', item.title, 'card-title'));
+
+        if (item.pending) {
+          const job = wishes.state.jobs.find(function (entry) {
+            return entry.id === item.jobId;
+          });
+
+          main.appendChild(make(
+            'div',
+            job ? jobStateLabel(job) : '送信待ち',
+            'pending-label'
+          ));
+        }
+
+        if (item.done) {
+          const restore = button('戻す', function () {
+            changeWish(item, false);
+          });
+
+          restore.disabled =
+            !!item.pending ||
+            !wishes.ready ||
+            !!client.legacyCount;
+
+          row.append(main, restore);
+        } else {
+          const done = button('', function () {
+            changeWish(item, true);
+          }, 'hit');
+
+          done.setAttribute('aria-label', item.title + 'を達成済みにする');
+          done.disabled =
+            !!item.pending ||
+            !wishes.ready ||
+            !!client.legacyCount;
+
+          done.appendChild(make('span', null, 'circle'));
+          row.append(done, main);
+        }
+
+        return row;
+      }
+
+      async function changeWish(item, done) {
+        if (item.pending) {
+          return;
+        }
+
+        if (!confirm(
+          '「' + item.title + '」を' +
+          (done ? '達成済みにしますか。' : 'したいことに戻しますか。')
+        )) {
+          return;
+        }
+
+        try {
+          await wishes.setDone(item, done);
+          notify('送信待ち');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      function openWishAdd() {
+        showEditor(
+          'したいことを追加',
+          async function (form) {
+            const title = String(form.get('title') || '').trim();
+
+            if (!title || title.length > 200) {
+              throw new Error('件名は1～200文字で入力してください。');
+            }
+
+            await wishes.add(title);
+            notify('送信待ち');
+          },
+          '追加'
+        );
+
+        field('title', '件名＊', 'text', '', true).focus();
+      }
+
+      async function openWishConflict(id) {
+        try {
+          await wishes.read(false);
+        } catch (error) {
+          failed('一覧を確認できませんでした', error);
+          return;
+        }
+
+        const job = wishes.state.jobs.find(function (entry) {
+          return entry.id === id && entry.state === 'conflict';
+        });
+
+        if (!job) {
+          return;
+        }
+
+        const item = wishes.state.snapshot.items.find(function (entry) {
+          return entry.wishId === job.payload.wishId;
+        });
+
+        conflictSource = 'wishes';
+        conflictId = id;
+        wishReviewedVersion = item ? item.version : '';
+
+        $('conflict-note').textContent = job.note;
+
+        $('conflict-server').replaceChildren(make(
+          'p',
+          item
+            ? item.title + '\n' + (item.done ? '達成済み' : '未達成')
+            : '対象が見つかりません。'
+        ));
+
+        $('conflict-local').replaceChildren(make(
+          'p',
+          job.payload.action === 'wishDone'
+            ? '達成済みにする'
+            : 'したいことに戻す'
+        ));
+
+        $('conflict-apply').hidden = !item;
+        $('conflict-dialog').showModal();
       }
 
       /* ---------- 1日の計画 ---------- */
@@ -1961,7 +2325,7 @@
         tools.appendChild(label);
 
         if (taskFilter === 'date') {
-          const dateLabelElement = make('label', null, 'filter-field');
+          const dateField = make('label', null, 'filter-field');
           const input = make('input');
           input.type = 'date';
           input.value = filterDate;
@@ -1971,8 +2335,8 @@
             render();
           });
 
-          dateLabelElement.append(make('span', '実行日'), input);
-          tools.appendChild(dateLabelElement);
+          dateField.append(make('span', '実行日'), input);
+          tools.appendChild(dateField);
         }
 
         content.appendChild(tools);
@@ -2472,7 +2836,6 @@
         render();
 
         try {
-          // 確認に必要な対象を取得する。下見専用画面は設けない。
           const result = await client.read({
             action: 'preview'
           });
@@ -3066,6 +3429,7 @@
           return;
         }
 
+        conflictSource = 'tasks';
         conflictId = id;
         const related = client.relatedJobs(id);
         conflictReviewed = related.map(function (entry) {
@@ -3101,11 +3465,19 @@
 
       async function resolveConflict(useLocal) {
         try {
-          await client.resolveConflict(
-            conflictId,
-            useLocal,
-            conflictReviewed
-          );
+          if (conflictSource === 'wishes') {
+            await wishes.resolveConflict(
+              conflictId,
+              useLocal,
+              wishReviewedVersion
+            );
+          } else {
+            await client.resolveConflict(
+              conflictId,
+              useLocal,
+              conflictReviewed
+            );
+          }
 
           $('conflict-dialog').close();
           notify(useLocal ? '送信待ち' : '保存済みの内容を使います');
@@ -3162,13 +3534,8 @@
       function stateRows() {
         return [
           ['通信', navigator.onLine ? 'あり' : 'なし'],
-          ['未送信', state.jobs.length + '件'],
-          [
-            '確認が必要',
-            state.jobs.filter(function (job) {
-              return job.state === 'conflict' || job.state === 'blocked';
-            }).length + '件'
-          ],
+          ['タスクの未送信', state.jobs.length + '件'],
+          ['したいことの未送信', wishJobs().length + '件'],
           [
             '前回確認',
             timeLabel(state.snapshot ? state.snapshot.fetchedAt : '') +
@@ -3187,8 +3554,9 @@
               ? '終了確認待ち'
               : '待ちなし'
           ],
-          ['直近の送信', sendTiming()],
-          ['取得エラー', client.lastReadError || 'なし']
+          ['直近のタスク送信', sendTiming()],
+          ['取得エラー', client.lastReadError || 'なし'],
+          ['したいこと取得エラー', wishError || 'なし']
         ];
       }
 
@@ -3246,7 +3614,7 @@
         const url = $('url').value.trim();
         const token = $('token').value.trim();
 
-        if (state.jobs.length && previous.url && previous.url !== url) {
+        if (allPendingCount() && previous.url && previous.url !== url) {
           alert('未送信があるため、接続先は変更できません。');
           return;
         }
@@ -3255,8 +3623,10 @@
           (url !== previous.url || token !== previous.token) &&
           (
             client.pumpPromise ||
+            wishes.pumpPromise ||
             refreshPromise ||
             historyPromise ||
+            wishReadPromise ||
             checking
           )
         ) {
@@ -3281,12 +3651,23 @@
               saved.transitions = [];
               saved.lastNetworkAt = 0;
             });
+
+            await wishes.mutate(function (saved) {
+              saved.snapshot = null;
+              saved.lastNetworkAt = 0;
+            });
           }
 
           $('settings-dialog').close();
           notify('設定を保存しました');
           await refresh();
+
+          if (page === 'wishes') {
+            await loadWishes(false);
+          }
+
           client.pump(false);
+          wishes.pump(false);
         } catch (error) {
           failed('設定を保存できませんでした', error);
         }
@@ -3389,6 +3770,7 @@
           autoBusy ||
           document.hidden ||
           !client.ready ||
+          !wishes.ready ||
           client.legacyCount ||
           !client.configured() ||
           !navigator.onLine ||
@@ -3397,9 +3779,10 @@
           anyDialogOpen() ||
           refreshPromise ||
           historyPromise ||
+          wishReadPromise ||
           manualReloading ||
           periodicAdding ||
-          state.jobs.length ||
+          allPendingCount() ||
           Date.now() < nextAutoRead
         ) {
           return;
@@ -3420,6 +3803,8 @@
         try {
           if (page === 'history') {
             await loadHistory(false, true);
+          } else if (page === 'wishes') {
+            await loadWishes(true);
           } else {
             await refresh(true);
           }
@@ -3438,13 +3823,22 @@
 
           if (page === 'history') {
             loadHistory(false);
+          } else if (page === 'wishes') {
+            loadWishes(false);
           } else {
             render();
           }
         });
       });
 
-      $('add').onclick = openAdd;
+      $('add').onclick = function () {
+        if (page === 'wishes') {
+          openWishAdd();
+        } else {
+          openAdd();
+        }
+      };
+
       $('settings').onclick = openSettings;
 
       $('message-close').onclick = function () {
@@ -3460,9 +3854,13 @@
         renderStatus();
 
         try {
+          client.pump(true);
+          wishes.pump(true);
+
           if (page === 'history') {
-            client.pump(true);
             await loadHistory(false);
+          } else if (page === 'wishes') {
+            await loadWishes(false);
           } else {
             await client.pump(true);
             await refresh();
@@ -3476,6 +3874,8 @@
       window.addEventListener('online', function () {
         if (page === 'history') {
           loadHistory(false);
+        } else if (page === 'wishes') {
+          loadWishes(false);
         } else if (!anyDialogOpen()) {
           refresh();
         }
@@ -3498,11 +3898,15 @@
 
         try {
           await client.reloadLocal();
+          await wishes.reloadLocal();
           client.pump(false);
+          wishes.pump(false);
 
           if (!anyDialogOpen()) {
             if (page === 'history') {
               loadHistory(false);
+            } else if (page === 'wishes') {
+              loadWishes(false);
             } else {
               refresh();
             }
@@ -3547,11 +3951,15 @@
       (async function () {
         try {
           await client.start();
+          await wishes.start();
           render();
 
           if (page === 'history') {
             client.pump(false);
             await loadHistory(false);
+          } else if (page === 'wishes') {
+            client.pump(false);
+            await loadWishes(false);
           } else if (client.configured() && !client.legacyCount) {
             const changed = await client.pump(false);
 
