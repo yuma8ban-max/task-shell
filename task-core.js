@@ -4,7 +4,7 @@
 
   // 既存の小窓が確認する接続互換性の番号。
   const VERSION = 'v4.8';
-  const BUILD = 'v4.10.1';
+  const BUILD = 'v4.10.2';
 
   const SERVER_VERSION = 'v4.3';
   const SYNC_PROTOCOL = 'task-sync-v1';
@@ -14,6 +14,7 @@
   const CHANNEL_NAME = 'task-unified-state';
   const NETWORK_LOCK = 'taskapp-unified-remote-v1';
   const REQUEST_TIMEOUT_MS = 60000;
+  const READ_404_RETRY_DELAY_MS = 2000;
   const DIAGNOSTIC_KEY = 'read-receipt-checks-v1';
   const DIAGNOSTIC_LIMIT = 8;
   const RESPONSE_INFO = Symbol('response-info');
@@ -172,6 +173,54 @@
       : 'その他';
   }
 
+  function finalDestination(finalUrl, initialUrl) {
+    if (!finalUrl) {
+      return '確認できない';
+    }
+
+    try {
+      const final = new URL(finalUrl);
+      const initial = new URL(initialUrl);
+
+      const finalPath = final.pathname.replace(/\/+$/, '');
+      const initialPath = initial.pathname.replace(/\/+$/, '');
+
+      if (
+        final.origin === initial.origin &&
+        finalPath === initialPath
+      ) {
+        return '元の公開先';
+      }
+
+      if (final.hostname === 'script.googleusercontent.com') {
+        return 'Googleの結果受け取り先';
+      }
+
+      return 'その他';
+    } catch (error) {
+      return '確認できない';
+    }
+  }
+
+  function isEntryGuide(value) {
+    if (!isObject(value)) {
+      return false;
+    }
+
+    const keys = Object.keys(value);
+    const expectedKeys = ['ok', 'app', 'build', 'message'];
+
+    return keys.length === expectedKeys.length &&
+      keys.every(function (key) {
+        return expectedKeys.indexOf(key) >= 0;
+      }) &&
+      value.ok === true &&
+      value.app === SERVER_VERSION &&
+      typeof value.build === 'string' &&
+      safeVersion(value.build) !== '指定外' &&
+      value.message === '個人用タスク管理';
+  }
+
   function summarizeResponse(result, transport) {
     const source = isObject(result) ? result : {};
     const snapshot = isObject(source.snapshot) ? source.snapshot : {};
@@ -186,6 +235,11 @@
         ? info.httpStatus
         : null,
       contentType: info.contentType || 'なし',
+      redirected: typeof info.redirected === 'boolean'
+        ? info.redirected
+        : null,
+      finalDestination: info.finalDestination || '確認できない',
+      entryGuide: isObject(result) ? isEntryGuide(result) : null,
       rootType: valueType(result),
       ok: typeof source.ok === 'boolean' ? source.ok : null,
       status: safeStatus(source.status),
@@ -240,12 +294,23 @@
     };
   }
 
-  function receiveError(code, message, info, retryFull, issues) {
+  function receiveError(
+    code,
+    message,
+    info,
+    retryFull,
+    issues,
+    retryAfterMs
+  ) {
     const error = new Error(message);
     error.receiveCode = code;
     error.receiveInfo = info || null;
     error.retryFull = retryFull === true;
     error.receiveIssues = issues || [];
+    error.retryAfterMs = Number.isFinite(retryAfterMs)
+      ? Math.max(0, retryAfterMs)
+      : 0;
+
     return error;
   }
 
@@ -485,6 +550,20 @@
         String(result.message || '一覧を取得できませんでした。'),
         info,
         false
+      );
+    }
+
+    if (isEntryGuide(result)) {
+      throw receiveError(
+        'entry-guide',
+        '一覧ではなく、保存先の入口の案内が返されました。',
+        info,
+        true,
+        [{
+          field: 'snapshot',
+          expected: 'タスク一覧',
+          actual: '入口の案内'
+        }]
       );
     }
 
@@ -1439,7 +1518,10 @@
         };
 
         transaction.onerror = transaction.onabort = function () {
-          reject(transaction.error || new Error('点検記録を読み取れませんでした。'));
+          reject(
+            transaction.error ||
+            new Error('点検記録を読み取れませんでした。')
+          );
         };
       });
     }
@@ -1473,7 +1555,10 @@
           };
 
           transaction.onerror = transaction.onabort = function () {
-            reject(transaction.error || new Error('点検記録を保存できませんでした。'));
+            reject(
+              transaction.error ||
+              new Error('点検記録を保存できませんでした。')
+            );
           };
         });
 
@@ -1503,6 +1588,7 @@
 
     readDiagnosticText() {
       const records = this.readDiagnostics.slice().reverse();
+
       const actionNames = {
         load: '一覧取得',
         history: '完了済み取得',
@@ -1511,7 +1597,7 @@
       };
 
       const outcomeNames = {
-        retrying: '再確認中',
+        retrying: '再確認開始・終了結果は未記録',
         recovered: '再確認で取得成功',
         failed: '取得失敗'
       };
@@ -1520,6 +1606,7 @@
         'non-json': 'JSONではない返答',
         'response-envelope': '返答全体の形式不一致',
         'server-version': '保存先の版の不一致',
+        'entry-guide': '一覧ではなく入口の案内',
         'snapshot-shape': 'タスク一覧の形式不一致',
         'unchanged-shape': '変更なしの返答の形式不一致',
         'read-extra-shape': '画面別情報の形式不一致',
@@ -1547,6 +1634,7 @@
 
       records.forEach(function (record, index) {
         const time = Date.parse(record.at || '');
+
         const label = Number.isFinite(time)
           ? new Date(time + 9 * 3600000)
             .toISOString()
@@ -1557,6 +1645,7 @@
         lines.push(
           '',
           '【' + (index + 1) + '】' + label + '（日本時間）',
+          '記録時の版：' + (record.build || '未記録'),
           '操作：' + (actionNames[record.action] || 'その他'),
           '結果：' + (outcomeNames[record.outcome] || '未確定')
         );
@@ -1564,10 +1653,31 @@
         record.attempts.forEach(function (attempt) {
           const info = attempt.response || {};
 
+          const redirected = typeof info.redirected === 'boolean'
+            ? info.redirected ? 'あり' : 'なし'
+            : info.redirected === null
+              ? '確認できない'
+              : '未記録';
+
+          const entryGuide = typeof info.entryGuide === 'boolean'
+            ? info.entryGuide ? '一致' : '一致しない'
+            : info.entryGuide === null
+              ? '判定できない'
+              : '未記録';
+
           lines.push(
             '・' + attempt.number + '回目' +
               '／全体取得要求：' + (attempt.full ? 'あり' : 'なし') +
-              '／' + (attempt.accepted ? '受理' : '不受理'),
+              '／' + (attempt.accepted ? '受理' : '不受理')
+          );
+
+          if (attempt.number > 1 && Number.isFinite(attempt.waitMs)) {
+            lines.push(
+              '  再確認前の待ち：' + attempt.waitMs + 'ミリ秒'
+            );
+          }
+
+          lines.push(
             '  判定：' + (
               attempt.accepted
                 ? '必要な情報を確認'
@@ -1578,6 +1688,9 @@
               info.httpStatus == null ? '未取得' : info.httpStatus
             ),
             '  Content-Type：' + (info.contentType || 'なし'),
+            '  転送：' + redirected,
+            '  最終到着先：' + (info.finalDestination || '未記録'),
+            '  入口案内との一致：' + entryGuide,
             '  ok：' + (
               info.ok === null || info.ok === undefined
                 ? 'なし'
@@ -1805,7 +1918,9 @@
       let transport = {
         format: '返答なし',
         httpStatus: null,
-        contentType: 'なし'
+        contentType: 'なし',
+        redirected: null,
+        finalDestination: '確認できない'
       };
 
       this.controllers.add(controller);
@@ -1831,19 +1946,28 @@
           signal: controller.signal
         });
 
+        // URLそのものは記録せず、分類だけを残す。
         transport = {
           format: '本文読取前',
           httpStatus: response.status,
-          contentType: safeContentType(response.headers.get('Content-Type'))
+          contentType: safeContentType(response.headers.get('Content-Type')),
+          redirected: response.redirected,
+          finalDestination: finalDestination(response.url, config.url)
         };
 
         if (!response.ok) {
+          const retryableRead404 =
+            response.status === 404 &&
+            READ_ACTIONS.indexOf(payload.action) >= 0;
+
           const error = receiveError(
             'http',
             '保存先から正常な返答を受け取れませんでした' +
               '（応答番号：' + response.status + '）。',
             summarizeResponse(undefined, transport),
-            false
+            retryableRead404,
+            [],
+            retryableRead404 ? READ_404_RETRY_DELAY_MS : 0
           );
 
           error.httpStatus = response.status;
@@ -1966,6 +2090,58 @@
       }
     }
 
+    waitBeforeReadRetry(milliseconds) {
+      if (milliseconds <= 0) {
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve, reject) => {
+        const controller = new AbortController();
+        let timer = null;
+        let settled = false;
+
+        const finish = (error) => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          clearTimeout(timer);
+          this.controllers.delete(controller);
+
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        };
+
+        controller.signal.addEventListener('abort', function () {
+          finish(receiveError(
+            'interrupted',
+            '画面が閉じられたため、一覧の再確認を中断しました。',
+            summarizeResponse(undefined, {
+              format: '再確認前に中断'
+            }),
+            false
+          ));
+        }, {
+          once: true
+        });
+
+        this.controllers.add(controller);
+
+        if (this.paused) {
+          controller.abort();
+          return;
+        }
+
+        timer = setTimeout(function () {
+          finish(null);
+        }, milliseconds);
+      });
+    }
+
     markReceived(clearReadError) {
       if (clearReadError === true) {
         this.lastReadError = '';
@@ -2027,7 +2203,9 @@
     async performRead(payload, settings) {
       let full = !!settings.forceFull;
       let diagnostic = null;
+      let waitMs = 0;
 
+      // 最初の要求と、1回だけの再確認に限定する。
       for (let attempt = 1; attempt <= 2; attempt++) {
         let response = null;
 
@@ -2038,6 +2216,11 @@
         );
 
         try {
+          if (waitMs > 0) {
+            await this.waitBeforeReadRetry(waitMs);
+          }
+
+          // 毎回、設定済みの元の公開先へ新しい読み取り要求を送る。
           response = await this.request(payload, full);
           validateReadResponse(payload.action, response, full);
 
@@ -2061,6 +2244,7 @@
             diagnostic.attempts.push({
               number: attempt,
               full: full,
+              waitMs: waitMs,
               accepted: true,
               code: '',
               response: response[RESPONSE_INFO] ||
@@ -2084,6 +2268,7 @@
             diagnostic = {
               id: uuid(),
               at: new Date().toISOString(),
+              build: BUILD,
               action: safeAction(payload.action),
               outcome: 'failed',
               attempts: []
@@ -2093,6 +2278,7 @@
           diagnostic.attempts.push({
             number: attempt,
             full: full,
+            waitMs: waitMs,
             accepted: false,
             code: error.receiveCode || 'other',
             response: error.receiveInfo ||
@@ -2108,8 +2294,15 @@
 
           if (attempt === 1 && error.retryFull === true) {
             diagnostic.outcome = 'retrying';
+
+            this.setReadStatus('retrying', payload.action, 2);
             await this.saveReadDiagnostic(diagnostic);
+
             full = true;
+            waitMs = Number.isFinite(error.retryAfterMs)
+              ? error.retryAfterMs
+              : 0;
+
             continue;
           }
 
@@ -2152,7 +2345,6 @@
             return SKIPPED;
           }
 
-          // 自動再確認は読み取り要求だけ。更新操作は再実行しない。
           return this.performRead(payload, settings);
         }, {
           opportunistic: !!settings.background
