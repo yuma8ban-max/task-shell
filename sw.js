@@ -1,5 +1,5 @@
-/* File: sw.js — task-v4.10.1-1 */
-const CACHE = 'task-v4.10.1-1';
+/* File: sw.js — task-v4.10.2-1 */
+const CACHE = 'task-v4.10.2-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -8,7 +8,7 @@ const QUICK = new URL('./quick-add.html', self.registration.scope).href;
 const REQUIRED_FILES = [
   './index.html',
   './quick-add.html',
-  './task-core.js?v=4.10.1',
+  './task-core.js?v=4.10.2',
   './task-core.js?v=4.8',
   './wish-client.js?v=4.10',
   './manifest.webmanifest',
