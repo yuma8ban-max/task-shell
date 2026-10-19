@@ -807,7 +807,7 @@
     <main>
       <header>
         <h1>タスク</h1>
-        <span class="version">v4.10.1</span>
+        <span class="version">v4.10.2</span>
         <span class="spacer"></span>
         <button id="add" class="primary" type="button" disabled>タスクを追加</button>
         <button id="reload" type="button" disabled>最新を取得</button>
@@ -897,7 +897,9 @@
         <li>小窓は追加後も残ります。閉じるときは右上の×を使ってください。</li>
         <li>通常画面が開いていれば、小窓を閉じた後の送信確認を引き継ぎます。</li>
         <li>表示中のページを約20秒ごとを目安に確認します。</li>
-        <li>一覧として扱えない返答を受け取った場合は、一覧全体を1回だけ再取得します。正常な一覧を受け取るまでは前回の表示を残します。</li>
+        <li>一覧取得で404になった場合は、2秒待ち、一覧全体を1回だけ取り直します。</li>
+        <li>一覧ではなく入口の案内が返る場合や、必要な情報が欠ける場合も、一覧全体を1回だけ取り直します。</li>
+        <li>正常な一覧を受け取るまでは前回の表示を残し、再確認にも失敗した場合はエラーを表示します。</li>
         <li>一覧取得の点検記録には、合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
         <li>iPhoneショートカットの未送信は「ファイル」アプリで管理します。この画面の送信待ちとは別です。</li>
       </ul>
@@ -931,13 +933,13 @@
     </div>
   </dialog>
 
-  <script src="./task-core.js?v=4.10.1"></script>
+  <script src="./task-core.js?v=4.10.2"></script>
   <script src="./wish-client.js?v=4.10"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.10.1';
+      const VERSION = 'v4.10.2';
 
       function $(id) {
         return document.getElementById(id);
