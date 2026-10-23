@@ -1,10 +1,13 @@
 <!-- Output: html -->
 <!-- File: index.html -->
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="style-src 'self' 'unsafe-inline'; font-src 'none';">
   <meta name="theme-color" content="#1a73e8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="タスク">
@@ -12,806 +15,157 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./icon-check-32.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
-  <style>
-    :root {
-      color-scheme: light;
-      --accent: #1a73e8;
-      --line: #d8dfe6;
-      --secondary: #46576a;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      color: #202833;
-      background: #f6f8fb;
-      font-family: -apple-system, system-ui, sans-serif;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-    }
-
-    button,
-    input,
-    select {
-      font: inherit;
-    }
-
-    input,
-    textarea {
-      -webkit-user-select: text;
-      user-select: text;
-    }
-
-    button {
-      min-height: 42px;
-      padding: 9px 13px;
-      border: 1px solid #ccd4de;
-      border-radius: 9px;
-      color: #263445;
-      background: #fff;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: .5;
-      cursor: default;
-    }
-
-    button.primary {
-      border-color: var(--accent);
-      color: #fff;
-      background: var(--accent);
-    }
-
-    input,
-    select {
-      min-height: 42px;
-      max-width: 100%;
-      padding: 9px;
-      border: 1px solid #bcc7d4;
-      border-radius: 8px;
-      color: #202833;
-      background: #fff;
-      font-size: 16px;
-    }
-
-    h1,
-    h2,
-    h3,
-    p {
-      margin-top: 0;
-    }
-
-    h1 {
-      margin-bottom: 0;
-      font-size: 21px;
-    }
-
-    h2 {
-      margin-bottom: 12px;
-      font-size: 19px;
-    }
-
-    h3 {
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    .app {
-      display: grid;
-      grid-template-columns: 170px minmax(0, 1fr);
-      min-height: 100vh;
-    }
-
-    nav {
-      position: sticky;
-      top: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      height: 100vh;
-      padding: 24px 12px;
-      border-right: 1px solid var(--line);
-      background: #fff;
-    }
-
-    nav button {
-      border-color: transparent;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    nav button.active {
-      color: #1559ad;
-      background: #eaf2ff;
-      font-weight: bold;
-    }
-
-    main {
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 22px;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .spacer {
-      flex: 1;
-    }
-
-    .version {
-      color: var(--secondary);
-      font-size: 12px;
-    }
-
-    .sub {
-      color: var(--secondary);
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .view-switch {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 18px;
-    }
-
-    .view-switch button {
-      min-width: 100px;
-    }
-
-    .view-switch button.active {
-      border-color: var(--accent);
-      color: #1559ad;
-      background: #eaf2ff;
-      font-weight: bold;
-    }
-
-    .task-filters {
-      align-items: flex-end;
-      gap: 12px;
-    }
-
-    .filter-field {
-      display: grid;
-      gap: 6px;
-      min-width: 0;
-      color: var(--secondary);
-      font-size: 14px;
-    }
-
-    .filter-field input,
-    .filter-field select {
-      width: 100%;
-    }
-
-    .filter-field select {
-      min-width: 240px;
-    }
-
-    .status {
-      margin-bottom: 10px;
-      color: #725619;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .notice {
-      margin: 10px 0;
-      padding: 10px 13px;
-      border: 1px solid #cbdcec;
-      border-radius: 9px;
-      color: #234f77;
-      background: #edf5ff;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .notice.error {
-      border-color: #e7bdba;
-      color: #8f211c;
-      background: #fff1ef;
-    }
-
-    .notice-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .notice-row span {
-      flex: 1;
-      min-width: 0;
-      overflow-wrap: anywhere;
-    }
-
-    .notice-close {
-      flex: none;
-      min-height: 30px;
-      width: 30px;
-      padding: 0;
-      border: 0;
-      color: inherit;
-      background: transparent;
-      font-size: 20px;
-    }
-
-    .detail-text {
-      margin-top: 8px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    details {
-      font-size: 14px;
-    }
-
-    summary {
-      cursor: pointer;
-    }
-
-    .panel {
-      padding: 18px;
-      border: 1px solid #e1e6ee;
-      border-radius: 13px;
-      background: #fff;
-    }
-
-    #outbox {
-      margin: 12px 0;
-      padding: 12px;
-      border: 1px solid #ddcfab;
-      border-radius: 10px;
-      background: #fffaf0;
-    }
-
-    .job {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #e7dfcd;
-      overflow-wrap: anywhere;
-    }
-
-    .job-heading {
-      display: flex;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 7px;
-      margin-bottom: 7px;
-    }
-
-    .job-title {
-      flex: 1;
-      min-width: 160px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .job-state {
-      padding: 2px 7px;
-      border-radius: 5px;
-      color: #725619;
-      background: #f6e9c7;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
-    .job-state.needs-check {
-      color: #8f211c;
-      background: #f9dcd8;
-    }
-
-    .cards {
-      display: grid;
-      gap: 9px;
-    }
-
-    .card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #fff;
-    }
-
-    .card-main {
-      flex: 1;
-      min-width: 0;
-      overflow-wrap: anywhere;
-      line-height: 1.5;
-    }
-
-    .card-title {
-      margin-bottom: 4px;
-    }
-
-    .card-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      flex: none;
-    }
-
-    .pending-add {
-      border-style: dashed;
-      background: #fffdf5;
-    }
-
-    .pending-label {
-      margin-top: 5px;
-      color: #775912;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .calendar {
-      max-width: 780px;
-    }
-
-    .calendar-month {
-      margin: 0;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 5px;
-    }
-
-    .calendar-weekday {
-      padding: 5px 0;
-      color: var(--secondary);
-      text-align: center;
-      font-size: 13px;
-    }
-
-    .calendar-day {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      gap: 5px;
-      min-width: 0;
-      min-height: 64px;
-      padding: 8px 2px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-    }
-
-    .calendar-day.is-selected {
-      border-color: var(--accent);
-      background: #eaf2ff;
-    }
-
-    .calendar-day.is-today .calendar-day-number {
-      font-weight: bold;
-      text-decoration: underline;
-      text-underline-offset: 4px;
-    }
-
-    .calendar-day-number {
-      font-size: 14px;
-    }
-
-    .calendar-count {
-      min-height: 18px;
-      color: #1559ad;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .calendar-undated {
-      margin-top: 12px;
-    }
-
-    .calendar-undated.is-selected {
-      border-color: var(--accent);
-      color: #1559ad;
-      background: #eaf2ff;
-    }
-
-    .calendar-details {
-      margin-top: 22px;
-      padding-top: 18px;
-      border-top: 1px solid var(--line);
-    }
-
-    .timeline {
-      position: relative;
-      max-width: 780px;
-      margin-top: 16px;
-    }
-
-    .slot {
-      display: grid;
-      grid-template-columns: 54px minmax(0, 1fr);
-      min-height: 44px;
-      border-top: 1px solid var(--line);
-    }
-
-    .slot-label {
-      padding: 12px 4px 0 0;
-      color: var(--secondary);
-      font-size: 13px;
-      line-height: 1.3;
-    }
-
-    .slot-list {
-      min-height: 44px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .task {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 6px 0;
-      padding: 12px 10px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #fff;
-      font-size: 16px;
-      touch-action: pan-y;
-    }
-
-    .task.pending-add {
-      border-style: dashed;
-      background: #fffdf5;
-    }
-
-    .task.dragging {
-      z-index: 10;
-      border-color: var(--accent);
-      background: #f2f7ff;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
-      opacity: .95;
-    }
-
-    .hit {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      width: 34px;
-      min-height: 44px;
-      margin: -10px 0 -10px -4px;
-      padding: 0;
-      border: 0;
-      background: transparent;
-    }
-
-    .circle {
-      width: 24px;
-      height: 24px;
-      border: 2px solid #a5b1bf;
-      border-radius: 50%;
-    }
-
-    .ttl {
-      flex: 1;
-      min-width: 0;
-      overflow-wrap: anywhere;
-      line-height: 1.45;
-    }
-
-    .task-due {
-      margin-top: 5px;
-      color: var(--secondary);
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    .plan-edit {
-      flex: none;
-      min-height: 42px;
-      margin: -6px 0;
-      padding: 8px 10px;
-      font-size: 13px;
-      white-space: nowrap;
-      touch-action: manipulation;
-    }
-
-    .grip {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      width: 36px;
-      min-height: 44px;
-      margin: -10px 0;
-      padding: 0;
-      border: 0;
-      color: #8595a8;
-      background: transparent;
-      font-size: 24px;
-      cursor: grab;
-      touch-action: none;
-    }
-
-    .timeline-end {
-      min-height: 28px;
-      padding-top: 7px;
-      border-top: 1px solid var(--line);
-      color: var(--secondary);
-      font-size: 13px;
-    }
-
-    .now-line {
-      position: absolute;
-      right: 0;
-      left: 54px;
-      z-index: 8;
-      height: 0;
-      border-top: 2px solid #e45151;
-      pointer-events: none;
-    }
-
-    .now-line span {
-      position: absolute;
-      top: -9px;
-      left: -54px;
-      width: 50px;
-      color: #cb3535;
-      background: #fff;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    dialog {
-      width: min(620px, calc(100vw - 24px));
-      max-height: calc(100dvh - 36px);
-      padding: 22px;
-      border: 1px solid #d7dfeb;
-      border-radius: 14px;
-      color: #202833;
-      background: #fff;
-      overflow: auto;
-    }
-
-    dialog::backdrop {
-      background: rgba(20, 34, 52, .4);
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-      margin-bottom: 14px;
-      font-size: 14px;
-    }
-
-    .field input,
-    .field select {
-      width: 100%;
-    }
-
-    .form-error {
-      margin: 10px 0;
-      color: #a52620;
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-    }
-
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 18px;
-    }
-
-    .comparison {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .comparison section {
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      overflow-wrap: anywhere;
-    }
-
-    .comparison p,
-    .dialog-text {
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-    }
-
-    .settings-section {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--line);
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
-    .settings-section li {
-      margin: 6px 0;
-    }
-
-    .settings-state {
-      display: grid;
-      grid-template-columns: max-content minmax(0, 1fr);
-      gap: 8px 14px;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .settings-state dt {
-      font-weight: bold;
-    }
-
-    .settings-state dd {
-      margin: 0;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .diagnostic-text {
-      max-height: 380px;
-      overflow: auto;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      -webkit-user-select: text;
-      user-select: text;
-    }
-
-    .loading {
-      color: #1559ad;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    .wish-list {
-      max-width: 780px;
-    }
-
-    .wish-completed {
-      max-width: 780px;
-      margin-top: 24px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-    }
-
-    .wish-completed summary {
-      margin-bottom: 14px;
-    }
-
-    .wish-achieved {
-      color: #46576a;
-    }
-
-    .wish-achieved .card-title {
-      text-decoration: line-through;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    @media (max-width: 700px) {
-      .app {
-        display: block;
-      }
-
-      main {
-        padding: 14px 12px 100px;
-      }
-
-      nav {
-        position: fixed;
-        top: auto;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 30;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 2px;
-        height: auto;
-        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-        border-top: 1px solid var(--line);
-        border-right: 0;
-      }
-
-      nav button {
-        min-width: 0;
-        padding: 10px 2px;
-        text-align: center;
-        font-size: 11px;
-        white-space: nowrap;
-      }
-
-      .panel {
-        padding: 13px 10px;
-      }
-
-      .task-filters .filter-field {
-        width: 100%;
-      }
-
-      .task-filters .filter-field select {
-        min-width: 0;
-      }
-
-      .card {
-        align-items: flex-start;
-      }
-
-      .card-actions {
-        max-width: 100px;
-      }
-
-      .calendar-grid {
-        gap: 4px;
-      }
-
-      .calendar-day {
-        min-height: 58px;
-      }
-
-      .comparison {
-        grid-template-columns: 1fr;
-      }
-
-      header button {
-        padding-right: 10px;
-        padding-left: 10px;
-        font-size: 13px;
-      }
-    }
-  </style>
+  <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
+  <link rel="stylesheet" href="./task-ui.css?v=4.11.0">
 </head>
-<body>
+<body class="task-app">
+  <svg
+    class="icon-sprite"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false">
+    <symbol id="icon-check" viewBox="0 0 24 24">
+      <path d="M5 12l4 4L19 6"></path>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14"></path>
+      <path d="M5 12h14"></path>
+    </symbol>
+    <symbol id="icon-plan" viewBox="0 0 24 24">
+      <rect x="4" y="5" width="16" height="16" rx="3"></rect>
+      <path d="M8 3v4"></path>
+      <path d="M16 3v4"></path>
+      <path d="M4 10h16"></path>
+      <path d="M8 14h3"></path>
+      <path d="M8 17h6"></path>
+    </symbol>
+    <symbol id="icon-list" viewBox="0 0 24 24">
+      <path d="M9 6h11"></path>
+      <path d="M9 12h11"></path>
+      <path d="M9 18h11"></path>
+      <path d="M3 6l1 1 2-2"></path>
+      <path d="M3 12l1 1 2-2"></path>
+      <path d="M3 18l1 1 2-2"></path>
+    </symbol>
+    <symbol id="icon-repeat" viewBox="0 0 24 24">
+      <path d="M17 3l3 3-3 3"></path>
+      <path d="M20 6H8a4 4 0 0 0-4 4v1"></path>
+      <path d="M7 21l-3-3 3-3"></path>
+      <path d="M4 18h12a4 4 0 0 0 4-4v-1"></path>
+    </symbol>
+    <symbol id="icon-done" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"></circle>
+      <path d="M8 12l3 3 5-6"></path>
+    </symbol>
+    <symbol id="icon-wish" viewBox="0 0 24 24">
+      <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3z"></path>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+      <path d="M4 7h16"></path>
+      <path d="M4 17h16"></path>
+      <circle cx="9" cy="7" r="3"></circle>
+      <circle cx="15" cy="17" r="3"></circle>
+    </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24">
+      <path d="M20 7v5h-5"></path>
+      <path d="M4 17v-5h5"></path>
+      <path d="M6.1 7a7 7 0 0 1 11.5-1L20 9"></path>
+      <path d="M17.9 17a7 7 0 0 1-11.5 1L4 15"></path>
+    </symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24">
+      <path d="M13 6l5 5"></path>
+      <path d="M4 20l5-1 11-11a2.1 2.1 0 0 0-5-5L4 14l-1 6z"></path>
+      <path d="M13 20h8"></path>
+    </symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24">
+      <path d="M10.3 4.5L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z"></path>
+      <path d="M12 9v4"></path>
+      <path d="M12 17h.01"></path>
+    </symbol>
+  </svg>
+
   <div class="app">
-    <nav aria-label="画面の切り替え">
-      <button type="button" data-page="plan" class="active">1日の計画</button>
-      <button type="button" data-page="tasks">タスク一覧</button>
-      <button type="button" data-page="periodic">定期タスク</button>
-      <button type="button" data-page="history">完了済み</button>
-      <button type="button" data-page="wishes">したいこと</button>
+    <nav class="app-nav" aria-label="画面の切り替え">
+      <div class="nav-brand" aria-hidden="true">
+        <span class="brand-mark">
+          <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+            <use href="#icon-check"></use>
+          </svg>
+        </span>
+        <span>タスク</span>
+      </div>
+
+      <div class="nav-items">
+        <button
+          type="button"
+          data-page="plan"
+          class="nav-link active"
+          aria-current="page">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-plan"></use>
+          </svg>
+          <span class="nav-label">1日の計画</span>
+        </button>
+
+        <button type="button" data-page="tasks" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-list"></use>
+          </svg>
+          <span class="nav-label">タスク一覧</span>
+        </button>
+
+        <button type="button" data-page="periodic" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-repeat"></use>
+          </svg>
+          <span class="nav-label">定期タスク</span>
+        </button>
+
+        <button type="button" data-page="history" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-done"></use>
+          </svg>
+          <span class="nav-label">完了済み</span>
+        </button>
+
+        <button type="button" data-page="wishes" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-wish"></use>
+          </svg>
+          <span class="nav-label">したいこと</span>
+        </button>
+      </div>
     </nav>
 
     <main>
-      <header>
-        <h1>タスク</h1>
-        <span class="version">v4.10.2</span>
-        <span class="spacer"></span>
-        <button id="add" class="primary" type="button" disabled>タスクを追加</button>
-        <button id="reload" type="button" disabled>最新を取得</button>
-        <button id="settings" type="button">設定</button>
+      <header class="app-header">
+        <div class="app-heading">
+          <h1>タスク</h1>
+          <span class="badge version">v4.11.0</span>
+        </div>
+
+        <div class="header-actions">
+          <button id="add" class="btn btn-primary primary" type="button" disabled>
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-plus"></use>
+            </svg>
+            <span id="add-label">タスクを追加</span>
+          </button>
+
+          <button id="reload" class="btn" type="button" disabled>
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-refresh"></use>
+            </svg>
+            <span id="reload-label">最新を取得</span>
+          </button>
+
+          <button id="settings" class="btn" type="button">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-settings"></use>
+            </svg>
+            <span>設定</span>
+          </button>
+        </div>
       </header>
 
       <div id="status" class="status" aria-live="polite">準備中</div>
@@ -840,34 +194,60 @@
     </main>
   </div>
 
-  <dialog id="editor">
-    <h2 id="editor-title"></h2>
+  <dialog id="editor" aria-labelledby="editor-title">
+    <div class="dialog-heading">
+      <span class="dialog-icon" aria-hidden="true">
+        <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+          <use href="#icon-edit"></use>
+        </svg>
+      </span>
+      <h2 id="editor-title"></h2>
+    </div>
+
     <form id="editor-form">
       <div id="editor-fields"></div>
       <div id="editor-note" class="form-error" hidden aria-live="polite"></div>
       <div class="dialog-actions">
-        <button type="button" id="editor-cancel">キャンセル</button>
-        <button type="submit" class="primary" id="editor-submit">保存</button>
+        <button type="button" id="editor-cancel" class="btn">キャンセル</button>
+        <button type="submit" class="btn btn-primary primary" id="editor-submit">保存</button>
       </div>
     </form>
   </dialog>
 
-  <dialog id="settings-dialog">
-    <h2>設定</h2>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-heading">
+      <span class="dialog-icon" aria-hidden="true">
+        <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+          <use href="#icon-settings"></use>
+        </svg>
+      </span>
+      <h2 id="settings-title">設定</h2>
+    </div>
 
     <label class="field">
-      接続先
-      <input id="url" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <span class="form-label">接続先</span>
+      <input
+        id="url"
+        class="form-control"
+        type="text"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false">
     </label>
 
     <label class="field">
-      合い言葉
-      <input id="token" type="password" autocomplete="off" autocapitalize="off">
+      <span class="form-label">合い言葉</span>
+      <input
+        id="token"
+        class="form-control"
+        type="password"
+        autocomplete="off"
+        autocapitalize="off">
     </label>
 
     <div class="toolbar">
-      <button id="check" type="button">動作の点検</button>
-      <button id="copy" type="button">状態をコピー</button>
+      <button id="check" class="btn" type="button">動作の点検</button>
+      <button id="copy" class="btn" type="button">状態をコピー</button>
     </div>
 
     <details class="settings-section">
@@ -906,13 +286,21 @@
     </details>
 
     <div class="dialog-actions">
-      <button id="settings-close" type="button">閉じる</button>
-      <button id="settings-save" class="primary" type="button">保存</button>
+      <button id="settings-close" class="btn" type="button">閉じる</button>
+      <button id="settings-save" class="btn btn-primary primary" type="button">保存</button>
     </div>
   </dialog>
 
-  <dialog id="conflict-dialog">
-    <h2>変更が重なっています</h2>
+  <dialog id="conflict-dialog" aria-labelledby="conflict-title">
+    <div class="dialog-heading warning">
+      <span class="dialog-icon" aria-hidden="true">
+        <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+          <use href="#icon-alert"></use>
+        </svg>
+      </span>
+      <h2 id="conflict-title">変更が重なっています</h2>
+    </div>
+
     <p id="conflict-note" class="dialog-text"></p>
 
     <div class="comparison">
@@ -927,9 +315,9 @@
     </div>
 
     <div class="dialog-actions">
-      <button id="conflict-close" type="button">後で確認</button>
-      <button id="conflict-remote" type="button">保存済みを使う</button>
-      <button id="conflict-apply" class="primary" type="button">端末の変更を反映</button>
+      <button id="conflict-close" class="btn" type="button">後で確認</button>
+      <button id="conflict-remote" class="btn" type="button">保存済みを使う</button>
+      <button id="conflict-apply" class="btn btn-primary primary" type="button">端末の変更を反映</button>
     </div>
   </dialog>
 
@@ -939,7 +327,9 @@
     (function () {
       'use strict';
 
-      const VERSION = 'v4.10.2';
+      const VERSION = 'v4.11.0';
+      const REQUIRED_CORE_BUILD = 'v4.10.2';
+      const UI_KIT_VERSION = '1.0.0';
 
       function $(id) {
         return document.getElementById(id);
@@ -948,12 +338,14 @@
       if (
         !window.TaskCore ||
         TaskCore.VERSION !== 'v4.8' ||
-        TaskCore.BUILD !== VERSION ||
+        TaskCore.BUILD !== REQUIRED_CORE_BUILD ||
         !window.WishClient ||
         WishClient.VERSION !== 'v4.10'
       ) {
         $('status').textContent =
-          '画面の準備ができません。task-core.js と wish-client.js を確認してください。';
+          '画面に対応する共通処理を読み込めません。' +
+          'task-core.js（v4.10.2）と wish-client.js（v4.10）を確認してください。' +
+          '端末の記録は消さないでください。';
         return;
       }
 
@@ -1042,7 +434,12 @@
       }
 
       function button(text, handler, className) {
-        const element = make('button', text, className);
+        const element = make(
+          'button',
+          text,
+          'btn' + (className ? ' ' + className : '')
+        );
+
         element.type = 'button';
         element.addEventListener('click', handler);
         return element;
@@ -1284,7 +681,7 @@
         $('status').textContent = parts.join('／');
         $('status').hidden = !parts.length;
 
-        $('add').textContent = page === 'wishes'
+        $('add-label').textContent = page === 'wishes'
           ? 'したいことを追加'
           : 'タスクを追加';
 
@@ -1305,7 +702,7 @@
           manualReloading ||
           loading;
 
-        $('reload').textContent = retryingRead() && loading
+        $('reload-label').textContent = retryingRead() && loading
           ? '再確認中'
           : manualReloading || loading
             ? '確認中'
@@ -1350,6 +747,7 @@
         }).length;
 
         $('outbox').hidden = !entries.length;
+        $('outbox').classList.toggle('has-attention', attention > 0);
         $('outbox-summary').textContent =
           '送信待ち ' + entries.length + '件' +
           (attention ? '・確認が必要 ' + attention + '件' : '');
@@ -1366,7 +764,7 @@
             make(
               'span',
               jobStateLabel(job),
-              'job-state' + (needsCheck ? ' needs-check' : '')
+              'badge job-state' + (needsCheck ? ' needs-check' : '')
             )
           );
 
@@ -1454,7 +852,14 @@
         }
 
         document.querySelectorAll('nav [data-page]').forEach(function (element) {
-          element.classList.toggle('active', element.dataset.page === page);
+          const active = element.dataset.page === page;
+          element.classList.toggle('active', active);
+
+          if (active) {
+            element.setAttribute('aria-current', 'page');
+          } else {
+            element.removeAttribute('aria-current');
+          }
         });
 
         const content = $('content');
@@ -1895,8 +1300,8 @@
       function renderPlan(content) {
         content.appendChild(make('h2', '1日の計画'));
 
-        const tools = make('div', null, 'toolbar');
-        const date = make('input');
+        const tools = make('div', null, 'toolbar plan-tools');
+        const date = make('input', null, 'form-control plan-date');
         date.type = 'date';
         date.value = selectedDate;
         date.setAttribute('aria-label', '計画の日付');
@@ -2397,6 +1802,7 @@
 
         const switcher = make('div', null, 'view-switch');
         switcher.setAttribute('role', 'group');
+        switcher.setAttribute('aria-label', '一覧の表示方法');
 
         [
           ['list', '一覧'],
@@ -2423,7 +1829,7 @@
       function renderTaskList(content) {
         const tools = make('div', null, 'toolbar task-filters');
         const label = make('label', null, 'filter-field');
-        const select = make('select');
+        const select = make('select', null, 'form-select');
 
         const all = make('option', 'すべて');
         all.value = 'all';
@@ -2478,7 +1884,7 @@
 
         if (taskFilter === 'date') {
           const dateField = make('label', null, 'filter-field');
-          const input = make('input');
+          const input = make('input', null, 'form-control');
           input.type = 'date';
           input.value = filterDate;
 
@@ -2529,7 +1935,7 @@
         });
 
         const calendar = make('section', null, 'calendar');
-        const tools = make('div', null, 'toolbar');
+        const tools = make('div', null, 'toolbar calendar-tools');
 
         const monthText = Number(calendarMonth.slice(0, 4)) + '年' +
           Number(calendarMonth.slice(5, 7)) + '月';
@@ -2648,9 +2054,9 @@
 
       function field(name, label, type, value, required) {
         const wrapper = make('label', null, 'field');
-        wrapper.appendChild(make('span', label));
+        wrapper.appendChild(make('span', label, 'form-label'));
 
-        const input = make('input');
+        const input = make('input', null, 'form-control');
         input.name = name;
         input.type = type;
         input.value = value == null ? '' : String(value);
@@ -2667,8 +2073,8 @@
 
       function selectField(name, label, options, value) {
         const wrapper = make('label', null, 'field');
-        wrapper.appendChild(make('span', label));
-        const select = make('select');
+        wrapper.appendChild(make('span', label, 'form-label'));
+        const select = make('select', null, 'form-select');
         select.name = name;
 
         options.forEach(function (entry) {
@@ -3457,6 +2863,9 @@
 
         historyData.items.forEach(function (item) {
           const card = make('div', null, 'card');
+          const mark = make('span', '✓', 'history-mark');
+          mark.setAttribute('aria-hidden', 'true');
+
           const main = make('div', null, 'card-main');
           main.appendChild(make('div', item.title, 'card-title'));
 
@@ -3464,7 +2873,7 @@
             main.appendChild(make('div', '完了 ' + item.doneAt, 'sub'));
           }
 
-          card.appendChild(main);
+          card.append(mark, main);
           cards.appendChild(card);
         });
 
@@ -3694,6 +3103,24 @@
           '\n保存先処理 ' + seconds(info.serverMs);
       }
 
+      function uiStyleVersion() {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue('--task-ui-version')
+          .trim() || '未読込';
+      }
+
+      function uiKitStatus() {
+        const link = $('tabler-style');
+
+        try {
+          return link && link.sheet && link.sheet.cssRules.length
+            ? 'Tabler ' + UI_KIT_VERSION + '（CSS読込済み）'
+            : '未読込';
+        } catch (error) {
+          return '確認できません';
+        }
+      }
+
       function stateRows() {
         return [
           ['通信', navigator.onLine ? 'あり' : 'なし'],
@@ -3705,6 +3132,8 @@
               '（日本時間）'
           ],
           ['画面', VERSION],
+          ['UIスタイル', uiStyleVersion()],
+          ['UIキット', uiKitStatus()],
           ['共通処理', TaskCore.BUILD],
           [
             '保存先の改修版',
