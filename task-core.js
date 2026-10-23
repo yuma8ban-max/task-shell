@@ -2,21 +2,27 @@
 (function () {
   'use strict';
 
-  // 既存の小窓が確認する接続互換性の番号。
   const VERSION = 'v4.8';
-  const BUILD = 'v4.10.2';
+  const BUILD = 'v4.11.2';
 
   const SERVER_VERSION = 'v4.3';
   const SYNC_PROTOCOL = 'task-sync-v1';
+  const TRACE_PROTOCOL = 'task-read-trace-v1';
   const DB_NAME = 'taskapp-unified';
   const URL_KEY = 'gasUrl_v1';
   const TOKEN_KEY = 'gasTok_v1';
   const CHANNEL_NAME = 'task-unified-state';
   const NETWORK_LOCK = 'taskapp-unified-remote-v1';
+
   const REQUEST_TIMEOUT_MS = 60000;
-  const READ_404_RETRY_DELAY_MS = 2000;
+  const READ_RETRY_DELAY_MS = 2000;
+  const RESUME_REQUEST_AGE_MS = 30000;
+  const RESUME_HIDDEN_TIME_MS = 15000;
+
   const DIAGNOSTIC_KEY = 'read-receipt-checks-v1';
-  const DIAGNOSTIC_LIMIT = 8;
+  const TRACE_KEY = 'read-traces-v1';
+  const DIAGNOSTIC_LIMIT = 12;
+
   const RESPONSE_INFO = Symbol('response-info');
   const SKIPPED = Symbol('skipped');
 
@@ -25,6 +31,18 @@
     'history',
     'preview',
     'check'
+  ];
+
+  const MUTATION_ACTIONS = [
+    'add',
+    'order',
+    'edit',
+    'done',
+    'undo',
+    'periodicSave',
+    'periodicSend',
+    'periodicRun',
+    'automatic'
   ];
 
   const KNOWN_STATUSES = [
@@ -168,9 +186,29 @@
   }
 
   function safeAction(value) {
-    return READ_ACTIONS.indexOf(value) >= 0
+    return READ_ACTIONS.concat(MUTATION_ACTIONS).indexOf(value) >= 0
       ? value
       : 'その他';
+  }
+
+  function actionLabel(value) {
+    const names = {
+      load: '一覧更新',
+      history: '完了済み更新',
+      preview: '定期タスクの対象確認',
+      check: '動作確認',
+      add: '追加',
+      order: '配置',
+      edit: '編集',
+      done: '完了',
+      undo: '取り消し',
+      periodicSave: '定期設定',
+      periodicSend: '定期追加',
+      periodicRun: '今日の定期追加',
+      automatic: '自動追加設定'
+    };
+
+    return names[value] || 'その他';
   }
 
   function finalDestination(finalUrl, initialUrl) {
@@ -246,6 +284,13 @@
       app: safeVersion(source.app),
       build: safeVersion(source.build || snapshot.build),
       unchanged: source.unchanged === true,
+      elapsedMs: Number.isFinite(info.elapsedMs)
+        ? info.elapsedMs
+        : null,
+      traceEcho: info.traceEcho || '対象外',
+      serverMs: Number.isFinite(source.serverMs)
+        ? source.serverMs
+        : null,
       fields: [
         {
           name: 'snapshot',
@@ -311,6 +356,12 @@
       ? Math.max(0, retryAfterMs)
       : 0;
 
+    return error;
+  }
+
+  function interruptedRead() {
+    const error = new Error('古い一覧更新を終了しました。');
+    error.supersededRead = true;
     return error;
   }
 
@@ -545,12 +596,15 @@
     const info = result[RESPONSE_INFO] || summarizeResponse(result);
 
     if (!result.ok) {
-      throw receiveError(
+      const error = receiveError(
         'server-rejection',
-        String(result.message || '一覧を取得できませんでした。'),
+        String(result.message || '一覧を更新できませんでした。'),
         info,
         false
       );
+
+      error.serverStatus = safeStatus(result.status);
+      throw error;
     }
 
     if (isEntryGuide(result)) {
@@ -573,7 +627,7 @@
       if (action !== 'load') {
         issues.push({
           field: 'unchanged',
-          expected: '一覧取得以外では使用しない',
+          expected: '一覧更新以外では使用しない',
           actual: 'true'
         });
       }
@@ -723,6 +777,85 @@
         issues
       );
     }
+  }
+
+  function validTransition(value) {
+    if (
+      !isObject(value) ||
+      !Array.isArray(value.days) ||
+      !Array.isArray(value.tasks)
+    ) {
+      return false;
+    }
+
+    const validEntry = function (entry) {
+      return isObject(entry) &&
+        typeof entry.key === 'string' &&
+        typeof entry.before === 'string' &&
+        typeof entry.after === 'string';
+    };
+
+    if (
+      !value.days.every(validEntry) ||
+      !value.tasks.every(validEntry)
+    ) {
+      return false;
+    }
+
+    return ['periodic', 'undo'].every(function (key) {
+      const entry = value[key];
+
+      return entry === null ||
+        (
+          isObject(entry) &&
+          typeof entry.before === 'string' &&
+          typeof entry.after === 'string'
+        );
+    });
+  }
+
+  function requireMutationReceipt(result) {
+    if (
+      result.ok === true &&
+      result.status === 'saved' &&
+      validTransition(result.transition)
+    ) {
+      return;
+    }
+
+    throw receiveError(
+      isEntryGuide(result) ? 'entry-guide' : 'mutation-receipt-shape',
+      '保存成功の返答に必要な確認情報がありません。',
+      result[RESPONSE_INFO] || summarizeResponse(result),
+      false
+    );
+  }
+
+  function shortRetryAllowed(error) {
+    if (
+      !error ||
+      error.supersededRead ||
+      error.serverStatus
+    ) {
+      return false;
+    }
+
+    if (error.receiveCode === 'http') {
+      return error.httpStatus === 404 ||
+        (
+          error.receiveInfo &&
+          error.receiveInfo.httpStatus === 404
+        );
+    }
+
+    return [
+      'non-json',
+      'response-envelope',
+      'entry-guide',
+      'mutation-receipt-shape',
+      'snapshot-shape',
+      'trace-mismatch'
+    ].indexOf(error.receiveCode) >= 0;
   }
 
   function compareTasks(a, b) {
@@ -1134,6 +1267,10 @@
       this.verifiedFeatures = {};
       this.legacyWaitUntil = 0;
 
+      this.activeRead = null;
+      this.hiddenAt = document.hidden ? Date.now() : 0;
+      this.lastHiddenDuration = 0;
+
       this.readStatus = {
         phase: 'idle',
         action: '',
@@ -1141,6 +1278,7 @@
       };
 
       this.readDiagnostics = [];
+      this.readTraces = [];
       this.diagnosticWarning = '';
 
       this.fastHandoff = !!(
@@ -1168,6 +1306,7 @@
     resetConnection() {
       this.verifiedConnection = '';
       this.verifiedFeatures = {};
+      this.cancelRead('connection-changed');
     }
 
     emit(meta) {
@@ -1209,7 +1348,11 @@
       }
     }
 
-    setReadStatus(phase, action, attempt) {
+    setReadStatus(phase, action, attempt, operation) {
+      if (operation && this.activeRead !== operation) {
+        return;
+      }
+
       this.readStatus = {
         phase: phase,
         action: safeAction(action),
@@ -1223,18 +1366,126 @@
 
     readStatusLabel() {
       switch (this.readStatus.phase) {
+        case 'waiting':
+          return '通信の順番待ち';
         case 'reading':
-          return '読み込み中';
+          return '更新中';
         case 'retrying':
-          return '一覧全体で再確認中';
+          return '一覧を取り直しています';
         case 'success':
           return this.readStatus.attempt === 2
-            ? '再確認で取得成功'
-            : '取得成功';
+            ? '再取得で更新成功'
+            : '更新成功';
         case 'failed':
-          return '前回の取得に失敗';
+          return '前回の更新に失敗';
+        case 'deferred':
+          return '更新待ち';
         default:
           return 'この起動後は未確認';
+      }
+    }
+
+    readActive(operation) {
+      return this.activeRead === operation &&
+        !operation.cancelled &&
+        !this.paused;
+    }
+
+    readEvent(operation, name) {
+      if (!operation) {
+        return;
+      }
+
+      operation.events.push({
+        name: name,
+        at: new Date().toISOString(),
+        elapsedMs: Math.max(0, Date.now() - operation.createdAt)
+      });
+
+      operation.events = operation.events.slice(-12);
+    }
+
+    cancelRead(reason) {
+      const operation = this.activeRead;
+
+      if (!operation || operation.cancelled) {
+        return false;
+      }
+
+      operation.cancelled = true;
+      operation.cancelReason = reason;
+      this.readEvent(operation, reason);
+
+      operation.controllers.forEach(function (controller) {
+        controller.abort();
+      });
+
+      operation.releaseCancellation();
+      return true;
+    }
+
+    async resumeReads() {
+      const operation = this.activeRead;
+
+      if (!operation) {
+        return false;
+      }
+
+      this.readEvent(operation, 'visible');
+
+      const now = Date.now();
+      const hiddenDuration = this.hiddenAt
+        ? Math.max(0, now - this.hiddenAt)
+        : this.lastHiddenDuration;
+
+      const totalAge = Math.max(0, now - operation.createdAt);
+      const requestAge = operation.networkStartedAt
+        ? Math.max(0, now - operation.networkStartedAt)
+        : 0;
+
+      const stale =
+        totalAge >= REQUEST_TIMEOUT_MS ||
+        (
+          hiddenDuration >= RESUME_HIDDEN_TIME_MS &&
+          (
+            requestAge >= RESUME_REQUEST_AGE_MS ||
+            (
+              operation.phase !== 'receiving' &&
+              totalAge >= RESUME_REQUEST_AGE_MS
+            )
+          )
+        );
+
+      if (!operation.cancelled && !stale) {
+        return false;
+      }
+
+      if (!operation.cancelled) {
+        this.cancelRead('resume-expired');
+      }
+
+      if (operation.promise) {
+        await operation.promise.catch(function () {
+          return null;
+        });
+      }
+
+      return true;
+    }
+
+    trackController(controller, operation) {
+      this.controllers.add(controller);
+
+      if (operation) {
+        operation.controllers.add(controller);
+      }
+    }
+
+    untrackController(controller, operation) {
+      this.controllers.delete(controller);
+
+      if (operation) {
+        operation.controllers.delete(controller);
       }
     }
 
@@ -1269,6 +1520,7 @@
 
       this.db.onversionchange = () => {
         this.ready = false;
+        this.cancelRead('storage-changed');
         this.db.close();
 
         this.issue(
@@ -1284,8 +1536,9 @@
 
       try {
         this.readDiagnostics = await this.readDiagnosticRecords();
+        this.readTraces = await this.readDiagnosticRecords(TRACE_KEY);
       } catch (error) {
-        this.diagnosticWarning = '以前の受信点検記録を読み取れませんでした。';
+        this.diagnosticWarning = '以前の通信の点検記録を読み取れませんでした。';
       }
 
       this.ready = true;
@@ -1304,6 +1557,7 @@
               event.data.type === 'read-diagnostics-changed'
             ) {
               this.readDiagnostics = await this.readDiagnosticRecords();
+              this.readTraces = await this.readDiagnosticRecords(TRACE_KEY);
 
               this.emit({
                 kind: 'diagnostic'
@@ -1361,12 +1615,26 @@
         }
       });
 
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          this.hiddenAt = Date.now();
+          this.readEvent(this.activeRead, 'hidden');
+        } else if (this.hiddenAt) {
+          this.lastHiddenDuration = Math.max(
+            0,
+            Date.now() - this.hiddenAt
+          );
+
+          this.hiddenAt = 0;
+        }
+      });
+
       window.addEventListener('pagehide', () => {
         this.paused = true;
 
-        this.controllers.forEach(function (controller) {
-          controller.abort();
-        });
+        // 通常の一覧取得だけを中断する。
+        // 更新送信の通信を一括で中断しない。
+        this.cancelRead('pagehide');
 
         try {
           if (this.channel) {
@@ -1502,10 +1770,11 @@
       });
     }
 
-    readDiagnosticRecords() {
+    readDiagnosticRecords(key) {
       return new Promise((resolve, reject) => {
         const transaction = this.db.transaction('data', 'readonly');
-        const request = transaction.objectStore('data').get(DIAGNOSTIC_KEY);
+        const request = transaction.objectStore('data')
+          .get(key || DIAGNOSTIC_KEY);
 
         transaction.oncomplete = function () {
           const records = request.result;
@@ -1526,14 +1795,16 @@
       });
     }
 
-    async saveReadDiagnostic(record) {
+    async saveReadDiagnostic(record, asTrace) {
       const safeRecord = clone(record);
+      const key = asTrace ? TRACE_KEY : DIAGNOSTIC_KEY;
+      const property = asTrace ? 'readTraces' : 'readDiagnostics';
 
       try {
         const records = await new Promise((resolve, reject) => {
           const transaction = this.db.transaction('data', 'readwrite');
           const store = transaction.objectStore('data');
-          const request = store.get(DIAGNOSTIC_KEY);
+          const request = store.get(key);
           let next;
 
           request.onsuccess = function () {
@@ -1547,7 +1818,7 @@
 
             next.push(safeRecord);
             next = next.slice(-DIAGNOSTIC_LIMIT);
-            store.put(next, DIAGNOSTIC_KEY);
+            store.put(next, key);
           };
 
           transaction.oncomplete = function () {
@@ -1562,7 +1833,7 @@
           };
         });
 
-        this.readDiagnostics = records;
+        this[property] = records;
         this.diagnosticWarning = '';
 
         if (this.channel) {
@@ -1571,14 +1842,15 @@
           });
         }
       } catch (error) {
-        this.readDiagnostics = this.readDiagnostics.filter(function (entry) {
+        this[property] = this[property].filter(function (entry) {
           return entry.id !== safeRecord.id;
         });
 
-        this.readDiagnostics.push(safeRecord);
-        this.readDiagnostics = this.readDiagnostics.slice(-DIAGNOSTIC_LIMIT);
+        this[property].push(safeRecord);
+        this[property] = this[property].slice(-DIAGNOSTIC_LIMIT);
         this.diagnosticWarning =
-          '受信点検を端末に保存できませんでした。この画面を閉じると記録が失われる場合があります。';
+          '通信の点検記録を端末に保存できませんでした。' +
+          'この画面を閉じると記録が失われる場合があります。';
       }
 
       this.emit({
@@ -1586,20 +1858,122 @@
       });
     }
 
+    saveReadTrace(operation, outcome) {
+      return this.saveReadDiagnostic({
+        id: operation.id,
+        at: operation.at,
+        build: BUILD,
+        action: safeAction(operation.action),
+        outcome: outcome,
+        phase: operation.phase,
+        cancelled: operation.cancelled,
+        cancelReason: operation.cancelReason || '',
+        elapsedMs: Math.max(0, Date.now() - operation.createdAt),
+        events: operation.events,
+        attempts: operation.attempts
+      }, true);
+    }
+
+    readTraceText() {
+      const outcomes = {
+        waiting: '開始・終了結果は未記録',
+        reading: '送信開始・終了結果は未記録',
+        success: '更新成功',
+        failed: '更新失敗',
+        cancelled: '古い一覧更新を終了',
+        skipped: '今回は通信しない'
+      };
+
+      const events = {
+        created: '更新を受け付けた',
+        hidden: '画面が非表示になった',
+        visible: '画面へ戻った',
+        'resume-expired': '復帰時に古い一覧取得を終了した',
+        pagehide: '画面を閉じたため一覧取得を終了した',
+        'connection-changed': '接続設定の変更で一覧取得を終了した',
+        'storage-changed': '端末保存の変更で一覧取得を終了した'
+      };
+
+      const lines = [
+        '【読み取りの照合記録】',
+        '照合番号はタスクID・保存操作の受付番号とは別の番号です。'
+      ];
+
+      if (!this.readTraces.length) {
+        lines.push('記録：なし');
+        return lines.join('\n');
+      }
+
+      this.readTraces.slice().reverse().forEach(function (record, index) {
+        lines.push(
+          '',
+          '［' + (index + 1) + '］' + actionLabel(record.action),
+          '照合番号：' + record.id,
+          '開始：' + record.at,
+          '結果：' + (outcomes[record.outcome] || '未確定'),
+          '全体経過：' + (record.elapsedMs || 0) + 'ミリ秒'
+        );
+
+        (record.events || []).forEach(function (event) {
+          lines.push(
+            '・' + (events[event.name] || '状態の変化') +
+            '／' + event.at +
+            '／開始から' + event.elapsedMs + 'ミリ秒'
+          );
+        });
+
+        (record.attempts || []).forEach(function (attempt) {
+          const response = attempt.response || {};
+
+          lines.push(
+            '・試行' + attempt.number,
+            '  送信開始：' + (attempt.sentAt || '送信前'),
+            '  端末側の順番待ち：' +
+              (
+                Number.isFinite(attempt.queueMs)
+                  ? attempt.queueMs + 'ミリ秒'
+                  : '未記録'
+              ),
+            '  試行時間：' +
+              (
+                Number.isFinite(response.elapsedMs)
+                  ? response.elapsedMs + 'ミリ秒'
+                  : '未記録'
+              ),
+            '  応答番号：' +
+              (
+                response.httpStatus == null
+                  ? '未取得'
+                  : response.httpStatus
+              ),
+            '  GAS照合番号：' + (response.traceEcho || '返答未確認'),
+            '  保存先処理：' +
+              (
+                Number.isFinite(response.serverMs)
+                  ? response.serverMs + 'ミリ秒'
+                  : '未取得'
+              ),
+            '  判定：' +
+              (
+                attempt.accepted
+                  ? '必要な情報を確認'
+                  : attempt.code || '終了結果は未記録'
+              )
+          );
+        });
+      });
+
+      return lines.join('\n');
+    }
+
     readDiagnosticText() {
       const records = this.readDiagnostics.slice().reverse();
 
-      const actionNames = {
-        load: '一覧取得',
-        history: '完了済み取得',
-        preview: '定期タスクの対象確認',
-        check: '動作の点検'
-      };
-
       const outcomeNames = {
         retrying: '再確認開始・終了結果は未記録',
-        recovered: '再確認で取得成功',
-        failed: '取得失敗'
+        recovered: '再確認で成功',
+        failed: '失敗',
+        interrupted: '再確認を中断'
       };
 
       const codeNames = {
@@ -1610,17 +1984,20 @@
         'snapshot-shape': 'タスク一覧の形式不一致',
         'unchanged-shape': '変更なしの返答の形式不一致',
         'read-extra-shape': '画面別情報の形式不一致',
+        'mutation-receipt-shape': '保存結果の確認情報が不足',
+        'trace-mismatch': '要求と返答の照合番号が不一致',
         'cached-list-mismatch': '端末の一覧と変更なしの返答を照合できない',
         'server-rejection': '保存先が要求を受け付けなかった',
         'http': '通信の応答番号が正常ではない',
         'network': '接続失敗',
         'timeout': '応答待ち時間超過',
         'interrupted': '通信中断',
-        'other': '取得または端末保存の処理で失敗'
+        'other': '通信または端末保存の処理で失敗'
       };
 
       const lines = [
-        '受信点検の版：' + BUILD
+        '通信の点検の版：' + BUILD,
+        '【異常な返答の記録】'
       ];
 
       if (this.diagnosticWarning) {
@@ -1629,7 +2006,6 @@
 
       if (!records.length) {
         lines.push('異常な返答の記録：なし');
-        return lines.join('\n');
       }
 
       records.forEach(function (record, index) {
@@ -1646,11 +2022,15 @@
           '',
           '【' + (index + 1) + '】' + label + '（日本時間）',
           '記録時の版：' + (record.build || '未記録'),
-          '操作：' + (actionNames[record.action] || 'その他'),
+          '操作：' + actionLabel(record.action),
           '結果：' + (outcomeNames[record.outcome] || '未確定')
         );
 
-        record.attempts.forEach(function (attempt) {
+        if (record.traceId) {
+          lines.push('読み取り照合番号：' + record.traceId);
+        }
+
+        (record.attempts || []).forEach(function (attempt) {
           const info = attempt.response || {};
 
           const redirected = typeof info.redirected === 'boolean'
@@ -1691,6 +2071,11 @@
             '  転送：' + redirected,
             '  最終到着先：' + (info.finalDestination || '未記録'),
             '  入口案内との一致：' + entryGuide,
+            '  試行時間：' + (
+              Number.isFinite(info.elapsedMs)
+                ? info.elapsedMs + 'ミリ秒'
+                : '未記録'
+            ),
             '  ok：' + (
               info.ok === null || info.ok === undefined
                 ? 'なし'
@@ -1722,6 +2107,7 @@
         });
       });
 
+      lines.push('', this.readTraceText());
       return lines.join('\n');
     }
 
@@ -1794,9 +2180,13 @@
 
     async withNetwork(work, options) {
       const settings = options || {};
+      const operation = settings.readOperation || null;
 
       const run = async () => {
-        if (this.paused) {
+        if (
+          this.paused ||
+          (operation && !this.readActive(operation))
+        ) {
           return SKIPPED;
         }
 
@@ -1822,7 +2212,7 @@
           renewal = setInterval(() => {
             this.senderRecord('renew', this.fastHandoff)
               .catch(function () {
-                // 次の操作前にも所有状態を確認する。
+                return null;
               });
           }, 10000);
         }
@@ -1845,7 +2235,7 @@
 
       if (this.fastHandoff) {
         const controller = new AbortController();
-        this.controllers.add(controller);
+        this.trackController(controller, operation);
 
         const lockOptions = {
           mode: 'exclusive',
@@ -1866,7 +2256,7 @@
             }
           );
         } finally {
-          this.controllers.delete(controller);
+          this.untrackController(controller, operation);
         }
       }
 
@@ -1875,6 +2265,15 @@
       this.localTail = result.catch(function () {
         return undefined;
       });
+
+      if (operation) {
+        return Promise.race([
+          result,
+          operation.cancelPromise.then(function () {
+            return SKIPPED;
+          })
+        ]);
+      }
 
       return result;
     }
@@ -1894,9 +2293,13 @@
       };
     }
 
-    async request(payload, forceFull) {
+    async request(payload, forceFull, operation) {
       if (!this.configured()) {
         throw new Error('接続先と合い言葉を設定してください。');
+      }
+
+      if (operation && !this.readActive(operation)) {
+        throw interruptedRead();
       }
 
       if (!navigator.onLine) {
@@ -1912,7 +2315,8 @@
 
       const config = this.config();
       const controller = new AbortController();
-      const started = performance.now();
+      const started = Date.now();
+      const hint = this.clientHint(forceFull);
       let timedOut = false;
 
       let transport = {
@@ -1920,10 +2324,23 @@
         httpStatus: null,
         contentType: 'なし',
         redirected: null,
-        finalDestination: '確認できない'
+        finalDestination: '確認できない',
+        traceEcho: operation ? '返答未確認' : '対象外'
       };
 
-      this.controllers.add(controller);
+      if (operation) {
+        hint.readTrace = {
+          protocol: TRACE_PROTOCOL,
+          id: operation.id,
+          attempt: operation.attempt,
+          build: BUILD
+        };
+
+        operation.networkStartedAt = started;
+        operation.phase = 'request';
+      }
+
+      this.trackController(controller, operation);
 
       const timer = setTimeout(function () {
         timedOut = true;
@@ -1940,34 +2357,34 @@
             mode: 'web',
             token: config.token
           }, payload, {
-            clientState: this.clientHint(forceFull)
+            clientState: hint
           })),
           redirect: 'follow',
+          cache: 'no-store',
           signal: controller.signal
         });
 
-        // URLそのものは記録せず、分類だけを残す。
         transport = {
           format: '本文読取前',
           httpStatus: response.status,
           contentType: safeContentType(response.headers.get('Content-Type')),
           redirected: response.redirected,
-          finalDestination: finalDestination(response.url, config.url)
+          finalDestination: finalDestination(response.url, config.url),
+          elapsedMs: Math.max(0, Date.now() - started),
+          traceEcho: operation ? '返答未確認' : '対象外'
         };
 
         if (!response.ok) {
-          const retryableRead404 =
-            response.status === 404 &&
-            READ_ACTIONS.indexOf(payload.action) >= 0;
+          const retryable404 = response.status === 404;
 
           const error = receiveError(
             'http',
             '保存先から正常な返答を受け取れませんでした' +
               '（応答番号：' + response.status + '）。',
             summarizeResponse(undefined, transport),
-            retryableRead404,
+            retryable404 && READ_ACTIONS.indexOf(payload.action) >= 0,
             [],
-            retryableRead404 ? READ_404_RETRY_DELAY_MS : 0
+            retryable404 ? READ_RETRY_DELAY_MS : 0
           );
 
           error.httpStatus = response.status;
@@ -1975,6 +2392,7 @@
         }
 
         const text = await response.text();
+        transport.elapsedMs = Math.max(0, Date.now() - started);
         let result;
 
         try {
@@ -1995,6 +2413,31 @@
         }
 
         transport.format = 'JSON';
+
+        if (operation) {
+          if (!isObject(result) || result.readTrace == null) {
+            transport.traceEcho = '返答に照合番号なし';
+          } else {
+            const trace = result.readTrace;
+
+            const matched = isObject(trace) &&
+              trace.protocol === TRACE_PROTOCOL &&
+              trace.id === operation.id &&
+              trace.attempt === operation.attempt;
+
+            transport.traceEcho = matched ? '一致' : '不一致';
+
+            if (!matched) {
+              throw receiveError(
+                'trace-mismatch',
+                '送った一覧取得と、届いた返答の照合番号が一致しません。',
+                summarizeResponse(result, transport),
+                true
+              );
+            }
+          }
+        }
+
         const info = summarizeResponse(result, transport);
 
         if (
@@ -2017,7 +2460,8 @@
         }
 
         if (result.ok && result.app !== SERVER_VERSION) {
-          this.resetConnection();
+          this.verifiedConnection = '';
+          this.verifiedFeatures = {};
 
           throw receiveError(
             'server-version',
@@ -2027,7 +2471,11 @@
           );
         }
 
-        if (result.ok) {
+        if (operation && !this.readActive(operation)) {
+          throw interruptedRead();
+        }
+
+        if (result.ok && !isEntryGuide(result)) {
           const source = result.snapshot || result.patch || result;
           this.verifiedConnection = config.url + '\n' + config.token;
           this.verifiedFeatures = source.features || this.verifiedFeatures;
@@ -2040,7 +2488,7 @@
 
         this.lastCommunication = {
           action: payload.action,
-          milliseconds: Math.round(performance.now() - started),
+          milliseconds: Math.max(0, Date.now() - started),
           serverMs: Number.isFinite(result.serverMs)
             ? result.serverMs
             : null
@@ -2048,6 +2496,12 @@
 
         return result;
       } catch (error) {
+        transport.elapsedMs = Math.max(0, Date.now() - started);
+
+        if (operation && !this.readActive(operation)) {
+          throw interruptedRead();
+        }
+
         if (this.paused) {
           throw error;
         }
@@ -2062,6 +2516,10 @@
         }
 
         if (error && error.receiveCode) {
+          if (error.receiveInfo) {
+            error.receiveInfo.elapsedMs = transport.elapsedMs;
+          }
+
           throw error;
         }
 
@@ -2086,11 +2544,11 @@
         throw error;
       } finally {
         clearTimeout(timer);
-        this.controllers.delete(controller);
+        this.untrackController(controller, operation);
       }
     }
 
-    waitBeforeReadRetry(milliseconds) {
+    waitBeforeReadRetry(milliseconds, operation) {
       if (milliseconds <= 0) {
         return Promise.resolve();
       }
@@ -2107,7 +2565,7 @@
 
           settled = true;
           clearTimeout(timer);
-          this.controllers.delete(controller);
+          this.untrackController(controller, operation);
 
           if (error) {
             reject(error);
@@ -2117,21 +2575,19 @@
         };
 
         controller.signal.addEventListener('abort', function () {
-          finish(receiveError(
-            'interrupted',
-            '画面が閉じられたため、一覧の再確認を中断しました。',
-            summarizeResponse(undefined, {
-              format: '再確認前に中断'
-            }),
-            false
-          ));
+          finish(operation
+            ? interruptedRead()
+            : new Error('再確認を中断しました。'));
         }, {
           once: true
         });
 
-        this.controllers.add(controller);
+        this.trackController(controller, operation);
 
-        if (this.paused) {
+        if (
+          this.paused ||
+          (operation && !this.readActive(operation))
+        ) {
           controller.abort();
           return;
         }
@@ -2154,9 +2610,17 @@
       });
     }
 
-    async acceptRead(result) {
+    async acceptRead(result, operation) {
+      if (operation && !this.readActive(operation)) {
+        throw interruptedRead();
+      }
+
       if (result.unchanged) {
-        return this.mutate(function (saved) {
+        return this.mutate((saved) => {
+          if (operation && !this.readActive(operation)) {
+            throw interruptedRead();
+          }
+
           if (
             !saved.snapshot ||
             saved.snapshot.revision !== result.revision ||
@@ -2192,7 +2656,11 @@
         result[RESPONSE_INFO]
       );
 
-      await this.mutate(function (saved) {
+      await this.mutate((saved) => {
+        if (operation && !this.readActive(operation)) {
+          throw interruptedRead();
+        }
+
         storeSnapshot(saved, result.snapshot);
         saved.lastNetworkAt = Date.now();
       });
@@ -2200,68 +2668,216 @@
       return true;
     }
 
-    async performRead(payload, settings) {
+    async performRead(payload, settings, operation) {
       let full = !!settings.forceFull;
       let diagnostic = null;
       let waitMs = 0;
 
-      // 最初の要求と、1回だけの再確認に限定する。
+      await this.saveReadTrace(operation, 'waiting');
+
       for (let attempt = 1; attempt <= 2; attempt++) {
         let response = null;
-
-        this.setReadStatus(
-          attempt === 1 ? 'reading' : 'retrying',
-          payload.action,
-          attempt
-        );
+        let attemptRecord = null;
 
         try {
+          if (!this.readActive(operation)) {
+            throw interruptedRead();
+          }
+
+          operation.attempt = attempt;
+          operation.phase = attempt === 1 ? 'waiting' : 'retry-wait';
+
+          this.setReadStatus(
+            attempt === 1 ? 'waiting' : 'retrying',
+            payload.action,
+            attempt,
+            operation
+          );
+
           if (waitMs > 0) {
-            await this.waitBeforeReadRetry(waitMs);
+            await this.waitBeforeReadRetry(waitMs, operation);
           }
 
-          // 毎回、設定済みの元の公開先へ新しい読み取り要求を送る。
-          response = await this.request(payload, full);
-          validateReadResponse(payload.action, response, full);
-
-          const accepted = await this.acceptRead(response);
-
-          if (!accepted) {
-            throw receiveError(
-              'cached-list-mismatch',
-              '端末の一覧と、保存先の「変更なし」という返答を照合できませんでした。',
-              response[RESPONSE_INFO],
-              true,
-              [{
-                field: 'local.snapshot',
-                expected: '返答の版と一致する有効な一覧',
-                actual: '照合できない'
-              }]
-            );
+          if (!this.readActive(operation)) {
+            throw interruptedRead();
           }
 
-          if (diagnostic) {
-            diagnostic.attempts.push({
+          this.state = await this.readState();
+
+          if (readyJob(this.state, false)) {
+            await this.pump(false);
+          }
+
+          if (!this.readActive(operation)) {
+            throw interruptedRead();
+          }
+
+          const queuedAt = Date.now();
+
+          const result = await this.withNetwork(async () => {
+            if (!this.readActive(operation)) {
+              throw interruptedRead();
+            }
+
+            this.state = await this.readState();
+
+            if (
+              settings.background &&
+              (
+                this.state.jobs.length ||
+                (
+                  attempt === 1 &&
+                  Date.now() - (this.state.lastNetworkAt || 0) < 20000
+                )
+              )
+            ) {
+              return SKIPPED;
+            }
+
+            operation.phase = 'request';
+
+            attemptRecord = {
               number: attempt,
               full: full,
               waitMs: waitMs,
-              accepted: true,
+              queueMs: Math.max(0, Date.now() - queuedAt),
+              sentAt: new Date().toISOString(),
+              accepted: false,
               code: '',
-              response: response[RESPONSE_INFO] ||
-                summarizeResponse(response),
+              response: null,
               issues: []
-            });
+            };
 
+            operation.attempts.push(attemptRecord);
+            await this.saveReadTrace(operation, 'reading');
+
+            if (!this.readActive(operation)) {
+              throw interruptedRead();
+            }
+
+            this.setReadStatus(
+              attempt === 1 ? 'reading' : 'retrying',
+              payload.action,
+              attempt,
+              operation
+            );
+
+            response = await this.request(payload, full, operation);
+
+            if (!this.readActive(operation)) {
+              throw interruptedRead();
+            }
+
+            operation.phase = 'receiving';
+            validateReadResponse(payload.action, response, full);
+
+            const accepted = await this.acceptRead(response, operation);
+
+            if (!accepted) {
+              throw receiveError(
+                'cached-list-mismatch',
+                '端末の一覧と、保存先の「変更なし」という返答を照合できませんでした。',
+                response[RESPONSE_INFO],
+                true,
+                [{
+                  field: 'local.snapshot',
+                  expected: '返答の版と一致する有効な一覧',
+                  actual: '照合できない'
+                }]
+              );
+            }
+
+            return response;
+          }, {
+            opportunistic: !!settings.background,
+            readOperation: operation
+          });
+
+          if (!this.readActive(operation)) {
+            throw interruptedRead();
+          }
+
+          if (result === SKIPPED) {
+            operation.phase = 'deferred';
+
+            this.setReadStatus(
+              'deferred',
+              payload.action,
+              attempt,
+              operation
+            );
+
+            if (diagnostic) {
+              diagnostic.outcome = 'interrupted';
+              await this.saveReadDiagnostic(diagnostic);
+            }
+
+            await this.saveReadTrace(operation, 'skipped');
+            return null;
+          }
+
+          attemptRecord.accepted = true;
+          attemptRecord.response = response[RESPONSE_INFO] ||
+            summarizeResponse(response);
+
+          if (diagnostic) {
+            diagnostic.attempts.push(clone(attemptRecord));
             diagnostic.outcome = 'recovered';
             await this.saveReadDiagnostic(diagnostic);
           }
 
+          if (!this.readActive(operation)) {
+            throw interruptedRead();
+          }
+
           this.markReceived(true);
-          this.setReadStatus('success', payload.action, attempt);
-          return response;
+          this.setReadStatus('success', payload.action, attempt, operation);
+
+          operation.phase = 'finished';
+          await this.saveReadTrace(operation, 'success');
+
+          return this.readActive(operation) ? response : null;
         } catch (error) {
-          if (this.paused) {
-            throw error;
+          if (
+            operation.cancelled ||
+            this.paused ||
+            error.supersededRead
+          ) {
+            operation.phase = 'cancelled';
+
+            if (diagnostic) {
+              diagnostic.outcome = 'interrupted';
+              await this.saveReadDiagnostic(diagnostic);
+            }
+
+            await this.saveReadTrace(operation, 'cancelled');
+            return null;
+          }
+
+          const recordedAttempt = attemptRecord || {
+            number: attempt,
+            full: full,
+            waitMs: waitMs,
+            queueMs: null,
+            sentAt: '',
+            accepted: false,
+            issues: []
+          };
+
+          recordedAttempt.code = error.receiveCode || 'other';
+          recordedAttempt.response = error.receiveInfo ||
+            (
+              response
+                ? response[RESPONSE_INFO] || summarizeResponse(response)
+                : summarizeResponse(undefined, {
+                  format: '返答を確認できない'
+                })
+            );
+
+          recordedAttempt.issues = error.receiveIssues || [];
+
+          if (!attemptRecord) {
+            operation.attempts.push(recordedAttempt);
           }
 
           if (!diagnostic) {
@@ -2270,38 +2886,25 @@
               at: new Date().toISOString(),
               build: BUILD,
               action: safeAction(payload.action),
+              traceId: operation.id,
               outcome: 'failed',
               attempts: []
             };
           }
 
-          diagnostic.attempts.push({
-            number: attempt,
-            full: full,
-            waitMs: waitMs,
-            accepted: false,
-            code: error.receiveCode || 'other',
-            response: error.receiveInfo ||
-              (
-                response
-                  ? response[RESPONSE_INFO] || summarizeResponse(response)
-                  : summarizeResponse(undefined, {
-                    format: '返答を確認できない'
-                  })
-              ),
-            issues: error.receiveIssues || []
-          });
+          diagnostic.attempts.push(clone(recordedAttempt));
 
           if (attempt === 1 && error.retryFull === true) {
             diagnostic.outcome = 'retrying';
-
-            this.setReadStatus('retrying', payload.action, 2);
             await this.saveReadDiagnostic(diagnostic);
 
             full = true;
-            waitMs = Number.isFinite(error.retryAfterMs)
-              ? error.retryAfterMs
-              : 0;
+            waitMs = Math.max(
+              READ_RETRY_DELAY_MS,
+              Number.isFinite(error.retryAfterMs)
+                ? error.retryAfterMs
+                : 0
+            );
 
             continue;
           }
@@ -2310,17 +2913,27 @@
           await this.saveReadDiagnostic(diagnostic);
 
           const message = attempt === 2
-            ? '一覧全体で再確認しましたが、取得できませんでした。\n' +
+            ? '一覧を取り直しましたが、更新できませんでした。\n' +
               String(error.message || error)
             : String(error.message || error);
 
-          this.lastReadError = message;
-          this.setReadStatus('failed', payload.action, attempt);
+          if (this.readActive(operation)) {
+            this.lastReadError = message;
+            this.setReadStatus('failed', payload.action, attempt, operation);
+          }
+
+          operation.phase = 'finished';
+          await this.saveReadTrace(operation, 'failed');
+
+          if (!this.readActive(operation)) {
+            return null;
+          }
+
           throw new Error(message);
         }
       }
 
-      throw new Error('一覧を取得できませんでした。');
+      return null;
     }
 
     async read(payload, options) {
@@ -2334,34 +2947,78 @@
         throw new Error('読み取り用の操作ではありません。');
       }
 
-      try {
-        const result = await this.withNetwork(async () => {
-          this.state = await this.readState();
+      if (this.paused) {
+        return null;
+      }
 
-          if (
-            settings.background &&
-            Date.now() - (this.state.lastNetworkAt || 0) < 20000
-          ) {
-            return SKIPPED;
-          }
+      const key = JSON.stringify([
+        payload.action,
+        payload.offset || 0,
+        !!settings.forceFull,
+        !!settings.background
+      ]);
 
-          return this.performRead(payload, settings);
-        }, {
-          opportunistic: !!settings.background
-        });
+      if (this.activeRead) {
+        const previous = this.activeRead;
 
-        return result === SKIPPED ? null : result;
-      } catch (error) {
-        if (!this.paused) {
-          this.lastReadError = String(error.message || error);
-
-          if (this.readStatus.phase !== 'failed') {
-            this.setReadStatus('failed', payload.action, 0);
-          }
+        if (!previous.cancelled && previous.key === key) {
+          return previous.promise;
         }
 
-        throw error;
+        if (settings.background) {
+          return null;
+        }
+
+        await previous.promise.catch(function () {
+          return null;
+        });
+
+        return this.read(payload, settings);
       }
+
+      let releaseCancellation;
+
+      const operation = {
+        id: uuid(),
+        key: key,
+        action: payload.action,
+        at: new Date().toISOString(),
+        createdAt: Date.now(),
+        networkStartedAt: 0,
+        phase: 'waiting',
+        attempt: 0,
+        attempts: [],
+        events: [],
+        controllers: new Set(),
+        cancelled: false,
+        cancelReason: '',
+        promise: null,
+        cancelPromise: new Promise(function (resolve) {
+          releaseCancellation = resolve;
+        }),
+        releaseCancellation: function () {
+          releaseCancellation();
+        }
+      };
+
+      this.activeRead = operation;
+      this.readEvent(operation, 'created');
+
+      operation.promise = this.performRead(
+        clone(payload),
+        settings,
+        operation
+      ).finally(() => {
+        if (this.activeRead === operation) {
+          this.activeRead = null;
+
+          if (operation.cancelled) {
+            this.setReadStatus('deferred', payload.action, 0);
+          }
+        }
+      });
+
+      return operation.promise;
     }
 
     context(payload, snapshot) {
@@ -2484,6 +3141,93 @@
       });
     }
 
+    async rememberMutationReceipt(job, result) {
+      requireMutationReceipt(result);
+
+      const receipt = {
+        status: 'saved',
+        transition: clone(result.transition),
+        result: isObject(result.result) ? clone(result.result) : {},
+        message: typeof result.message === 'string' ? result.message : '',
+        serverMs: Number.isFinite(result.serverMs) ? result.serverMs : null,
+        confirmedAt: new Date().toISOString()
+      };
+
+      await this.mutate(function (saved) {
+        const current = saved.jobs.find(function (entry) {
+          return entry.id === job.id;
+        });
+
+        if (current) {
+          current.serverReceipt = receipt;
+        }
+      });
+
+      job.serverReceipt = receipt;
+    }
+
+    async finishConfirmedMutation(job, started, immediateResult) {
+      const receipt = job.serverReceipt;
+
+      if (!receipt || !validTransition(receipt.transition)) {
+        throw new Error(
+          '端末に残した保存確認情報を読み取れません。データは消さないでください。'
+        );
+      }
+
+      let result = immediateResult;
+      let accepted = false;
+
+      if (result && (result.snapshot || result.patch)) {
+        try {
+          accepted = await this.acceptMutation(
+            job,
+            result,
+            Math.max(0, Date.now() - started)
+          );
+        } catch (error) {
+          if (
+            error.receiveCode !== 'snapshot-shape' &&
+            error.message !== '届いた変更内容を読み取れませんでした。'
+          ) {
+            throw error;
+          }
+        }
+      }
+
+      if (!accepted) {
+        const full = await this.request({
+          action: 'load'
+        }, true);
+
+        validateReadResponse('load', full, true);
+
+        result = {
+          ok: true,
+          app: SERVER_VERSION,
+          build: full.build,
+          status: 'saved',
+          message: receipt.message,
+          snapshot: full.snapshot,
+          transition: clone(receipt.transition),
+          result: clone(receipt.result),
+          serverMs: receipt.serverMs
+        };
+
+        accepted = await this.acceptMutation(
+          job,
+          result,
+          Math.max(0, Date.now() - started)
+        );
+      }
+
+      if (!accepted) {
+        throw new Error('保存後の一覧を確認できませんでした。');
+      }
+
+      return result;
+    }
+
     async sendOne(force) {
       let job = null;
 
@@ -2509,6 +3253,8 @@
         current.frozen = true;
         current.state = 'sending';
         current.note = '';
+        current.errorStatus = '';
+        current.shortRetry = 0;
         current.retryAt = 0;
         current.firstSentAt = current.firstSentAt || Date.now();
         current.lastAttemptAt = Date.now();
@@ -2521,63 +3267,112 @@
         };
       }
 
-      const started = performance.now();
+      const started = Date.now();
+      let diagnostic = null;
+      let finalError = null;
 
-      try {
-        const config = this.config();
-        const connection = config.url + '\n' + config.token;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        let result = null;
 
-        if (
-          job.payload.action === 'periodicSave' &&
-          Object.prototype.hasOwnProperty.call(job.payload, 'dueRule') &&
-          this.verifiedConnection !== connection
-        ) {
-          const checked = await this.request({
-            action: 'load'
-          }, true);
-
-          if (!checked.ok) {
-            throw new Error(checked.message || '保存先を確認できませんでした。');
+        try {
+          if (this.paused) {
+            throw new Error('画面の終了後に送信を続行しません。');
           }
+
+          const config = this.config();
+          const connection = config.url + '\n' + config.token;
 
           if (
-            !checked.snapshot ||
-            !checked.snapshot.features ||
-            !checked.snapshot.features.periodicDue
+            !job.serverReceipt &&
+            job.payload.action === 'periodicSave' &&
+            Object.prototype.hasOwnProperty.call(job.payload, 'dueRule') &&
+            this.verifiedConnection !== connection
           ) {
-            throw new Error('保存先が期限設定に対応していません。');
-          }
-
-          await this.acceptRead(checked);
-        }
-
-        const result = await this.request(job.payload, false);
-
-        if (result.ok) {
-          const timing = Math.round(performance.now() - started);
-          let accepted = await this.acceptMutation(job, result, timing);
-
-          if (!accepted) {
-            const full = await this.request({
+            const checked = await this.request({
               action: 'load'
             }, true);
 
-            if (!full.ok) {
-              throw new Error(full.message || '保存後の一覧を確認できませんでした。');
+            validateReadResponse('load', checked, true);
+
+            if (
+              !checked.snapshot.features ||
+              !checked.snapshot.features.periodicDue
+            ) {
+              throw new Error('保存先が期限設定に対応していません。');
             }
 
-            requireSnapshot(full.snapshot);
-            result.snapshot = full.snapshot;
-            delete result.patch;
-
-            accepted = await this.acceptMutation(job, result, timing);
+            await this.acceptRead(checked);
           }
 
-          if (!accepted) {
-            throw new Error('保存後の一覧を確認できませんでした。');
+          if (job.serverReceipt) {
+            result = await this.finishConfirmedMutation(job, started, null);
+          } else {
+            result = await this.request(job.payload, false);
+
+            if (result.ok) {
+              await this.rememberMutationReceipt(job, result);
+              result = await this.finishConfirmedMutation(job, started, result);
+            } else {
+              const conflict = result.status === 'conflict';
+              const blocked = result.status === 'invalid' ||
+                result.status === 'indeterminate';
+
+              if (conflict || blocked) {
+                await this.mutate(function (saved) {
+                  const current = saved.jobs.find(function (entry) {
+                    return entry.id === job.id;
+                  });
+
+                  if (current) {
+                    current.state = conflict ? 'conflict' : 'blocked';
+                    current.note = result.message || '確認が必要です。';
+                    current.retryAt = 0;
+                    current.shortRetry = 0;
+                    current.errorStatus = result.status;
+                  }
+
+                  if (
+                    result.snapshot &&
+                    snapshotIssues(result.snapshot).length === 0
+                  ) {
+                    storeSnapshot(saved, result.snapshot);
+                    saved.lastNetworkAt = Date.now();
+                  }
+                });
+
+                return {
+                  saved: false,
+                  stop: false
+                };
+              }
+
+              const error = receiveError(
+                'server-rejection',
+                result.message || '保存結果を確認できませんでした。',
+                result[RESPONSE_INFO] || summarizeResponse(result),
+                false
+              );
+
+              error.serverStatus = safeStatus(result.status);
+              throw error;
+            }
           }
 
-          // 更新の成功だけで、直前の一覧取得エラーを消さない。
+          if (diagnostic) {
+            diagnostic.outcome = 'recovered';
+            diagnostic.attempts.push({
+              number: attempt,
+              full: !!job.serverReceipt,
+              waitMs: attempt === 2 ? 2000 : attempt === 3 ? 5000 : 0,
+              accepted: true,
+              code: '',
+              response: result[RESPONSE_INFO] || summarizeResponse(result),
+              issues: []
+            });
+
+            await this.saveReadDiagnostic(diagnostic);
+          }
+
           this.markReceived(false);
 
           this.signal({
@@ -2597,74 +3392,112 @@
             saved: true,
             stop: false
           };
-        }
-
-        const conflict = result.status === 'conflict';
-        const blocked = result.status === 'invalid' ||
-          result.status === 'indeterminate';
-
-        if (conflict || blocked) {
-          await this.mutate(function (saved) {
-            const current = saved.jobs.find(function (entry) {
-              return entry.id === job.id;
-            });
-
-            if (current) {
-              current.state = conflict ? 'conflict' : 'blocked';
-              current.note = result.message || '確認が必要です。';
-              current.retryAt = 0;
-            }
-
-            if (result.snapshot) {
-              storeSnapshot(saved, result.snapshot);
-              saved.lastNetworkAt = Date.now();
-            }
-          });
-
-          return {
-            saved: false,
-            stop: false
-          };
-        }
-
-        throw new Error(result.message || '送信を確認できませんでした。');
-      } catch (error) {
-        if (this.paused) {
-          throw error;
-        }
-
-        await this.mutate(function (saved) {
-          const current = saved.jobs.find(function (entry) {
-            return entry.id === job.id;
-          });
-
-          if (
-            !current ||
-            current.state === 'conflict' ||
-            current.state === 'blocked'
-          ) {
-            return;
+        } catch (error) {
+          if (this.paused) {
+            throw error;
           }
 
-          current.attempts = (current.attempts || 0) + 1;
+          finalError = error;
 
-          const delay = Math.min(
+          if (!diagnostic) {
+            diagnostic = {
+              id: uuid(),
+              at: new Date().toISOString(),
+              build: BUILD,
+              action: safeAction(job.payload.action),
+              outcome: 'failed',
+              attempts: []
+            };
+          }
+
+          diagnostic.attempts.push({
+            number: attempt,
+            full: !!job.serverReceipt,
+            waitMs: attempt === 2 ? 2000 : attempt === 3 ? 5000 : 0,
+            accepted: false,
+            code: error.receiveCode || 'other',
+            response: error.receiveInfo ||
+              (
+                result
+                  ? result[RESPONSE_INFO] || summarizeResponse(result)
+                  : summarizeResponse(undefined)
+              ),
+            issues: error.receiveIssues || []
+          });
+
+          if (attempt < 3 && shortRetryAllowed(error)) {
+            diagnostic.outcome = 'retrying';
+            await this.saveReadDiagnostic(diagnostic);
+
+            await this.mutate(function (saved) {
+              const current = saved.jobs.find(function (entry) {
+                return entry.id === job.id;
+              });
+
+              if (current) {
+                current.shortRetry = attempt;
+                current.state = 'sending';
+                current.note = '';
+              }
+            });
+
+            await this.waitBeforeReadRetry(attempt === 1 ? 2000 : 5000);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (diagnostic) {
+        diagnostic.outcome = 'failed';
+        await this.saveReadDiagnostic(diagnostic);
+      }
+
+      await this.mutate(function (saved) {
+        const current = saved.jobs.find(function (entry) {
+          return entry.id === job.id;
+        });
+
+        if (
+          !current ||
+          current.state === 'conflict' ||
+          current.state === 'blocked'
+        ) {
+          return;
+        }
+
+        current.attempts = (current.attempts || 0) + 1;
+        current.shortRetry = 0;
+
+        const authentication =
+          finalError.serverStatus === 'denied' ||
+          finalError.serverStatus === 'needs_setup' ||
+          finalError.receiveCode === 'server-version';
+
+        const delay = authentication
+          ? 300000
+          : Math.min(
             300000,
             5000 * Math.pow(2, Math.min(current.attempts - 1, 6))
           );
 
-          current.state = 'unknown';
-          current.retryAt = Date.now() + delay;
-          current.note =
-            String(error.message || error) +
-            '\n未反映とは限りません。同じ受付番号で再確認します。';
-        });
+        current.state = 'unknown';
+        current.errorStatus = authentication ? 'authentication' : '';
+        current.retryAt = Date.now() + delay;
 
-        return {
-          saved: false,
-          stop: true
-        };
-      }
+        current.note = String(finalError.message || finalError) +
+          (
+            current.serverReceipt
+              ? '\n保存成功の返答は確認しています。更新要求ではなく一覧を確認します。'
+              : '\n未反映とは限りません。同じ受付番号・同じ更新内容で再確認します。'
+          );
+      });
+
+      return {
+        saved: false,
+        stop: true
+      };
     }
 
     pump(force) {
@@ -2781,9 +3614,11 @@
               pendingText:
                 job.state === 'conflict' || job.state === 'blocked'
                   ? '確認が必要'
-                  : job.state === 'sending' || job.state === 'unknown'
-                    ? '送信結果を確認中'
-                    : '送信待ち'
+                  : job.shortRetry
+                    ? '再確認中・端末に保存済み'
+                    : job.state === 'sending' || job.state === 'unknown'
+                      ? '保存結果を確認中'
+                      : '送信待ち'
             });
           }
         }
@@ -2856,7 +3691,7 @@
           return job.id !== id && job.frozen;
         })) {
           throw new Error(
-            '関連する送信結果を確認中です。少し待って開き直してください。'
+            '関連する保存結果を確認中です。少し待って開き直してください。'
           );
         }
 
@@ -2888,11 +3723,14 @@
           job.frozen = false;
           job.state = 'saved';
           job.note = '';
+          job.errorStatus = '';
+          job.shortRetry = 0;
           job.retryAt = 0;
           job.attempts = 0;
           job.createdAt = Date.now();
           delete job.firstSentAt;
           delete job.lastAttemptAt;
+          delete job.serverReceipt;
 
           job.causes = (job.causes || []).map(function (cause) {
             return replacements.get(cause) || cause;
