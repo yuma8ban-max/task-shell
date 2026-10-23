@@ -1,0 +1,1667 @@
+/* File: task-ui.css */
+
+/*
+ * UI build: v4.11.0
+ *
+ * This file contains the application-specific styles.
+ * The following license notice accompanies the separately distributed,
+ * unmodified Tabler 1.0.0 stylesheet, tabler.css.
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018-2025 The Tabler Authors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+:root {
+  color-scheme: light;
+  --task-ui-version: v4.11.0;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --accent-soft: #edf4ff;
+  --line: #e0e7ef;
+  --secondary: #526176;
+  --text: #1e293b;
+  --surface: #ffffff;
+  --background: #f4f7fb;
+  --time-gutter: 56px;
+  --focus-ring: rgba(37, 99, 235, .28);
+  --task-font: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Yu Gothic UI", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+  --tblr-font-sans-serif: var(--task-font);
+  --tblr-body-font-family: var(--task-font);
+  --tblr-primary: #2563eb;
+  --tblr-primary-rgb: 37, 99, 235;
+  --tblr-body-color: #1e293b;
+  --tblr-body-bg: #f4f7fb;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: auto;
+}
+
+body.task-app {
+  margin: 0;
+  color: var(--text);
+  background: var(--background);
+  font-family: var(--task-font);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.task-app button,
+.task-app input,
+.task-app select,
+.task-app textarea {
+  font-family: inherit;
+}
+
+.task-app input,
+.task-app textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.task-app button {
+  cursor: pointer;
+}
+
+.task-app button:disabled,
+.task-app input:disabled,
+.task-app select:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+.task-app h1,
+.task-app h2,
+.task-app h3,
+.task-app p {
+  margin-top: 0;
+}
+
+.task-app h1 {
+  margin-bottom: 0;
+  color: #172438;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -.025em;
+}
+
+.task-app h2 {
+  margin-bottom: 20px;
+  color: #172438;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -.015em;
+}
+
+.task-app h3 {
+  margin-bottom: 12px;
+  color: #25354a;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.task-app p {
+  margin-bottom: 14px;
+}
+
+.task-app .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #d7e0eb;
+  border-radius: 10px;
+  color: #34445b;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .035);
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease;
+}
+
+.task-app .btn.primary,
+.task-app .btn.btn-primary {
+  border-color: var(--accent);
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 3px 7px rgba(37, 99, 235, .13);
+}
+
+.task-app button:focus-visible,
+.task-app summary:focus-visible,
+.task-app a:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.task-app .form-control,
+.task-app .form-select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd6e3;
+  border-radius: 10px;
+  color: var(--text);
+  background-color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .02);
+}
+
+.task-app .form-select {
+  padding-right: 36px;
+}
+
+.task-app .form-control:focus,
+.task-app .form-select:focus {
+  border-color: #7da5f6;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.task-app input[type="date"] {
+  min-width: 0;
+}
+
+.task-app input::placeholder {
+  color: #69788d;
+  opacity: 1;
+}
+
+.task-app .form-label {
+  margin: 0;
+  color: #34445b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ui-icon {
+  display: block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* ---------- 画面の外枠 ---------- */
+
+.task-app .app {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.task-app .app-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  padding: 24px 14px;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  overflow-y: auto;
+}
+
+.task-app .nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 46px;
+  margin: 0 8px 27px;
+  color: #23314b;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.task-app .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, .16);
+}
+
+.task-app .brand-mark .ui-icon {
+  width: 23px;
+  height: 23px;
+  stroke-width: 2.2;
+}
+
+.task-app .nav-items {
+  display: grid;
+  gap: 7px;
+}
+
+.task-app .app-nav .nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: #526176;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.task-app .app-nav .nav-link.active {
+  border-color: #dce8ff;
+  color: #1f57c3;
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.task-app main {
+  width: 100%;
+  min-width: 0;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 30px 32px 48px;
+}
+
+.task-app .app-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.task-app .app-heading {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 160px;
+}
+
+.task-app .version {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border: 1px solid #dce5ee;
+  border-radius: 7px;
+  color: #526176;
+  background: #edf2f7;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.task-app .header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-app .panel {
+  min-width: 0;
+  padding: 25px;
+  border: 1px solid #e1e8f0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 4px 20px rgba(26, 42, 69, .035);
+}
+
+.task-app .panel > :last-child {
+  margin-bottom: 0;
+}
+
+.task-app .sub {
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.task-app .toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.task-app .plan-tools {
+  display: grid;
+  grid-template-columns: auto minmax(130px, 180px) auto auto;
+  justify-content: start;
+  gap: 8px;
+}
+
+.task-app .plan-date {
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.task-app .view-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 22px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f2f5f9;
+}
+
+.task-app .view-switch .btn {
+  min-width: 104px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-color: transparent;
+  border-radius: 8px;
+  color: #56657a;
+  background: transparent;
+  box-shadow: none;
+}
+
+.task-app .view-switch .btn.active {
+  border-color: #dfe7f1;
+  color: #2458b4;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(30, 50, 80, .06);
+  font-weight: 700;
+}
+
+.task-app .task-filters {
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.task-app .filter-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  color: #45566e;
+  font-size: 14px;
+  font-weight: 550;
+}
+
+.task-app .filter-field input,
+.task-app .filter-field select {
+  width: 100%;
+}
+
+.task-app .filter-field select {
+  min-width: 250px;
+}
+
+/* ---------- 状態・送信待ち ---------- */
+
+.task-app .status {
+  margin-bottom: 14px;
+  color: #796024;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.task-app .notice {
+  margin: 0 0 18px;
+  padding: 13px 15px;
+  border: 1px solid #cddff8;
+  border-radius: 12px;
+  color: #254f85;
+  background: #f0f6ff;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.task-app .notice.error {
+  border-color: #ecc8c4;
+  color: #922f28;
+  background: #fff4f2;
+}
+
+.task-app .notice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-app .notice-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.task-app .notice-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  margin: -8px -8px -8px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.task-app .notice > p {
+  margin-bottom: 10px;
+}
+
+.task-app .notice > details {
+  margin-top: 10px;
+}
+
+.task-app .detail-text {
+  margin-top: 9px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.task-app details {
+  font-size: 14px;
+}
+
+.task-app summary {
+  padding: 3px 0;
+  border-radius: 5px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.task-app #outbox {
+  margin: 0 0 18px;
+  padding: 11px 14px;
+  border: 1px solid #e4d8bb;
+  border-radius: 12px;
+  color: #755d2c;
+  background: #fffdf7;
+}
+
+.task-app #outbox > summary {
+  font-weight: 600;
+}
+
+.task-app #outbox.has-attention {
+  border-color: #ecc8c4;
+  color: #8b342e;
+  background: #fff6f4;
+}
+
+.task-app .job {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e9e1d0;
+  overflow-wrap: anywhere;
+}
+
+.task-app .job-heading {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.task-app .job-title {
+  flex: 1;
+  min-width: 160px;
+  color: #34445b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.task-app .job-state {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: #765b1c;
+  background: #f8edcf;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.4;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.task-app .job-state.needs-check {
+  color: #94352c;
+  background: #fbe0da;
+}
+
+.task-app .job > details {
+  margin-top: 8px;
+}
+
+/* ---------- 一覧 ---------- */
+
+.task-app .cards {
+  display: grid;
+  gap: 10px;
+}
+
+.task-app .card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 72px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(25, 42, 70, .025);
+}
+
+.task-app .card-main {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.task-app .card-title {
+  margin: 0 0 4px;
+  color: #25354a;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.task-app .card-title:last-child {
+  margin-bottom: 0;
+}
+
+.task-app .card-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.task-app .card > .hit {
+  align-self: center;
+  margin: 0 0 0 -4px;
+}
+
+.task-app .pending-add,
+.task-app .card.pending-add,
+.task-app .task.pending-add {
+  border-style: dashed;
+  border-color: #decca5;
+  background: #fffcf3;
+}
+
+.task-app .pending-label {
+  margin-top: 5px;
+  color: #7a5d1e;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.6;
+}
+
+.task-app .history-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #247252;
+  background: #eaf7f0;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.task-app .cards + .btn {
+  margin-top: 16px;
+}
+
+/* ---------- カレンダー ---------- */
+
+.task-app .calendar {
+  max-width: 820px;
+}
+
+.task-app .calendar-tools {
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.task-app .calendar-month {
+  flex: 1;
+  margin: 0;
+  padding: 0 3px;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.task-app .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.task-app .calendar-weekday {
+  padding: 7px 0 9px;
+  color: var(--secondary);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.task-app .calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  min-width: 0;
+  min-height: 78px;
+  padding: 10px 2px;
+  border: 1px solid #e1e8f0;
+  border-radius: 10px;
+  color: #34445b;
+  background: #fff;
+  box-shadow: none;
+}
+
+.task-app .calendar-day.is-selected {
+  border-color: #729cf0;
+  color: #204fa9;
+  background: #edf4ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .08);
+}
+
+.task-app .calendar-day.is-today .calendar-day-number {
+  color: #1d4ed8;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.task-app .calendar-day-number {
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+
+.task-app .calendar-count {
+  min-height: 20px;
+  color: #2458b4;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+
+.task-app .calendar-count:not(:empty) {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eaf1ff;
+}
+
+.task-app .calendar-count:empty {
+  visibility: hidden;
+}
+
+.task-app .calendar-undated {
+  margin-top: 15px;
+}
+
+.task-app .calendar-undated.is-selected {
+  border-color: #729cf0;
+  color: #2458b4;
+  background: #edf4ff;
+}
+
+.task-app .calendar-details {
+  margin-top: 25px;
+  padding-top: 21px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- 1日の計画 ---------- */
+
+.task-app .timeline {
+  position: relative;
+  margin-top: 20px;
+}
+
+.task-app .slot {
+  display: grid;
+  grid-template-columns: var(--time-gutter) minmax(0, 1fr);
+  min-height: 44px;
+  border-top: 1px solid var(--line);
+}
+
+.task-app .slot-label {
+  padding: 14px 5px 0 0;
+  color: #56657a;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+
+.task-app .slot-list {
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-app .task {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 7px 0;
+  padding: 12px 10px;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  color: var(--text);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(25, 42, 70, .035);
+  font-size: 16px;
+  touch-action: pan-y;
+}
+
+.task-app .task.dragging {
+  z-index: 10;
+  border-color: var(--accent);
+  background: #f1f6ff;
+  box-shadow: 0 10px 25px rgba(31, 63, 111, .18);
+  opacity: .96;
+}
+
+.task-app .hit,
+.task-app .btn.hit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  min-width: 40px;
+  min-height: 44px;
+  margin: -8px 0 -8px -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1;
+}
+
+.task-app .circle {
+  display: block;
+  flex: none;
+  width: 23px;
+  height: 23px;
+  border: 2px solid #a8b6c7;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.task-app .ttl {
+  flex: 1;
+  min-width: 0;
+  color: #25354a;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.task-app .task-due {
+  margin-top: 5px;
+  color: #526176;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.task-app .plan-edit {
+  flex: none;
+  min-height: 44px;
+  margin: -6px 0;
+  padding: 8px 10px;
+  border-color: #e0e7ef;
+  color: #53647b;
+  background: #f9fbfd;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.task-app .grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  min-height: 44px;
+  margin: -8px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: #7c8ca2;
+  background: transparent;
+  box-shadow: none;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.task-app .task.dragging .grip {
+  color: var(--accent);
+  cursor: grabbing;
+}
+
+.task-app .timeline-end {
+  min-height: 30px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: #56657a;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+
+.task-app .now-line {
+  position: absolute;
+  right: 0;
+  left: var(--time-gutter);
+  z-index: 8;
+  height: 0;
+  border-top: 2px solid #e25353;
+  pointer-events: none;
+}
+
+.task-app .now-line::before {
+  position: absolute;
+  top: -4px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e25353;
+  content: "";
+}
+
+.task-app .now-line span {
+  position: absolute;
+  top: -10px;
+  left: calc(-1 * var(--time-gutter));
+  width: calc(var(--time-gutter) - 5px);
+  padding: 1px 0;
+  color: #be3535;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* ---------- 入力・設定・競合確認 ---------- */
+
+.task-app dialog {
+  width: min(620px, calc(100vw - 28px));
+  max-width: none;
+  max-height: calc(100vh - 40px);
+  max-height: calc(
+    100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+  );
+  margin: auto;
+  padding: 24px;
+  border: 1px solid #dce5ef;
+  border-radius: 18px;
+  color: var(--text);
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 30, 55, .2);
+  overflow: auto;
+}
+
+.task-app dialog:not([open]) {
+  display: none;
+}
+
+.task-app dialog[open] {
+  display: block;
+}
+
+.task-app dialog::backdrop {
+  background: rgba(20, 33, 54, .42);
+}
+
+.task-app .dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 23px;
+}
+
+.task-app .dialog-heading h2 {
+  min-width: 0;
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.5;
+}
+
+.task-app .dialog-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: #285fca;
+  background: #edf4ff;
+}
+
+.task-app .dialog-heading.warning .dialog-icon {
+  color: #926426;
+  background: #fff4db;
+}
+
+.task-app .field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin: 0 0 17px;
+  font-size: 14px;
+}
+
+.task-app .field input,
+.task-app .field select {
+  width: 100%;
+}
+
+.task-app .form-error {
+  margin: 12px 0;
+  padding: 11px 13px;
+  border: 1px solid #ecc8c4;
+  border-radius: 10px;
+  color: #a1352b;
+  background: #fff5f2;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.task-app .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 23px;
+  padding-top: 18px;
+  border-top: 1px solid #e8edf4;
+}
+
+.task-app .dialog-actions .primary {
+  min-width: 88px;
+}
+
+.task-app .comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.task-app .comparison section {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fafd;
+  overflow-wrap: anywhere;
+}
+
+.task-app .comparison section:last-child {
+  border-color: #d5e3fa;
+  background: #f4f8ff;
+}
+
+.task-app .comparison p,
+.task-app .dialog-text {
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.task-app .comparison p:last-child {
+  margin-bottom: 0;
+}
+
+.task-app .settings-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.task-app .settings-section > summary {
+  color: #34445b;
+  font-weight: 600;
+}
+
+.task-app .settings-section ul {
+  margin-top: 13px;
+  padding-left: 22px;
+}
+
+.task-app .settings-section li {
+  margin: 9px 0;
+}
+
+.task-app .settings-state {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 9px 14px;
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.task-app .settings-state dt {
+  color: #45566e;
+  font-weight: 600;
+}
+
+.task-app .settings-state dd {
+  min-width: 0;
+  margin: 0;
+  color: #26374e;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.task-app .diagnostic-text {
+  max-height: 380px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #35455c;
+  background: #f7f9fc;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.task-app .loading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #2d5eaf;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.task-app .loading::before {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d6e4ff;
+  border-top-color: #4879d4;
+  border-radius: 50%;
+  content: "";
+  animation: task-loading .9s linear infinite;
+}
+
+/* ---------- したいこと ---------- */
+
+.task-app .wish-list {
+  width: 100%;
+}
+
+.task-app .wish-completed {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.task-app .wish-completed > summary {
+  margin-bottom: 16px;
+  color: #45566e;
+  font-weight: 600;
+}
+
+.task-app .wish-achieved {
+  color: #526176;
+}
+
+.task-app .card.wish-achieved:not(.pending-add) {
+  background: #fafbfd;
+}
+
+.task-app .wish-achieved .card-title {
+  color: #526176;
+  font-weight: 500;
+  text-decoration: line-through;
+  text-decoration-color: #a9b6c6;
+}
+
+/* ---------- 入力方法・画面幅への調整 ---------- */
+
+[hidden] {
+  display: none !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-app .btn:not(:disabled):not(.primary):not(.btn-primary):hover {
+    border-color: #bdcee3;
+    color: #294f83;
+    background: #f3f7fd;
+  }
+
+  .task-app .btn.primary:not(:disabled):hover,
+  .task-app .btn.btn-primary:not(:disabled):hover {
+    border-color: var(--accent-dark);
+    color: #fff;
+    background: var(--accent-dark);
+  }
+
+  .task-app .app-nav .nav-link:not(.active):hover {
+    color: #344f76;
+    background: #f4f7fb;
+  }
+
+  .task-app .card:hover {
+    border-color: #cbd9e9;
+  }
+
+  .task-app .hit:not(:disabled):hover {
+    background: #f0f5ff;
+  }
+
+  .task-app .hit:not(:disabled):hover .circle {
+    border-color: #729cf0;
+  }
+
+  .task-app .grip:not(:disabled):hover {
+    color: #4777c8;
+    background: #f1f6ff;
+  }
+
+  .task-app .notice-close:hover {
+    background: rgba(90, 110, 140, .08);
+  }
+
+  .task-app .calendar-day.is-selected:hover {
+    border-color: #729cf0;
+    color: #204fa9;
+    background: #edf4ff;
+  }
+
+  .task-app .view-switch .btn.active:hover {
+    color: #2458b4;
+    background: #fff;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) {
+  .task-app .app {
+    grid-template-columns: 185px minmax(0, 1fr);
+  }
+
+  .task-app .app-nav {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .task-app .app-nav .nav-link {
+    gap: 10px;
+    padding-right: 10px;
+    padding-left: 12px;
+  }
+
+  .task-app main {
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+
+  .task-app .app-header {
+    gap: 14px;
+  }
+
+  .task-app .header-actions {
+    width: 100%;
+  }
+
+  .task-app .panel {
+    padding: 21px;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --time-gutter: 52px;
+  }
+
+  .task-app .app {
+    display: block;
+  }
+
+  .task-app main {
+    padding:
+      calc(20px + env(safe-area-inset-top))
+      12px
+      calc(112px + env(safe-area-inset-bottom));
+  }
+
+  .task-app .app-nav {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: block;
+    height: auto;
+    padding:
+      6px
+      max(4px, env(safe-area-inset-right))
+      calc(7px + env(safe-area-inset-bottom))
+      max(4px, env(safe-area-inset-left));
+    border-top: 1px solid #dde5ef;
+    border-right: 0;
+    background: #fff;
+    box-shadow: 0 -3px 16px rgba(25, 42, 70, .045);
+    overflow: visible;
+  }
+
+  .task-app .nav-brand {
+    display: none;
+  }
+
+  .task-app .nav-items {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .task-app .app-nav .nav-link {
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 59px;
+    padding: 7px 0;
+    border: 0;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 550;
+    line-height: 1.35;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .task-app .app-nav .nav-link.active {
+    color: #235dc9;
+    background: #edf4ff;
+    font-weight: 700;
+  }
+
+  .task-app .app-nav .ui-icon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .task-app .app-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-bottom: 19px;
+  }
+
+  .task-app .app-heading {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .task-app h1 {
+    font-size: 25px;
+  }
+
+  .task-app .header-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+    width: 100%;
+  }
+
+  .task-app .header-actions .btn {
+    flex: none;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .task-app .header-actions #add {
+    flex: 1;
+  }
+
+  .task-app .header-actions .ui-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .task-app .panel {
+    padding: 19px 12px;
+    border-radius: 15px;
+  }
+
+  .task-app h2 {
+    margin-bottom: 17px;
+    font-size: 20px;
+  }
+
+  .task-app .plan-tools {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .task-app .plan-tools .btn {
+    padding-right: 9px;
+    padding-left: 9px;
+    font-size: 13px;
+  }
+
+  .task-app .plan-date {
+    width: 100%;
+    min-width: 0;
+    padding-right: 7px;
+    padding-left: 7px;
+    font-size: 16px;
+  }
+
+  .task-app .task-filters .filter-field {
+    width: 100%;
+  }
+
+  .task-app .task-filters .filter-field select {
+    min-width: 0;
+  }
+
+  .task-app .view-switch {
+    margin-bottom: 19px;
+  }
+
+  .task-app .card {
+    align-items: flex-start;
+    gap: 9px;
+    padding: 12px 10px;
+  }
+
+  .task-app .card-actions {
+    max-width: 112px;
+  }
+
+  .task-app .card-actions .btn {
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 13px;
+  }
+
+  .task-app .card-title {
+    font-size: 16px;
+  }
+
+  .task-app .timeline {
+    margin-top: 17px;
+  }
+
+  .task-app .slot-label {
+    padding-right: 4px;
+    font-size: 12px;
+  }
+
+  .task-app .task {
+    gap: 6px;
+    padding-right: 7px;
+    padding-left: 7px;
+    border-radius: 10px;
+  }
+
+  .task-app .task .hit {
+    width: 36px;
+    min-width: 36px;
+    margin-left: -3px;
+  }
+
+  .task-app .task .plan-edit {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .task-app .task .grip {
+    width: 32px;
+  }
+
+  .task-app .calendar-grid {
+    gap: 4px;
+  }
+
+  .task-app .calendar-day {
+    min-height: 65px;
+    gap: 5px;
+    padding: 8px 1px;
+    border-radius: 8px;
+  }
+
+  .task-app .calendar-day-number {
+    font-size: 14px;
+  }
+
+  .task-app .calendar-count:not(:empty) {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .task-app .calendar-tools {
+    gap: 6px;
+  }
+
+  .task-app .calendar-tools .btn {
+    padding-right: 9px;
+    padding-left: 9px;
+    font-size: 13px;
+  }
+
+  .task-app .calendar-month {
+    font-size: 15px;
+  }
+
+  .task-app dialog {
+    width: calc(100vw - 24px);
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .task-app .dialog-heading {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .task-app .dialog-heading h2 {
+    font-size: 20px;
+  }
+
+  .task-app .comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .task-app .settings-state {
+    grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
+    gap: 10px 10px;
+    font-size: 14px;
+  }
+
+  .task-app .dialog-actions .btn {
+    padding-right: 11px;
+    padding-left: 11px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .task-app .header-actions #reload .ui-icon,
+  .task-app .header-actions #settings .ui-icon {
+    display: none;
+  }
+
+  .task-app .header-actions {
+    gap: 6px;
+  }
+
+  .task-app .header-actions .btn {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .task-app .panel {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .task-app .plan-tools .btn {
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+
+  .task-app .card-actions {
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 360px) {
+  .task-app .app-nav .nav-link {
+    font-size: 11px;
+  }
+
+  .task-app .calendar-tools {
+    flex-wrap: wrap;
+  }
+
+  .task-app .calendar-month {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-app .btn {
+    transition: none;
+  }
+
+  .task-app .loading::before {
+    animation: none;
+  }
+}
+
+@keyframes task-loading {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
