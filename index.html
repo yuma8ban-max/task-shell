@@ -16,7 +16,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
   <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
-  <link rel="stylesheet" href="./task-ui.css?v=4.11.0">
+  <link rel="stylesheet" href="./task-ui.css?v=4.11.1">
 </head>
 <body class="task-app">
   <svg
@@ -141,7 +141,7 @@
       <header class="app-header">
         <div class="app-heading">
           <h1>タスク</h1>
-          <span class="badge version">v4.11.0</span>
+          <span class="badge version">v4.11.1</span>
         </div>
 
         <div class="header-actions">
@@ -193,6 +193,25 @@
       <section id="content" class="panel"></section>
     </main>
   </div>
+
+  <dialog
+    id="task-filter-dialog"
+    class="filter-dialog"
+    aria-labelledby="task-filter-title">
+    <div class="filter-dialog-heading">
+      <h2 id="task-filter-title">絞り込み</h2>
+      <button
+        id="task-filter-close"
+        class="filter-close"
+        type="button"
+        aria-label="絞り込みを閉じる">×</button>
+    </div>
+    <div
+      id="task-filter-options"
+      class="filter-options"
+      role="menu"
+      aria-label="表示するタスク"></div>
+  </dialog>
 
   <dialog id="editor" aria-labelledby="editor-title">
     <div class="dialog-heading">
@@ -264,7 +283,13 @@
       <summary>使い方</summary>
       <ul>
         <li>＊は必須項目です。期限・実行日は空欄でも追加できます。</li>
-        <li>実行日が空欄のタスクは「実行日未定」に入ります。</li>
+        <li>実行日が空欄のタスクは「実行日なし」で表示できます。</li>
+        <li>日付は「期限」「実行」のラベルの下に表示します。年が今年と異なる場合は年も表示します。</li>
+        <li>「1日の計画」では実行日と時間帯が画面で分かるため、タスクには期限だけを表示します。</li>
+        <li>「期限切れ」と「実行日超過」は別の状態です。表示のために日付を変更することはありません。</li>
+        <li>絞り込みの「今週」は、従来どおり今日から日曜日までの実行日が対象です。</li>
+        <li>実行日の「昨日以前」は、昨日以前の実行日を持つ未完了タスクを古い実行日順で表示します。</li>
+        <li>「期限なし」は期限が空欄のタスク、「期限・実行日なし」は両方が空欄のタスクです。</li>
         <li>新規タスクは送信待ちとして先に表示します。編集・完了・移動は送信結果の確認後に使えます。</li>
         <li>左の丸で完了、編集ボタンで件名・期限・実行日を変更します。</li>
         <li>≡をつかむか、件名部分を0.6秒長押しすると移動できます。</li>
@@ -327,9 +352,37 @@
     (function () {
       'use strict';
 
-      const VERSION = 'v4.11.0';
+      const VERSION = 'v4.11.1';
       const REQUIRED_CORE_BUILD = 'v4.10.2';
       const UI_KIT_VERSION = '1.0.0';
+
+      const FILTER_GROUPS = [
+        {
+          label: '全体',
+          items: [
+            ['all', 'すべて'],
+            ['noboth', '期限・実行日なし']
+          ]
+        },
+        {
+          label: '期限',
+          items: [
+            ['hasdue', '期限あり'],
+            ['overdue', '期限切れ'],
+            ['nodue', '期限なし']
+          ]
+        },
+        {
+          label: '実行日',
+          items: [
+            ['today', '今日'],
+            ['week', '今週'],
+            ['date', '指定日'],
+            ['runoverdue', '昨日以前'],
+            ['nodate', '実行日なし']
+          ]
+        }
+      ];
 
       function $(id) {
         return document.getElementById(id);
@@ -362,6 +415,7 @@
       let taskView = 'list';
       let taskFilter = 'all';
       let filterDate = selectedDate;
+      let filterFocusDate = false;
       let calendarMonth = selectedDate.slice(0, 7);
       let calendarDate = selectedDate;
       let calendarUndated = false;
@@ -501,6 +555,20 @@
           Number(value.slice(8, 10)) + '日';
       }
 
+      function shortDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          return value;
+        }
+
+        const year = value.slice(0, 4);
+        const date = Number(value.slice(5, 7)) + '/' +
+          Number(value.slice(8, 10));
+
+        return year === japanDate().slice(0, 4)
+          ? date
+          : Number(year) + '/' + date;
+      }
+
       function timeLabel(value) {
         const time = Date.parse(value || '');
 
@@ -557,7 +625,8 @@
       function anyDialogOpen() {
         return $('editor').open ||
           $('settings-dialog').open ||
-          $('conflict-dialog').open;
+          $('conflict-dialog').open ||
+          $('task-filter-dialog').open;
       }
 
       function failed(text, error) {
@@ -847,7 +916,8 @@
         renderStatus();
         renderOutbox();
 
-        if (drag) {
+        // 選択中のメニューと、その呼び出し元を描き直さない。
+        if (drag || $('task-filter-dialog').open) {
           return;
         }
 
@@ -1366,10 +1436,7 @@
 
             const text = make('div', null, 'ttl');
             text.appendChild(make('div', task.title));
-
-            if (task.due) {
-              text.appendChild(make('div', '期限 ' + task.due, 'task-due'));
-            }
+            appendTaskDates(text, task, true);
 
             if (task.localOnly) {
               text.appendChild(make('div', task.pendingText, 'pending-label'));
@@ -1715,6 +1782,302 @@
         line.hidden = false;
       }
 
+      /* ---------- 日付ラベル ---------- */
+
+      function dateMark(kind, value, hour) {
+        const valid = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        const overdue = valid && value < japanDate();
+        const due = kind === 'due';
+
+        const item = make(
+          'div',
+          null,
+          'task-date-item date-' + kind +
+            (overdue ? ' is-overdue' : '')
+        );
+
+        const term = make('dt', due ? '期限' : '実行', 'date-label');
+        const detail = make('dd', null, 'date-value');
+        const date = make('time', shortDate(value));
+
+        if (valid) {
+          date.dateTime = value;
+          date.setAttribute('aria-label', dateLabel(value));
+          date.title = dateLabel(value);
+        }
+
+        detail.appendChild(date);
+
+        if (!due && hour != null) {
+          detail.appendChild(make('span', hourLabel(hour), 'date-hour'));
+        }
+
+        if (overdue) {
+          detail.appendChild(make(
+            'span',
+            due ? '期限切れ' : '実行日超過',
+            'date-state'
+          ));
+        }
+
+        item.append(term, detail);
+        return item;
+      }
+
+      function appendTaskDates(target, task, planOnly) {
+        const dates = make('dl', null, 'task-dates');
+
+        if (task.due) {
+          dates.appendChild(dateMark('due', task.due, null));
+        }
+
+        if (!planOnly && task.date) {
+          dates.appendChild(dateMark('run', task.date, task.hour));
+        }
+
+        if (dates.children.length) {
+          target.appendChild(dates);
+        }
+
+        // 実行日を空にしても、保存されている時間帯は表示から落とさない。
+        if (!planOnly && !task.date && task.hour != null) {
+          target.appendChild(make(
+            'div',
+            '時間帯：' + hourLabel(task.hour),
+            'task-time-only'
+          ));
+        }
+      }
+
+      /* ---------- 絞り込みメニュー ---------- */
+
+      function filterLabel() {
+        switch (taskFilter) {
+          case 'today':
+            return '実行日：今日';
+          case 'week':
+            return '実行日：今週';
+          case 'date':
+            return '実行日：' + (filterDate ? shortDate(filterDate) : '指定日');
+          case 'runoverdue':
+            return '実行日：昨日以前';
+          case 'hasdue':
+            return '期限あり';
+          case 'overdue':
+            return '期限切れ';
+          case 'nodue':
+            return '期限なし';
+          case 'nodate':
+            return '実行日なし';
+          case 'noboth':
+            return '期限・実行日なし';
+          default:
+            return 'すべて';
+        }
+      }
+
+      function positionTaskFilter() {
+        const dialog = $('task-filter-dialog');
+
+        if (!dialog.open) {
+          return;
+        }
+
+        if (window.matchMedia('(max-width: 700px)').matches) {
+          dialog.style.removeProperty('left');
+          dialog.style.removeProperty('top');
+          dialog.style.removeProperty('max-height');
+          return;
+        }
+
+        const trigger = $('task-filter-trigger');
+
+        if (!trigger) {
+          return;
+        }
+
+        const rect = trigger.getBoundingClientRect();
+        const margin = 12;
+        const viewportHeight = window.innerHeight;
+
+        dialog.style.maxHeight = Math.max(120, viewportHeight - 24) + 'px';
+
+        const size = dialog.getBoundingClientRect();
+        const below = viewportHeight - rect.bottom - 8 - margin;
+        let top;
+        let available;
+
+        if (below >= 220 || below >= rect.top - 8 - margin) {
+          top = Math.max(margin, rect.bottom + 8);
+          available = viewportHeight - top - margin;
+        } else {
+          available = Math.max(120, rect.top - 8 - margin);
+          top = Math.max(margin, rect.top - 8 - Math.min(size.height, available));
+        }
+
+        dialog.style.left = Math.max(
+          margin,
+          Math.min(rect.left, window.innerWidth - size.width - margin)
+        ) + 'px';
+
+        dialog.style.top = top + 'px';
+        dialog.style.maxHeight = Math.max(120, available) + 'px';
+      }
+
+      function openTaskFilter() {
+        if (anyDialogOpen()) {
+          return;
+        }
+
+        const options = $('task-filter-options');
+        options.replaceChildren();
+        filterFocusDate = false;
+
+        FILTER_GROUPS.forEach(function (group, index) {
+          const section = make('div', null, 'filter-group');
+          const heading = make('h3', group.label, 'filter-group-title');
+          heading.id = 'task-filter-group-' + index;
+          section.setAttribute('role', 'group');
+          section.setAttribute('aria-labelledby', heading.id);
+          section.appendChild(heading);
+
+          group.items.forEach(function (entry) {
+            const selected = taskFilter === entry[0];
+            const option = make(
+              'button',
+              null,
+              'filter-option' + (selected ? 'is-selected' : '')
+            );
+
+            option.type = 'button';
+            option.dataset.filter = entry[0];
+            option.setAttribute('role', 'menuitemradio');
+            option.setAttribute('aria-checked', String(selected));
+            option.tabIndex = selected ? 0 : -1;
+
+            const check = make(
+              'span',
+              selected ? '✓' : '',
+              'filter-option-check'
+            );
+
+            check.setAttribute('aria-hidden', 'true');
+            option.append(make('span', entry[1], 'filter-option-label'), check);
+
+            option.addEventListener('click', function () {
+              taskFilter = entry[0];
+              filterFocusDate = taskFilter === 'date';
+              $('task-filter-dialog').close();
+            });
+
+            section.appendChild(option);
+          });
+
+          options.appendChild(section);
+        });
+
+        const trigger = $('task-filter-trigger');
+        trigger.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('filter-open');
+
+        const dialog = $('task-filter-dialog');
+        dialog.showModal();
+        positionTaskFilter();
+
+        const selected = options.querySelector('[aria-checked="true"]');
+
+        if (selected) {
+          selected.focus({
+            preventScroll: true
+          });
+
+          selected.scrollIntoView({
+            block: 'nearest'
+          });
+        }
+      }
+
+      $('task-filter-close').addEventListener('click', function () {
+        $('task-filter-dialog').close();
+      });
+
+      $('task-filter-dialog').addEventListener('click', function (event) {
+        const dialog = $('task-filter-dialog');
+
+        if (event.target !== dialog) {
+          return;
+        }
+
+        const rect = dialog.getBoundingClientRect();
+
+        if (
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        ) {
+          dialog.close();
+        }
+      });
+
+      $('task-filter-dialog').addEventListener('close', function () {
+        document.body.classList.remove('filter-open');
+        render();
+
+        const target = filterFocusDate
+          ? $('task-filter-date')
+          : $('task-filter-trigger');
+
+        filterFocusDate = false;
+
+        if (target) {
+          target.focus({
+            preventScroll: true
+          });
+        }
+      });
+
+      $('task-filter-options').addEventListener('keydown', function (event) {
+        if (
+          ['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0
+        ) {
+          return;
+        }
+
+        const options = Array.from(
+          $('task-filter-options').querySelectorAll('[role="menuitemradio"]')
+        );
+
+        if (!options.length) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const current = options.indexOf(document.activeElement);
+        let next = current;
+
+        if (event.key === 'Home') {
+          next = 0;
+        } else if (event.key === 'End') {
+          next = options.length - 1;
+        } else {
+          const direction = event.key === 'ArrowDown' ? 1 : -1;
+          next = (current + direction + options.length) % options.length;
+        }
+
+        options.forEach(function (option, index) {
+          option.tabIndex = index === next ? 0 : -1;
+        });
+
+        options[next].focus();
+      });
+
+      window.addEventListener('resize', positionTaskFilter);
+      window.addEventListener('scroll', positionTaskFilter, {
+        passive: true
+      });
+
       /* ---------- タスク一覧・カレンダー ---------- */
 
       function filterTask(task) {
@@ -1726,7 +2089,7 @@
           case 'today':
             return task.date === today;
           case 'date':
-            return task.date === filterDate;
+            return !!filterDate && task.date === filterDate;
           case 'week':
             return !!task.date && task.date >= today && task.date <= weekEnd;
           case 'runoverdue':
@@ -1735,6 +2098,8 @@
             return !!task.due;
           case 'overdue':
             return !!task.due && task.due < today;
+          case 'nodue':
+            return !task.due;
           case 'nodate':
             return !task.date;
           case 'noboth':
@@ -1742,24 +2107,6 @@
           default:
             return true;
         }
-      }
-
-      function taskInfo(task) {
-        const parts = [];
-
-        if (task.due) {
-          parts.push('期限 ' + task.due);
-        }
-
-        if (task.date) {
-          parts.push('実行 ' + task.date);
-        }
-
-        if (task.hour != null) {
-          parts.push(task.hour + '時');
-        }
-
-        return parts.join(' ／ ');
       }
 
       function renderTaskCards(content, tasks) {
@@ -1779,12 +2126,7 @@
 
           const main = make('div', null, 'card-main');
           main.appendChild(make('div', task.title, 'card-title'));
-
-          const info = taskInfo(task);
-
-          if (info) {
-            main.appendChild(make('div', info, 'sub'));
-          }
+          appendTaskDates(main, task, false);
 
           if (task.localOnly) {
             main.appendChild(make('div', task.pendingText, 'pending-label'));
@@ -1828,63 +2170,39 @@
 
       function renderTaskList(content) {
         const tools = make('div', null, 'toolbar task-filters');
-        const label = make('label', null, 'filter-field');
-        const select = make('select', null, 'form-select');
+        const field = make('div', null, 'filter-field');
+        const label = make('span', '絞り込み');
+        label.id = 'task-filter-caption';
 
-        const all = make('option', 'すべて');
-        all.value = 'all';
-        select.appendChild(all);
+        const trigger = button(
+          '',
+          openTaskFilter,
+          'filter-trigger' + (taskFilter !== 'all' ? ' is-filtered' : '')
+        );
 
-        [
-          {
-            label: '期限',
-            items: [
-              ['hasdue', '期限あり（近い順）'],
-              ['overdue', '期限切れ']
-            ]
-          },
-          {
-            label: '実行日',
-            items: [
-              ['today', '今日の分'],
-              ['week', '今週の分'],
-              ['date', '日付を指定'],
-              ['runoverdue', '実行日超過']
-            ]
-          },
-          {
-            label: '未設定',
-            items: [
-              ['nodate', '実行日未定'],
-              ['noboth', '期限・実行日なし']
-            ]
-          }
-        ].forEach(function (group) {
-          const optgroup = make('optgroup');
-          optgroup.label = group.label;
+        trigger.id = 'task-filter-trigger';
+        trigger.setAttribute('aria-haspopup', 'dialog');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.setAttribute('aria-controls', 'task-filter-dialog');
 
-          group.items.forEach(function (entry) {
-            const option = make('option', entry[1]);
-            option.value = entry[0];
-            optgroup.appendChild(option);
-          });
+        const value = make('span', filterLabel(), 'filter-trigger-value');
+        value.id = 'task-filter-value';
 
-          select.appendChild(optgroup);
-        });
+        trigger.setAttribute(
+          'aria-labelledby',
+          'task-filter-caption task-filter-value'
+        );
 
-        select.value = taskFilter;
-
-        select.addEventListener('change', function () {
-          taskFilter = select.value;
-          render();
-        });
-
-        label.append(make('span', '絞り込み'), select);
-        tools.appendChild(label);
+        const arrow = make('span', '⌄', 'filter-trigger-arrow');
+        arrow.setAttribute('aria-hidden', 'true');
+        trigger.append(value, arrow);
+        field.append(label, trigger);
+        tools.appendChild(field);
 
         if (taskFilter === 'date') {
           const dateField = make('label', null, 'filter-field');
           const input = make('input', null, 'form-control');
+          input.id = 'task-filter-date';
           input.type = 'date';
           input.value = filterDate;
 
@@ -1899,18 +2217,28 @@
 
         content.appendChild(tools);
         const tasks = client.effectiveTasks().filter(filterTask);
+        let orderLabel = '';
 
         if (taskFilter === 'hasdue') {
           tasks.sort(function (a, b) {
             return a.due.localeCompare(b.due) || a.row - b.row;
           });
+
+          orderLabel = '期限が近い順';
         } else if (taskFilter === 'runoverdue') {
           tasks.sort(function (a, b) {
             return a.date.localeCompare(b.date) || compareTasks(a, b);
           });
+
+          orderLabel = '実行日が古い順';
         }
 
-        content.appendChild(make('p', tasks.length + '件', 'sub'));
+        content.appendChild(make(
+          'p',
+          tasks.length + '件' + (orderLabel ? '・' + orderLabel : ''),
+          'sub'
+        ));
+
         renderTaskCards(content, tasks);
       }
 
@@ -2019,7 +2347,7 @@
         calendar.appendChild(grid);
 
         const undated = button(
-          '実行日未定 ' + undatedCount + '件',
+          '実行日なし ' + undatedCount + '件',
           function () {
             calendarUndated = true;
             render();
@@ -2035,7 +2363,7 @@
 
         details.appendChild(make(
           'h3',
-          calendarUndated ? '実行日未定' : dateLabel(calendarDate)
+          calendarUndated ? '実行日なし' : dateLabel(calendarDate)
         ));
 
         const shown = tasks.filter(function (task) {
@@ -2121,14 +2449,14 @@
               due: due,
               date: date
             }, '追加：' + title +
-              ' ／ ' + (date ? '実行日：' + date : '実行日未定') +
+              ' ／ ' + (date ? '実行日：' + date : '実行日なし') +
               (due ? ' ／ 期限：' + due : '')
             );
 
             notify(
               date
                 ? '追加先：' + dateLabel(date) + '（送信待ち）'
-                : '追加先：実行日未定（送信待ち）'
+                : '追加先：実行日なし（送信待ち）'
             );
           },
           '追加'
@@ -2189,7 +2517,7 @@
               ? '送信待ち'
               : date
                 ? dateLabel(date) + 'へ変更（送信待ち）'
-                : '実行日未定へ変更（送信待ち）'
+                : '実行日なしへ変更（送信待ち）'
           );
         });
 
