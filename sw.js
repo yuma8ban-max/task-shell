@@ -1,5 +1,7 @@
-/* File: sw.js — task-v4.11.1-1 */
-const CACHE = 'task-v4.11.1-1';
+/* File: sw.js — task-v4.11.2-1 */
+'use strict';
+
+const CACHE = 'task-v4.11.2-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -10,7 +12,7 @@ const REQUIRED_FILES = [
   './quick-add.html',
   './tabler.css?v=1.0.0',
   './task-ui.css?v=4.11.1',
-  './task-core.js?v=4.10.2',
+  './task-core.js?v=4.11.2',
   './task-core.js?v=4.8',
   './wish-client.js?v=4.10',
   './manifest.webmanifest',
@@ -26,70 +28,119 @@ const OPTIONAL_FILES = [
   './icon-512.png'
 ];
 
-function saveOptionalFile(cache, file) {
+async function checkedResponse(file) {
   const url = new URL(file, self.registration.scope).href;
 
-  return cache.add(new Request(url, {
+  const response = await fetch(new Request(url, {
     cache: 'reload'
-  })).catch(function () {
-    return caches.match(url).then(function (saved) {
-      return saved ? cache.put(url, saved) : null;
-    });
-  });
+  }));
+
+  if (!response.ok) {
+    throw new Error('画面の必須ファイルを取得できませんでした。');
+  }
+
+  if (
+    file.indexOf('.css') >= 0 ||
+    file.indexOf('.js') >= 0 ||
+    file === './index.html'
+  ) {
+    const text = await response.clone().text();
+
+    if (
+      file === './index.html' &&
+      text.indexOf("const VERSION = 'v4.11.2';") < 0
+    ) {
+      throw new Error('画面の版が揃っていません。');
+    }
+
+    if (
+      file.indexOf('./task-core.js') === 0 &&
+      text.indexOf("const BUILD = 'v4.11.2';") < 0
+    ) {
+      throw new Error('共通処理の版が揃っていません。');
+    }
+
+    if (
+      file.indexOf('./task-ui.css') === 0 &&
+      text.indexOf('--task-ui-version: v4.11.1;') < 0
+    ) {
+      throw new Error('UIスタイルの版が揃っていません。');
+    }
+
+    if (
+      file.indexOf('./tabler.css') === 0 &&
+      (
+        text.indexOf('--tblr-') < 0 ||
+        text.indexOf('.btn') < 0
+      )
+    ) {
+      throw new Error('TablerのCSSを確認できませんでした。');
+    }
+
+    if (
+      file !== './index.html' &&
+      /^\s*(?:<!doctype\s+html|<html|<head|<body)/i.test(text)
+    ) {
+      throw new Error('CSSまたはJavaScriptの代わりにHTMLが返されました。');
+    }
+  }
+
+  return {
+    url: url,
+    response: response
+  };
+}
+
+async function saveOptionalFile(cache, file) {
+  const url = new URL(file, self.registration.scope).href;
+
+  try {
+    const response = await fetch(new Request(url, {
+      cache: 'reload'
+    }));
+
+    if (response.ok) {
+      await cache.put(url, response);
+    }
+  } catch (error) {
+    const saved = await caches.match(url);
+
+    if (saved) {
+      await cache.put(url, saved);
+    }
+  }
 }
 
 self.addEventListener('install', function (event) {
-  event.waitUntil(
-    caches.open(CACHE).then(function (cache) {
-      return Promise.all(
-        REQUIRED_FILES.map(function (file) {
-          return cache.add(new Request(
-            new URL(file, self.registration.scope).href,
-            {
-              cache: 'reload'
-            }
-          ));
-        })
-      ).then(function () {
-        return Promise.all(
-          OPTIONAL_FILES.map(function (file) {
-            return saveOptionalFile(cache, file);
-          })
-        );
-      });
-    }).then(function () {
-      return self.skipWaiting();
-    })
-  );
+  event.waitUntil((async function () {
+    // 必須ファイルの取得・版の確認が全部済むまでは有効化しない。
+    const responses = await Promise.all(
+      REQUIRED_FILES.map(checkedResponse)
+    );
+
+    const cache = await caches.open(CACHE);
+
+    await Promise.all(responses.map(function (entry) {
+      return cache.put(entry.url, entry.response);
+    }));
+
+    await Promise.all(OPTIONAL_FILES.map(function (file) {
+      return saveOptionalFile(cache, file);
+    }));
+
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', function (event) {
-  event.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(
-        keys.map(function (key) {
-          if (key !== CACHE && /^task-v/.test(key)) {
-            return caches.delete(key);
-          }
-
-          return null;
-        })
-      );
-    }).then(function () {
-      return self.clients.claim();
-    })
-  );
+  // この更新では旧画面用のキャッシュを削除しない。
+  // IndexedDBや送信待ちの記録には触れない。
+  event.waitUntil(self.clients.claim());
 });
 
-function offlinePage(documentUrl) {
-  return caches.open(CACHE).then(function (cache) {
-    return cache.match(documentUrl).then(function (saved) {
-      if (saved) {
-        return saved;
-      }
-
-      return new Response(
-        `<!DOCTYPE html>
+function unavailablePage() {
+  return new Response(
+    `<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -102,40 +153,36 @@ function offlinePage(documentUrl) {
   <p>端末の記録は消していません。</p>
 </body>
 </html>`,
-        {
-          status: 503,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8'
-          }
-        }
-      );
-    });
-  });
+    {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8'
+      }
+    }
+  );
 }
 
-function documentResponse(request, documentUrl) {
-  return fetch(new Request(request, {
-    cache: 'no-cache'
-  })).then(function (response) {
-    if (!response.ok) {
-      return offlinePage(documentUrl);
-    }
+async function documentResponse(documentUrl) {
+  const cache = await caches.open(CACHE);
+  const saved = await cache.match(documentUrl);
 
-    const copied = response.clone();
+  if (saved) {
+    return saved;
+  }
 
-    return caches.open(CACHE).then(function (cache) {
-      return cache.put(documentUrl, copied);
-    }).catch(function () {
-      return null;
-    }).then(function () {
-      return response;
-    });
-  }).catch(function () {
-    return offlinePage(documentUrl);
-  });
+  try {
+    const response = await fetch(new Request(documentUrl, {
+      cache: 'no-store'
+    }));
+
+    return response.ok ? response : unavailablePage();
+  } catch (error) {
+    return unavailablePage();
+  }
 }
 
 self.addEventListener('fetch', function (event) {
+  // GASへのPOST通信は処理しない。
   if (event.request.method !== 'GET') {
     return;
   }
@@ -153,12 +200,12 @@ self.addEventListener('fetch', function (event) {
     url.pathname === index.pathname ||
     url.pathname === root.pathname
   ) {
-    event.respondWith(documentResponse(event.request, INDEX));
+    event.respondWith(documentResponse(INDEX));
     return;
   }
 
   if (url.pathname === quick.pathname) {
-    event.respondWith(documentResponse(event.request, QUICK));
+    event.respondWith(documentResponse(QUICK));
     return;
   }
 
@@ -166,13 +213,22 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  event.respondWith(
-    caches.open(CACHE).then(function (cache) {
-      return cache.match(event.request).then(function (saved) {
-        return saved || fetch(event.request);
-      });
-    })
-  );
+  event.respondWith((async function () {
+    const cache = await caches.open(CACHE);
+    const current = await cache.match(event.request);
+
+    if (current) {
+      return current;
+    }
+
+    const previous = await caches.match(event.request);
+
+    if (previous) {
+      return previous;
+    }
+
+    return fetch(event.request);
+  })());
 });
 
 self.addEventListener('message', function (event) {
