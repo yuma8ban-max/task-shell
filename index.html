@@ -16,7 +16,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
   <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
-  <link rel="stylesheet" href="./task-ui.css?v=4.11.1">
+  <link rel="stylesheet" href="./task-ui.css?v=4.11.3">
 </head>
 <body class="task-app">
   <svg
@@ -28,30 +28,28 @@
       <path d="M5 12l4 4L19 6"></path>
     </symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24">
-      <path d="M12 5v14"></path>
-      <path d="M5 12h14"></path>
+      <path d="M12 5v14M5 12h14"></path>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M6 18L18 6"></path>
+    </symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+      <path d="M6 9l6 6 6-6"></path>
+    </symbol>
+    <symbol id="icon-grip" viewBox="0 0 24 24">
+      <path d="M6 7h12M6 12h12M6 17h12"></path>
     </symbol>
     <symbol id="icon-plan" viewBox="0 0 24 24">
       <rect x="4" y="5" width="16" height="16" rx="3"></rect>
-      <path d="M8 3v4"></path>
-      <path d="M16 3v4"></path>
-      <path d="M4 10h16"></path>
-      <path d="M8 14h3"></path>
-      <path d="M8 17h6"></path>
+      <path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"></path>
     </symbol>
     <symbol id="icon-list" viewBox="0 0 24 24">
-      <path d="M9 6h11"></path>
-      <path d="M9 12h11"></path>
-      <path d="M9 18h11"></path>
-      <path d="M3 6l1 1 2-2"></path>
-      <path d="M3 12l1 1 2-2"></path>
-      <path d="M3 18l1 1 2-2"></path>
+      <path d="M9 6h11M9 12h11M9 18h11"></path>
+      <path d="M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"></path>
     </symbol>
     <symbol id="icon-repeat" viewBox="0 0 24 24">
-      <path d="M17 3l3 3-3 3"></path>
-      <path d="M20 6H8a4 4 0 0 0-4 4v1"></path>
-      <path d="M7 21l-3-3 3-3"></path>
-      <path d="M4 18h12a4 4 0 0 0 4-4v-1"></path>
+      <path d="M17 3l3 3-3 3M20 6H8a4 4 0 0 0-4 4v1"></path>
+      <path d="M7 21l-3-3 3-3M4 18h12a4 4 0 0 0 4-4v-1"></path>
     </symbol>
     <symbol id="icon-done" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9"></circle>
@@ -61,26 +59,21 @@
       <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3z"></path>
     </symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24">
-      <path d="M4 7h16"></path>
-      <path d="M4 17h16"></path>
+      <path d="M4 7h2M12 7h8M4 17h8M18 17h2"></path>
       <circle cx="9" cy="7" r="3"></circle>
       <circle cx="15" cy="17" r="3"></circle>
     </symbol>
     <symbol id="icon-refresh" viewBox="0 0 24 24">
-      <path d="M20 7v5h-5"></path>
-      <path d="M4 17v-5h5"></path>
-      <path d="M6.1 7a7 7 0 0 1 11.5-1L20 9"></path>
-      <path d="M17.9 17a7 7 0 0 1-11.5 1L4 15"></path>
+      <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
+      <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
     </symbol>
     <symbol id="icon-edit" viewBox="0 0 24 24">
-      <path d="M13 6l5 5"></path>
-      <path d="M4 20l5-1 11-11a2.1 2.1 0 0 0-5-5L4 14l-1 6z"></path>
-      <path d="M13 20h8"></path>
+      <path d="M16 5l3 3"></path>
+      <path d="M4 20h4L20 8a2.83 2.83 0 0 0-4-4L4 16v4"></path>
     </symbol>
     <symbol id="icon-alert" viewBox="0 0 24 24">
       <path d="M10.3 4.5L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z"></path>
-      <path d="M12 9v4"></path>
-      <path d="M12 17h.01"></path>
+      <path d="M12 9v4M12 17h.01"></path>
     </symbol>
   </svg>
 
@@ -141,7 +134,7 @@
       <header class="app-header">
         <div class="app-heading">
           <h1>タスク</h1>
-          <span class="badge version">v4.11.2</span>
+          <span class="badge version">v4.11.3</span>
         </div>
 
         <div class="header-actions">
@@ -153,9 +146,19 @@
           </button>
 
           <button id="reload" class="btn" type="button" disabled>
-            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <svg
+              id="reload-icon"
+              class="ui-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false">
               <use href="#icon-refresh"></use>
             </svg>
+            <span
+              id="reload-spinner"
+              class="button-spinner"
+              aria-hidden="true"
+              hidden></span>
             <span id="reload-label">更新</span>
           </button>
 
@@ -177,7 +180,11 @@
             id="message-close"
             class="notice-close"
             type="button"
-            aria-label="お知らせを閉じる">×</button>
+            aria-label="お知らせを閉じる">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-close"></use>
+            </svg>
+          </button>
         </div>
         <details id="message-details" hidden>
           <summary>詳細</summary>
@@ -204,7 +211,11 @@
         id="task-filter-close"
         class="filter-close"
         type="button"
-        aria-label="絞り込みを閉じる">×</button>
+        aria-label="絞り込みを閉じる">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#icon-close"></use>
+        </svg>
+      </button>
     </div>
     <div
       id="task-filter-options"
@@ -292,8 +303,13 @@
         <li>「期限なし」は期限が空欄、「期限・実行日なし」は両方が空欄のタスクです。</li>
         <li>新規タスクの編集・完了・移動は、登録確認後に使えます。</li>
         <li>左の丸で完了、編集ボタンで件名・期限・実行日を変更します。</li>
-        <li>≡をつかむか、件名部分を0.6秒長押しすると移動できます。離すと端末に保存します。</li>
+        <li>右の移動つまみをつかむか、件名部分を0.6秒長押しすると移動できます。離すと端末に保存します。</li>
         <li>実行日を変えても、設定済みの時間帯は残ります。</li>
+        <li>新しい編集では、変更した欄だけを反映します。同じ欄が別端末でも変更された場合は確認します。</li>
+        <li>別端末で完了したタスクへの編集は、照合できれば完了状態と完了日時を維持して反映します。タスクを作り直しません。</li>
+        <li>以前の形式の未送信は、受付番号や更新内容を勝手に変更しません。安全に照合できない場合は確認を残します。</li>
+        <li>確認画面の「この端末の変更を取り下げる」は、関連する未送信を反映しない選択です。保存先のタスクは削除しません。</li>
+        <li>自動追加のスイッチは、保存先で確認できた状態を表示します。変更中は切り替え先を併記し、同じ設定を重ねて送りません。</li>
         <li>定期タスクの頻度は、毎日・毎週月曜日・毎月15日・3日ごとなどです。「不定期」は自動追加の対象外です。</li>
         <li>予定分の期限は本来の追加予定日が基準です。「今すぐ1件追加」は押した日が基準です。</li>
         <li>期限の0日後は基準日当日です。土日も数え、その月にない指定日は月末にします。</li>
@@ -305,9 +321,9 @@
         <li>通常タスクの一覧取得で一時的な404や不正な返答があった場合は、2秒後に全体を1回だけ取り直します。</li>
         <li>通常タスクの更新送信では、一時的な404や不正な返答を2秒後・さらに5秒後まで再確認します。受付番号と更新内容は変えません。</li>
         <li>保存成功の返答を確認した後に一覧確認だけ失敗した場合は、更新要求ではなく一覧を確認します。</li>
-        <li>復帰時は、長く止まっている通常の一覧取得だけを終了できます。更新送信を一括で中断しません。</li>
+        <li>復帰時の通信開始後の判定には、通信開始前の順番待ちを含めません。更新送信は一括で中断しません。</li>
         <li>ブラウザーで一覧取得を中断しても、保存先の処理停止を意味しません。</li>
-        <li>正常な一覧を受け取るまでは前回の表示を残します。再確認にも失敗した場合はエラーを表示します。</li>
+        <li>正常な一覧を受け取るまでは前回の表示を残し、再確認にも失敗した場合はエラーを表示します。</li>
         <li>通信の点検記録には、合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
         <li>読み取りの照合番号は、タスクIDや保存操作の受付番号とは別の番号です。</li>
         <li>「したいこと」独自の再送処理は従来どおりです。</li>
@@ -328,14 +344,14 @@
           <use href="#icon-alert"></use>
         </svg>
       </span>
-      <h2 id="conflict-title">変更が重なっています</h2>
+      <h2 id="conflict-title">変更内容を確認</h2>
     </div>
 
     <p id="conflict-note" class="dialog-text"></p>
 
     <div class="comparison">
       <section>
-        <h3>保存済み</h3>
+        <h3 id="conflict-server-title">保存済み</h3>
         <div id="conflict-server"></div>
       </section>
       <section>
@@ -346,20 +362,21 @@
 
     <div class="dialog-actions">
       <button id="conflict-close" class="btn" type="button">後で確認</button>
-      <button id="conflict-remote" class="btn" type="button">保存済みを使う</button>
-      <button id="conflict-apply" class="btn btn-primary primary" type="button">端末の変更を反映</button>
+      <button id="conflict-remote" class="btn" type="button">この端末の変更を取り下げる</button>
+      <button id="conflict-apply" class="btn btn-primary primary" type="button">変更を反映</button>
     </div>
   </dialog>
 
-  <script src="./task-core.js?v=4.11.2"></script>
+  <script src="./task-core.js?v=4.11.3"></script>
   <script src="./wish-client.js?v=4.10"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.11.2';
-      const REQUIRED_CORE_BUILD = 'v4.11.2';
+      const VERSION = 'v4.11.3';
+      const REQUIRED_CORE_BUILD = 'v4.11.3';
       const UI_KIT_VERSION = '1.0.0';
+      const EDIT_PROTOCOL = 'task-edit-fields-v1';
 
       const FILTER_GROUPS = [
         {
@@ -402,7 +419,7 @@
       ) {
         $('status').textContent =
           '画面に対応する共通処理を読み込めません。' +
-          'task-core.js（v4.11.2）と wish-client.js（v4.10）を確認してください。' +
+          'task-core.js（v4.11.3）と wish-client.js（v4.10）を確認してください。' +
           '端末の記録は消さないでください。';
         return;
       }
@@ -461,10 +478,15 @@
       let conflictId = null;
       let conflictSource = 'tasks';
       let conflictReviewed = [];
+      let conflictReview = null;
+      let conflictOpening = false;
+      let conflictSaving = false;
       let wishReviewedVersion = '';
       let messageTimer = null;
       let messageKind = '';
       let cacheVersion = '未確認';
+
+      const shownAttention = new Set();
 
       let drag = null;
       let candidate = null;
@@ -491,6 +513,21 @@
         }
 
         return element;
+      }
+
+      function icon(name) {
+        const namespace = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(namespace, 'svg');
+        const use = document.createElementNS(namespace, 'use');
+
+        svg.setAttribute('class', 'ui-icon');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        use.setAttribute('href', '#icon-' + name);
+        svg.appendChild(use);
+
+        return svg;
       }
 
       function button(text, handler, className) {
@@ -618,6 +655,17 @@
         );
       }
 
+      function fieldEditingSupported() {
+        const features = state.snapshot && state.snapshot.features;
+
+        return !!(
+          features &&
+          features.taskEditFields &&
+          features.completedTaskEdit &&
+          features.taskEditProtocol === EDIT_PROTOCOL
+        );
+      }
+
       function onlineRequired() {
         if (!navigator.onLine) {
           notify('通信が必要です', true);
@@ -701,7 +749,7 @@
 
           if (
             meta.kind === 'committed' &&
-            (meta.action === 'done' || meta.action === 'undo')
+            ['done', 'undo', 'edit'].indexOf(meta.action) >= 0
           ) {
             scheduleHistoryRefresh();
           }
@@ -709,9 +757,14 @@
         onIssue: function (text, detail) {
           notify(text, true, detail);
         },
-        onSaved: function () {
+        onSaved: function (job, result) {
           if (!client.lastReadError) {
-            notify('保存しました', false);
+            notify(
+              result.result && result.result.editLocation === 'completed'
+                ? '完了済みの内容を更新しました'
+                : '保存しました',
+              false
+            );
           }
         }
       });
@@ -763,11 +816,9 @@
             parts.push('前回の一覧を表示');
           }
 
-          const rechecking = state.jobs.some(function (job) {
+          if (state.jobs.some(function (job) {
             return job.state === 'sending' && job.shortRetry;
-          });
-
-          if (rechecking) {
+          })) {
             parts.push('保存結果を再確認中・端末に保存済み');
           }
         }
@@ -790,15 +841,17 @@
             ? wishLoading
             : !!refreshPromise;
 
+        const busy = manualReloading || loading;
+
         $('reload').disabled =
           !client.ready ||
           !!client.legacyCount ||
-          manualReloading ||
-          loading;
+          busy;
 
-        $('reload-label').textContent = manualReloading || loading
-          ? '更新中'
-          : '更新';
+        $('reload').setAttribute('aria-busy', String(!!busy));
+        $('reload-label').textContent = busy ? '更新中' : '更新';
+        $('reload-icon').hidden = !!busy;
+        $('reload-spinner').hidden = !busy;
 
         if ($('settings-dialog').open) {
           renderSettingsState();
@@ -827,6 +880,17 @@
 
       function renderOutbox() {
         const container = $('outbox-items');
+
+        const openedDetails = new Set(
+          Array.from(container.querySelectorAll('details[data-job]'))
+            .filter(function (element) {
+              return element.open;
+            })
+            .map(function (element) {
+              return element.dataset.job;
+            })
+        );
+
         container.replaceChildren();
 
         const entries = state.jobs.map(function (job) {
@@ -846,13 +910,36 @@
             entry.job.state === 'blocked' ||
             entry.job.state === 'unknown' ||
             entry.job.errorStatus === 'authentication';
-        }).length;
+        });
+
+        const activeKeys = new Set(entries.map(function (entry) {
+          return entry.source + ':' + entry.job.id;
+        }));
+
+        Array.from(shownAttention).forEach(function (key) {
+          if (!activeKeys.has(key.split('|')[0])) {
+            shownAttention.delete(key);
+          }
+        });
+
+        let newAttention = false;
+
+        attention.forEach(function (entry) {
+          const key = entry.source + ':' + entry.job.id +
+            '|' + entry.job.state +
+            '|' + (entry.job.errorStatus || '');
+
+          if (!shownAttention.has(key)) {
+            shownAttention.add(key);
+            newAttention = true;
+          }
+        });
 
         $('outbox').hidden = !entries.length;
-        $('outbox').classList.toggle('has-attention', attention > 0);
+        $('outbox').classList.toggle('has-attention', attention.length > 0);
         $('outbox-summary').textContent =
           '送信待ち ' + entries.length + '件' +
-          (attention ? '・確認が必要 ' + attention + '件' : '');
+          (attention.length ? '・確認が必要 ' + attention.length + '件' : '');
 
         entries.forEach(function (entry) {
           const job = entry.job;
@@ -877,13 +964,16 @@
           row.appendChild(heading);
 
           if (job.state === 'conflict') {
-            row.appendChild(button('確認する', function () {
+            const review = button('確認する', function () {
               if (entry.source === 'wishes') {
                 openWishConflict(job.id);
               } else {
                 openConflict(job.id);
               }
-            }));
+            });
+
+            review.disabled = !navigator.onLine || conflictOpening;
+            row.appendChild(review);
           } else if (job.errorStatus === 'authentication') {
             row.appendChild(button('設定を確認', openSettings));
           } else if (
@@ -904,17 +994,23 @@
 
           if (job.note) {
             const details = make('details');
+            const key = entry.source + ':' + job.id;
+
+            details.dataset.job = key;
+            details.open = openedDetails.has(key);
+
             details.append(
               make('summary', '詳細'),
               make('div', job.note, 'detail-text')
             );
+
             row.appendChild(details);
           }
 
           container.appendChild(row);
         });
 
-        if (attention) {
+        if (newAttention) {
           $('outbox').open = true;
         }
       }
@@ -1269,7 +1365,6 @@
           done.setAttribute('aria-label', item.title + 'を達成済みにする');
           done.disabled = wishUnavailable(item);
           done.appendChild(make('span', null, 'circle'));
-
           row.append(done, main, actions);
         }
 
@@ -1347,68 +1442,83 @@
           }
         );
 
-        const title = field('title', '件名＊', 'text', visible.title, true);
-        title.focus();
+        field('title', '件名＊', 'text', visible.title, true).focus();
       }
 
       async function openWishConflict(id) {
+        if (conflictOpening || !onlineRequired()) {
+          return;
+        }
+
+        conflictOpening = true;
+        renderOutbox();
+
         try {
           await wishes.read(false);
+
+          const job = wishes.state.jobs.find(function (entry) {
+            return entry.id === id && entry.state === 'conflict';
+          });
+
+          if (!job) {
+            return;
+          }
+
+          const item = wishes.state.snapshot.items.find(function (entry) {
+            return entry.wishId === job.payload.wishId;
+          });
+
+          const local = wishes.effectiveItems().find(function (entry) {
+            return entry.wishId === job.payload.wishId;
+          });
+
+          const related = wishes.relatedJobs(id);
+
+          conflictSource = 'wishes';
+          conflictId = id;
+          conflictReview = null;
+          conflictReviewed = related.map(function (entry) {
+            return entry.id;
+          });
+
+          wishReviewedVersion = item ? item.version : '';
+
+          $('conflict-title').textContent = '変更内容を確認';
+          $('conflict-server-title').textContent = '保存済み';
+          $('conflict-apply').textContent = '変更を反映';
+
+          $('conflict-note').textContent =
+            job.note + '\n関連する未送信 ' + related.length +
+            '件が対象です。取り下げると、対象の端末側変更は反映しません。' +
+            '\n保存先の項目は削除しません。';
+
+          $('conflict-server').replaceChildren(make(
+            'p',
+            item
+              ? item.title + '\n' + (item.done ? '達成済み' : '未達成')
+              : '対象が見つかりません。'
+          ));
+
+          $('conflict-local').replaceChildren(
+            make(
+              'p',
+              local
+                ? local.title + '\n' + (local.done ? '達成済み' : '未達成')
+                : '対象が見つかりません。'
+            ),
+            make('p', related.map(function (entry) {
+              return '・' + entry.label;
+            }).join('\n'))
+          );
+
+          $('conflict-apply').hidden = !item;
+          $('conflict-dialog').showModal();
         } catch (error) {
           failed('一覧を確認できませんでした', error);
-          return;
+        } finally {
+          conflictOpening = false;
+          renderOutbox();
         }
-
-        const job = wishes.state.jobs.find(function (entry) {
-          return entry.id === id && entry.state === 'conflict';
-        });
-
-        if (!job) {
-          return;
-        }
-
-        const item = wishes.state.snapshot.items.find(function (entry) {
-          return entry.wishId === job.payload.wishId;
-        });
-
-        const local = wishes.effectiveItems().find(function (entry) {
-          return entry.wishId === job.payload.wishId;
-        });
-
-        const related = wishes.relatedJobs(id);
-
-        conflictSource = 'wishes';
-        conflictId = id;
-        conflictReviewed = related.map(function (entry) {
-          return entry.id;
-        });
-        wishReviewedVersion = item ? item.version : '';
-
-        $('conflict-note').textContent =
-          job.note + '\n関連する未送信 ' + related.length +
-          '件が対象です。「保存済みを使う」を選ぶと、対象の端末側変更は反映しません。';
-
-        $('conflict-server').replaceChildren(make(
-          'p',
-          item
-            ? item.title + '\n' + (item.done ? '達成済み' : '未達成')
-            : '対象が見つかりません。'
-        ));
-
-        $('conflict-local').replaceChildren(
-          make(
-            'p',
-            local
-              ? local.title + '\n' + (local.done ? '達成済み' : '未達成')
-              : '対象が見つかりません。'
-          ),
-          make('p', related.map(function (entry) {
-            return '・' + entry.label;
-          }).join('\n'))
-        );
-
-        $('conflict-apply').hidden = !item;
-        $('conflict-dialog').showModal();
       }
 
       /* ---------- 1日の計画 ---------- */
@@ -1488,11 +1598,12 @@
               text.appendChild(make('div', task.pendingText, 'pending-label'));
             }
 
-            const grip = make('button', '≡', 'grip');
+            const grip = make('button', null, 'grip');
             grip.type = 'button';
             grip.dataset.act = 'grip';
             grip.disabled = !!task.localOnly;
             grip.setAttribute('aria-label', task.title + 'を移動');
+            grip.appendChild(icon('grip'));
 
             row.append(
               completeButton(task),
@@ -1894,7 +2005,7 @@
         }
       }
 
-      /* ---------- 絞り込みメニュー ---------- */
+      /* ---------- 絞り込み ---------- */
 
       function filterLabel() {
         switch (taskFilter) {
@@ -1998,13 +2109,13 @@
             option.setAttribute('aria-checked', String(selected));
             option.tabIndex = selected ? 0 : -1;
 
-            const check = make(
-              'span',
-              selected ? '✓' : '',
-              'filter-option-check'
-            );
-
+            const check = make('span', null, 'filter-option-check');
             check.setAttribute('aria-hidden', 'true');
+
+            if (selected) {
+              check.appendChild(icon('check'));
+            }
+
             option.append(make('span', entry[1], 'filter-option-label'), check);
 
             option.addEventListener('click', function () {
@@ -2019,8 +2130,7 @@
           options.appendChild(section);
         });
 
-        const trigger = $('task-filter-trigger');
-        trigger.setAttribute('aria-expanded', 'true');
+        $('task-filter-trigger').setAttribute('aria-expanded', 'true');
         document.body.classList.add('filter-open');
 
         const dialog = $('task-filter-dialog');
@@ -2236,8 +2346,8 @@
           'task-filter-caption task-filter-value'
         );
 
-        const arrow = make('span', '⌄', 'filter-trigger-arrow');
-        arrow.setAttribute('aria-hidden', 'true');
+        const arrow = make('span', null, 'filter-trigger-arrow');
+        arrow.appendChild(icon('chevron-down'));
         trigger.append(value, arrow);
         field.append(label, trigger);
         tools.appendChild(field);
@@ -2445,6 +2555,7 @@
       function selectField(name, label, options, value) {
         const wrapper = make('label', null, 'field');
         wrapper.appendChild(make('span', label, 'form-label'));
+
         const select = make('select', null, 'form-select');
         select.name = name;
 
@@ -2516,6 +2627,15 @@
           return;
         }
 
+        if (!fieldEditingSupported()) {
+          notify(
+            '保存先の更新が必要です',
+            true,
+            'コード.gsのv4.11.3を同じ公開先へ反映してから、一覧を更新してください。'
+          );
+          return;
+        }
+
         const original = taskById(state.snapshot, id);
         const visible = client.effectiveTasks().find(function (task) {
           return task.taskId === id && !task.localOnly;
@@ -2531,7 +2651,9 @@
         const payload = {
           action: 'edit',
           taskId: id,
-          expectedTask: original.version
+          expectedTask: original.version,
+          editProtocol: EDIT_PROTOCOL,
+          editBase: TaskCore.editValues(captured)
         };
 
         const context = client.context(payload);
@@ -2549,6 +2671,15 @@
             throw new Error('件名は1～200文字で入力してください。');
           }
 
+          if (
+            title === captured.title &&
+            due === captured.due &&
+            date === captured.date
+          ) {
+            notify('変更はありません');
+            return;
+          }
+
           await client.enqueue(Object.assign({}, payload, {
             title: title,
             due: due,
@@ -2564,10 +2695,9 @@
           );
         });
 
-        const title = field('title', '件名＊', 'text', captured.title, true);
+        field('title', '件名＊', 'text', captured.title, true).focus();
         field('due', '期限', 'date', captured.due, false);
         field('date', '実行日', 'date', captured.date, false);
-        title.focus();
       }
 
       $('editor-form').addEventListener('compositionstart', function () {
@@ -2645,6 +2775,79 @@
 
       /* ---------- 定期タスク ---------- */
 
+      function automaticJobs() {
+        return state.jobs.filter(function (job) {
+          return job.payload.action === 'automatic';
+        }).sort(function (a, b) {
+          return a.sequence - b.sequence;
+        });
+      }
+
+      function automaticControl(periodic, supported) {
+        const wrapper = make('div', null, 'automatic-control');
+        const label = make('span', '毎日の自動追加', 'automatic-label');
+        label.id = 'automatic-label';
+
+        const pending = automaticJobs();
+        const latest = pending.length ? pending[pending.length - 1] : null;
+
+        const control = button('', toggleAutomatic, 'auto-switch');
+        control.id = 'automatic-switch';
+        control.setAttribute('role', 'switch');
+        control.setAttribute('aria-checked', String(periodic.automatic));
+        control.setAttribute('aria-labelledby', 'automatic-label');
+        control.setAttribute('aria-describedby', 'automatic-status');
+
+        control.disabled =
+          !navigator.onLine ||
+          !supported ||
+          !!client.legacyCount ||
+          pending.length > 0;
+
+        control.setAttribute(
+          'aria-busy',
+          String(pending.some(function (job) {
+            return job.state === 'saved' || job.state === 'sending';
+          }))
+        );
+
+        const track = make('span', null, 'auto-switch-track');
+        track.setAttribute('aria-hidden', 'true');
+        track.appendChild(make('span', null, 'auto-switch-thumb'));
+        control.appendChild(track);
+
+        const current = make(
+          'span',
+          periodic.automatic ? 'ON' : 'OFF',
+          'automatic-state'
+        );
+
+        current.setAttribute('aria-hidden', 'true');
+
+        const status = make('span', '', 'automatic-status');
+        status.id = 'automatic-status';
+        status.setAttribute('aria-live', 'polite');
+
+        if (latest) {
+          const destination = latest.payload.enabled ? 'ON' : 'OFF';
+          const attention = pending.some(function (job) {
+            return job.state === 'conflict' ||
+              job.state === 'blocked' ||
+              job.state === 'unknown';
+          });
+
+          status.textContent = attention
+            ? destination + 'への変更結果を確認してください'
+            : destination + 'へ変更中';
+
+          status.classList.toggle('has-error', attention);
+        }
+
+        status.hidden = !latest;
+        wrapper.append(label, control, current, status);
+        return wrapper;
+      }
+
       function renderPeriodic(content) {
         const periodic = state.snapshot.periodic;
         const supported = periodicSupported();
@@ -2668,12 +2871,7 @@
 
         today.id = 'periodic-today';
 
-        const automatic = button(
-          '毎日の自動追加：' + (periodic.automatic ? '入' : '切'),
-          toggleAutomatic
-        );
-
-        [add, today, automatic].forEach(function (control) {
+        [add, today].forEach(function (control) {
           control.disabled =
             !navigator.onLine ||
             !supported ||
@@ -2681,7 +2879,7 @@
         });
 
         today.disabled = today.disabled || periodicAdding;
-        tools.append(add, today, automatic);
+        tools.append(add, today, automaticControl(periodic, supported));
         content.appendChild(tools);
 
         const cards = make('div', null, 'cards');
@@ -3029,7 +3227,12 @@
       }
 
       async function toggleAutomatic() {
-        if (!onlineRequired()) {
+        if (!onlineRequired() || !state.snapshot) {
+          return;
+        }
+
+        if (automaticJobs().length) {
+          notify('自動追加の保存結果を確認中です');
           return;
         }
 
@@ -3037,17 +3240,29 @@
         const enabled = !periodic.automatic;
 
         if (!confirm(
-          '毎日の自動追加を「' + (enabled ? '入' : '切') + '」にしますか。'
+          '毎日の自動追加を「' + (enabled ? 'ON' : 'OFF') + '」にしますか。'
         )) {
           return;
         }
 
+        const payload = {
+          action: 'automatic',
+          expectedPeriodic: periodic.version,
+          enabled: enabled
+        };
+
+        if (
+          state.snapshot.features &&
+          state.snapshot.features.automaticStateCheck
+        ) {
+          payload.expectedAutomatic = periodic.automatic;
+        }
+
         try {
-          await client.enqueue({
-            action: 'automatic',
-            expectedPeriodic: periodic.version,
-            enabled: enabled
-          }, '毎日の自動追加を' + (enabled ? '入' : '切') + 'にする');
+          await client.enqueue(
+            payload,
+            '毎日の自動追加を' + (enabled ? 'ON' : 'OFF') + 'にする'
+          );
         } catch (error) {
           failed('保存できませんでした', error);
         }
@@ -3241,8 +3456,9 @@
 
         historyData.items.forEach(function (item) {
           const card = make('div', null, 'card');
-          const mark = make('span', '✓', 'history-mark');
+          const mark = make('span', null, 'history-mark');
           mark.setAttribute('aria-hidden', 'true');
+          mark.appendChild(icon('check'));
 
           const main = make('div', null, 'card-main');
           main.appendChild(make('div', item.title, 'card-title'));
@@ -3300,7 +3516,13 @@
         }
       }
 
-      /* ---------- 変更の食い違い ---------- */
+      /* ---------- 変更の確認 ---------- */
+
+      function editDescription(value) {
+        return value.title +
+          '\n期限：' + (value.due || 'なし') +
+          '\n実行日：' + (value.date || 'なし');
+      }
 
       function describePayload(payload, local) {
         if (!state.snapshot) {
@@ -3319,23 +3541,26 @@
           }).join('\n') || 'この日のタスクはありません。';
         }
 
+        if (payload.action === 'automatic') {
+          const enabled = local
+            ? payload.enabled
+            : state.snapshot.periodic.automatic;
+
+          return '毎日の自動追加：' + (enabled ? 'ON' : 'OFF');
+        }
+
         if (payload.taskId) {
           const task = taskById(state.snapshot, payload.taskId);
 
           if (!local) {
             return task
-              ? task.title +
-                '\n期限：' + (task.due || 'なし') +
-                '\n実行日：' + (task.date || 'なし') +
-                '\n' + hourLabel(task.hour)
-              : '現在の一覧にはありません。';
+              ? editDescription(task) + '\n' + hourLabel(task.hour)
+              : '現在の未完了一覧にはありません。';
           }
 
           return payload.action === 'done'
             ? 'このタスクを完了にする'
-            : payload.title +
-              '\n期限：' + (payload.due || 'なし') +
-              '\n実行日：' + (payload.date || 'なし');
+            : editDescription(payload);
         }
 
         if (payload.action === 'periodicSave') {
@@ -3368,56 +3593,182 @@
       }
 
       async function openConflict(id) {
-        const updated = await refresh();
-
-        if (!updated && client.lastReadError) {
-          notify('保存済みの内容を確認できませんでした', true, client.lastReadError);
+        if (conflictOpening || !onlineRequired()) {
           return;
         }
 
-        const job = state.jobs.find(function (entry) {
-          return entry.id === id && entry.state === 'conflict';
-        });
+        conflictOpening = true;
+        renderOutbox();
 
-        if (!job || !state.snapshot) {
-          return;
+        try {
+          let job = state.jobs.find(function (entry) {
+            return entry.id === id && entry.state === 'conflict';
+          });
+
+          if (!job) {
+            return;
+          }
+
+          if (
+            fieldEditingSupported() &&
+            (
+              job.payload.action === 'edit' ||
+              job.payload.action === 'automatic'
+            )
+          ) {
+            job = await client.recheckConflict(id);
+
+            if (!job) {
+              return;
+            }
+
+            if (job.state !== 'conflict') {
+              notify(
+                '保存結果の再確認を続けています',
+                job.state === 'blocked',
+                job.note || ''
+              );
+              return;
+            }
+          } else {
+            const updated = await refresh();
+
+            if (!updated) {
+              return;
+            }
+
+            job = state.jobs.find(function (entry) {
+              return entry.id === id && entry.state === 'conflict';
+            });
+
+            if (!job) {
+              return;
+            }
+          }
+
+          if (!state.snapshot) {
+            return;
+          }
+
+          conflictSource = 'tasks';
+          conflictId = id;
+
+          const related = client.relatedJobs(id);
+
+          conflictReviewed = related.map(function (entry) {
+            return entry.id;
+          });
+
+          conflictReview = {
+            revision: state.snapshot.revision,
+            edit: job.editConflict ? clone(job.editConflict) : null,
+            automatic: state.snapshot.periodic.automatic
+          };
+
+          $('conflict-title').textContent = '変更内容を確認';
+          $('conflict-server-title').textContent = '保存済み';
+          $('conflict-apply').textContent = '変更を反映';
+
+          let serverText = describePayload(job.payload, false);
+          let localText = describePayload(job.payload, true);
+          let canApply = ['order', 'done', 'periodicSave', 'automatic']
+            .indexOf(job.payload.action) >= 0;
+
+          const notes = [
+            job.note,
+            '関連する未送信 ' + related.length + '件が対象です。',
+            '取り下げると、対象の端末側変更は反映しません。保存先のタスクは削除しません。'
+          ];
+
+          if (job.payload.action === 'edit') {
+            const detail = job.editConflict;
+            canApply = !!(
+              fieldEditingSupported() &&
+              detail &&
+              detail.current
+            );
+
+            if (detail && detail.current) {
+              serverText = editDescription(detail.current);
+
+              const desired = TaskCore.editValues(detail.current);
+
+              TaskCore.editFields(job.payload).forEach(function (field) {
+                desired[field] = job.payload[field];
+              });
+
+              localText = editDescription(desired);
+
+              if (detail.location === 'completed') {
+                $('conflict-title').textContent = '完了済みの編集を確認';
+                $('conflict-server-title').textContent = '保存済み・完了済み';
+                $('conflict-apply').textContent = '完了を維持して反映';
+                notes.push('完了状態と完了日時は変えずに、編集内容だけを反映します。');
+              } else {
+                $('conflict-title').textContent = '変更した項目を確認';
+              }
+            } else {
+              $('conflict-title').textContent = '編集先を確認できません';
+              serverText = detail && detail.kind === 'missing'
+                ? '未完了・完了済みのどちらにも、対象が見つかりません。'
+                : '編集先の場所や状態を確認できません。';
+
+              notes.push(
+                'タスクの作り直しや、完了の取り消しは自動では行いません。'
+              );
+            }
+          } else if (job.payload.action === 'automatic') {
+            $('conflict-title').textContent = '自動追加の設定を確認';
+            $('conflict-apply').textContent = 'この設定に変更';
+          } else if (
+            job.payload.action === 'done' &&
+            !taskById(state.snapshot, job.payload.taskId)
+          ) {
+            canApply = false;
+          }
+
+          if (related.some(function (entry) {
+            return entry.id !== id && entry.frozen;
+          })) {
+            canApply = false;
+            notes.push('関連する送信結果を確認してから反映できます。');
+          }
+
+          $('conflict-note').textContent = notes.filter(Boolean).join('\n');
+          $('conflict-server').replaceChildren(make('p', serverText));
+
+          $('conflict-local').replaceChildren(
+            make('p', localText),
+            make('p', related.map(function (entry) {
+              return '・' + entry.label;
+            }).join('\n'))
+          );
+
+          $('conflict-apply').hidden = !canApply;
+          $('conflict-dialog').showModal();
+        } catch (error) {
+          failed('変更内容を確認できませんでした', error);
+        } finally {
+          conflictOpening = false;
+          renderOutbox();
         }
-
-        conflictSource = 'tasks';
-        conflictId = id;
-        const related = client.relatedJobs(id);
-        conflictReviewed = related.map(function (entry) {
-          return entry.id;
-        });
-
-        $('conflict-note').textContent =
-          job.note + '\n関連する未送信 ' + related.length +
-          '件が対象です。「保存済みを使う」を選ぶと、対象の端末側変更は反映しません。';
-
-        $('conflict-server').replaceChildren(
-          make('p', describePayload(job.payload, false))
-        );
-
-        $('conflict-local').replaceChildren(
-          make('p', describePayload(job.payload, true)),
-          make('p', related.map(function (entry) {
-            return '・' + entry.label;
-          }).join('\n'))
-        );
-
-        $('conflict-apply').hidden =
-          ['order', 'edit', 'done', 'periodicSave']
-            .indexOf(job.payload.action) < 0;
-
-        if ($('conflict-apply').hidden) {
-          $('conflict-note').textContent +=
-            '\n保存済みを使った後、必要な操作をやり直してください。';
-        }
-
-        $('conflict-dialog').showModal();
       }
 
       async function resolveConflict(useLocal) {
+        if (conflictSaving) {
+          return;
+        }
+
+        conflictSaving = true;
+
+        [
+          'conflict-close',
+          'conflict-remote',
+          'conflict-apply'
+        ].forEach(function (id) {
+          $(id).disabled = true;
+        });
+
         try {
           if (conflictSource === 'wishes') {
             await wishes.resolveConflict(
@@ -3430,14 +3781,30 @@
             await client.resolveConflict(
               conflictId,
               useLocal,
-              conflictReviewed
+              conflictReviewed,
+              conflictReview
             );
           }
 
           $('conflict-dialog').close();
-          notify(useLocal ? '送信待ち' : '保存済みの内容を使います');
+
+          notify(
+            useLocal
+              ? '送信待ち'
+              : 'この端末の変更を取り下げました'
+          );
         } catch (error) {
-          failed('確認が必要です', error);
+          $('conflict-note').textContent = String(error.message || error);
+        } finally {
+          conflictSaving = false;
+
+          [
+            'conflict-close',
+            'conflict-remote',
+            'conflict-apply'
+          ].forEach(function (id) {
+            $(id).disabled = false;
+          });
         }
       }
 
@@ -3452,6 +3819,12 @@
       $('conflict-apply').onclick = function () {
         resolveConflict(true);
       };
+
+      $('conflict-dialog').addEventListener('cancel', function (event) {
+        if (conflictSaving) {
+          event.preventDefault();
+        }
+      });
 
       /* ---------- 設定・点検 ---------- */
 
@@ -3521,6 +3894,10 @@
           [
             '保存先の改修版',
             state.snapshot ? state.snapshot.build || '未取得' : '未取得'
+          ],
+          [
+            '完了済みへの編集・項目別照合',
+            fieldEditingSupported() ? '対応' : '保存先の更新が必要'
           ],
           ['オフライン機能の版', cacheVersion],
           ['一覧の確認', client.readStatusLabel()],
@@ -3794,6 +4171,7 @@
           wishReadPromise ||
           manualReloading ||
           periodicAdding ||
+          conflictOpening ||
           resumePromise ||
           allPendingCount() ||
           Date.now() < nextAutoRead
@@ -3850,7 +4228,6 @@
 
           await client.reloadLocal();
           await wishes.reloadLocal();
-
           await client.pump(false);
           await wishes.pump(false);
 
