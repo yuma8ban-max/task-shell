@@ -1,10 +1,10 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.11.1
+ * UI build: v4.11.3
  *
- * This file contains the application-specific styles.
- * The following license notice accompanies the separately distributed,
+ * Application-specific styles.
+ * The following license accompanies the separately distributed,
  * unmodified Tabler 1.0.0 stylesheet, tabler.css.
  *
  * The MIT License (MIT)
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.11.1;
+  --task-ui-version: v4.11.3;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -227,6 +227,8 @@ body.task-app.filter-open {
   line-height: 1.5;
 }
 
+/* ---------- アイコン ---------- */
+
 .icon-sprite {
   position: absolute;
   width: 0;
@@ -235,17 +237,45 @@ body.task-app.filter-open {
   pointer-events: none;
 }
 
-.ui-icon {
+.task-app .ui-icon {
   display: block;
   flex: none;
   width: 20px;
   height: 20px;
+  min-width: 20px;
+  max-width: none;
+  margin: 0;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vertical-align: middle;
+  overflow: visible;
   pointer-events: none;
+}
+
+.task-app .button-spinner {
+  display: block;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: task-loading .9s linear infinite;
+}
+
+.task-app #reload {
+  width: 112px;
+  flex: none;
+}
+
+.task-app #reload:disabled {
+  color: #62728b;
+  background: #f8fafd;
+  opacity: 1;
 }
 
 /* ---------- 画面の外枠 ---------- */
@@ -297,7 +327,6 @@ body.task-app.filter-open {
 .task-app .brand-mark .ui-icon {
   width: 23px;
   height: 23px;
-  stroke-width: 2.2;
 }
 
 .task-app .nav-items {
@@ -446,6 +475,8 @@ body.task-app.filter-open {
   font-weight: 700;
 }
 
+/* ---------- 絞り込み ---------- */
+
 .task-app .task-filters {
   align-items: flex-end;
   gap: 12px;
@@ -464,10 +495,6 @@ body.task-app.filter-open {
 .task-app .filter-field input,
 .task-app .filter-field select {
   width: 100%;
-}
-
-.task-app .filter-field select {
-  min-width: 250px;
 }
 
 .task-app .btn.filter-trigger {
@@ -495,11 +522,23 @@ body.task-app.filter-open {
   overflow-wrap: anywhere;
 }
 
-.task-app .filter-trigger-arrow {
+.task-app .filter-trigger-arrow,
+.task-app .filter-option-check {
+  display: inline-flex;
   flex: none;
-  color: #66778e;
-  font-size: 20px;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
   line-height: 1;
+}
+
+.task-app .filter-trigger-arrow {
+  color: #66778e;
+}
+
+.task-app .filter-option-check {
+  color: #2563eb;
 }
 
 /* ---------- 状態・送信待ち ---------- */
@@ -540,23 +579,29 @@ body.task-app.filter-open {
   overflow-wrap: anywhere;
 }
 
-.task-app .notice-close {
+.task-app .notice-close,
+.task-app .filter-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
   width: 44px;
   min-height: 44px;
-  margin: -8px -8px -8px 0;
   padding: 0;
   border: 0;
   border-radius: 8px;
   color: inherit;
   background: transparent;
   box-shadow: none;
-  font-size: 24px;
-  font-weight: 400;
   line-height: 1;
+}
+
+.task-app .notice-close {
+  margin: -8px -8px -8px 0;
+}
+
+.task-app .filter-close {
+  color: #526176;
 }
 
 .task-app .notice > p {
@@ -728,15 +773,13 @@ body.task-app.filter-open {
   border-radius: 50%;
   color: #247252;
   background: #eaf7f0;
-  font-size: 18px;
-  font-weight: 650;
 }
 
 .task-app .cards + .btn {
   margin-top: 16px;
 }
 
-/* ---------- 期限・実行日の角丸ラベル ---------- */
+/* ---------- 期限・実行日の表示 ---------- */
 
 .task-app .task-dates {
   display: flex;
@@ -837,7 +880,8 @@ body.task-app.filter-open {
   color: #805916;
 }
 
-.task-app .task-time-only {
+.task-app .task-time-only,
+.task-app .task-due {
   margin-top: 7px;
   color: #526176;
   font-size: 14px;
@@ -1041,14 +1085,6 @@ body.task-app.filter-open {
   line-height: 1.55;
 }
 
-.task-app .task-due {
-  margin-top: 5px;
-  color: #526176;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.5;
-}
-
 .task-app .plan-edit {
   flex: none;
   min-height: 44px;
@@ -1078,11 +1114,14 @@ body.task-app.filter-open {
   color: #7c8ca2;
   background: transparent;
   box-shadow: none;
-  font-size: 25px;
-  font-weight: 400;
   line-height: 1;
   cursor: grab;
   touch-action: none;
+}
+
+.task-app .grip .ui-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .task-app .task.dragging .grip {
@@ -1132,6 +1171,98 @@ body.task-app.filter-open {
   font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
+}
+
+/* ---------- 自動追加のスイッチ ---------- */
+
+.task-app .automatic-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 44px;
+  margin-left: auto;
+}
+
+.task-app .automatic-label {
+  color: #34445b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.task-app .btn.auto-switch {
+  flex: none;
+  min-width: 60px;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1;
+}
+
+.task-app .auto-switch-track {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: #b6c2d1;
+  transition: background-color .15s ease;
+  pointer-events: none;
+}
+
+.task-app .auto-switch-thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+  transform: translateX(0);
+  transition: transform .15s ease;
+}
+
+.task-app .auto-switch[aria-checked="true"] .auto-switch-track {
+  background: var(--accent);
+}
+
+.task-app .auto-switch[aria-checked="true"] .auto-switch-thumb {
+  transform: translateX(20px);
+}
+
+.task-app .auto-switch:disabled {
+  opacity: .65;
+}
+
+.task-app .automatic-state {
+  min-width: 28px;
+  color: #34445b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.task-app .automatic-status {
+  flex-basis: 100%;
+  max-width: 330px;
+  margin-top: 3px;
+  color: #796024;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.task-app .automatic-status.has-error {
+  color: #922f28;
 }
 
 /* ---------- 入力・設定・競合確認 ---------- */
@@ -1299,8 +1430,10 @@ body.task-app.filter-open {
 }
 
 .task-app .settings-state dt {
+  max-width: 190px;
   color: #45566e;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .task-app .settings-state dd {
@@ -1396,24 +1529,6 @@ body.task-app.filter-open {
   font-weight: 650;
 }
 
-.task-app .filter-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  color: #526176;
-  background: transparent;
-  box-shadow: none;
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 1;
-}
-
 .task-app .filter-options {
   flex: 1;
   min-height: 0;
@@ -1473,15 +1588,6 @@ body.task-app.filter-open {
   overflow-wrap: anywhere;
 }
 
-.task-app .filter-option-check {
-  flex: none;
-  width: 20px;
-  color: #2563eb;
-  font-size: 17px;
-  font-weight: 700;
-  text-align: center;
-}
-
 /* ---------- したいこと ---------- */
 
 .task-app .wish-list {
@@ -1515,14 +1621,14 @@ body.task-app.filter-open {
   text-decoration-color: #a9b6c6;
 }
 
-/* ---------- 入力方法・画面幅への調整 ---------- */
+/* ---------- 操作状態・画面幅 ---------- */
 
 [hidden] {
   display: none !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .task-app .btn:not(:disabled):not(.primary):not(.btn-primary):hover {
+  .task-app .btn:not(:disabled):not(.primary):not(.btn-primary):not(.auto-switch):hover {
     border-color: #bdcee3;
     color: #294f83;
     background: #f3f7fd;
@@ -1544,7 +1650,8 @@ body.task-app.filter-open {
     border-color: #cbd9e9;
   }
 
-  .task-app .hit:not(:disabled):hover {
+  .task-app .hit:not(:disabled):hover,
+  .task-app .grip:not(:disabled):hover {
     background: #f0f5ff;
   }
 
@@ -1554,17 +1661,19 @@ body.task-app.filter-open {
 
   .task-app .grip:not(:disabled):hover {
     color: #4777c8;
-    background: #f1f6ff;
   }
 
-  .task-app .notice-close:hover {
+  .task-app .notice-close:hover,
+  .task-app .filter-close:hover,
+  .task-app .auto-switch:not(:disabled):hover {
     background: rgba(90, 110, 140, .08);
   }
 
-  .task-app .calendar-day.is-selected:hover {
+  .task-app .calendar-day.is-selected:hover,
+  .task-app .filter-option.is-selected:hover {
     border-color: #729cf0;
     color: #204fa9;
-    background: #edf4ff;
+    background: #e5efff;
   }
 
   .task-app .view-switch .btn.active:hover {
@@ -1572,13 +1681,8 @@ body.task-app.filter-open {
     background: #fff;
   }
 
-  .task-app .filter-option:not(.is-selected):hover,
-  .task-app .filter-close:hover {
+  .task-app .filter-option:not(.is-selected):hover {
     background: #f3f6fb;
-  }
-
-  .task-app .filter-option.is-selected:hover {
-    background: #e5efff;
   }
 }
 
@@ -1613,6 +1717,10 @@ body.task-app.filter-open {
 
   .task-app .panel {
     padding: 21px;
+  }
+
+  .task-app .automatic-control {
+    margin-left: 0;
   }
 }
 
@@ -1725,9 +1833,19 @@ body.task-app.filter-open {
     flex: 1;
   }
 
+  .task-app .header-actions #reload {
+    width: 96px;
+  }
+
   .task-app .header-actions .ui-icon {
     width: 18px;
     height: 18px;
+    min-width: 18px;
+  }
+
+  .task-app .header-actions .button-spinner {
+    width: 16px;
+    height: 16px;
   }
 
   .task-app .panel {
@@ -1764,7 +1882,6 @@ body.task-app.filter-open {
     width: 100%;
   }
 
-  .task-app .task-filters .filter-field select,
   .task-app .btn.filter-trigger {
     min-width: 0;
   }
@@ -1787,10 +1904,6 @@ body.task-app.filter-open {
     padding-right: 10px;
     padding-left: 10px;
     font-size: 13px;
-  }
-
-  .task-app .card-title {
-    font-size: 16px;
   }
 
   .task-app .task-dates {
@@ -1862,6 +1975,15 @@ body.task-app.filter-open {
     font-size: 15px;
   }
 
+  .task-app .automatic-control {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .task-app .automatic-status {
+    text-align: left;
+  }
+
   .task-app dialog {
     width: calc(100vw - 24px);
     padding: 20px;
@@ -1883,14 +2005,16 @@ body.task-app.filter-open {
 
   .task-app .settings-state {
     grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
-    gap: 10px 10px;
+    gap: 10px;
     font-size: 14px;
   }
 
   .task-app .dialog-actions .btn {
+    max-width: 100%;
     padding-right: 11px;
     padding-left: 11px;
     font-size: 14px;
+    white-space: normal;
   }
 
   .task-app dialog.filter-dialog {
@@ -1930,7 +2054,6 @@ body.task-app.filter-open {
 }
 
 @media (max-width: 380px) {
-  .task-app .header-actions #reload .ui-icon,
   .task-app .header-actions #settings .ui-icon {
     display: none;
   }
@@ -1942,6 +2065,10 @@ body.task-app.filter-open {
   .task-app .header-actions .btn {
     padding-right: 9px;
     padding-left: 9px;
+  }
+
+  .task-app .header-actions #reload {
+    width: 90px;
   }
 
   .task-app .panel {
@@ -1971,14 +2098,21 @@ body.task-app.filter-open {
   .task-app .calendar-month {
     font-size: 14px;
   }
+
+  .task-app .header-actions #add {
+    white-space: normal;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .task-app .btn {
+  .task-app .btn,
+  .task-app .auto-switch-track,
+  .task-app .auto-switch-thumb {
     transition: none;
   }
 
-  .task-app .loading::before {
+  .task-app .loading::before,
+  .task-app .button-spinner {
     animation: none;
   }
 }
