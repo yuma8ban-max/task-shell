@@ -1,7 +1,7 @@
-/* File: sw.js — task-v4.11.2-1 */
+/* File: sw.js — task-v4.11.3-1 */
 'use strict';
 
-const CACHE = 'task-v4.11.2-1';
+const CACHE = 'task-v4.11.3-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -11,8 +11,8 @@ const REQUIRED_FILES = [
   './index.html',
   './quick-add.html',
   './tabler.css?v=1.0.0',
-  './task-ui.css?v=4.11.1',
-  './task-core.js?v=4.11.2',
+  './task-ui.css?v=4.11.3',
+  './task-core.js?v=4.11.3',
   './task-core.js?v=4.8',
   './wish-client.js?v=4.10',
   './manifest.webmanifest',
@@ -48,21 +48,21 @@ async function checkedResponse(file) {
 
     if (
       file === './index.html' &&
-      text.indexOf("const VERSION = 'v4.11.2';") < 0
+      text.indexOf("const VERSION = 'v4.11.3';") < 0
     ) {
       throw new Error('画面の版が揃っていません。');
     }
 
     if (
       file.indexOf('./task-core.js') === 0 &&
-      text.indexOf("const BUILD = 'v4.11.2';") < 0
+      text.indexOf("const BUILD = 'v4.11.3';") < 0
     ) {
       throw new Error('共通処理の版が揃っていません。');
     }
 
     if (
       file.indexOf('./task-ui.css') === 0 &&
-      text.indexOf('--task-ui-version: v4.11.1;') < 0
+      text.indexOf('--task-ui-version: v4.11.3;') < 0
     ) {
       throw new Error('UIスタイルの版が揃っていません。');
     }
@@ -113,7 +113,6 @@ async function saveOptionalFile(cache, file) {
 
 self.addEventListener('install', function (event) {
   event.waitUntil((async function () {
-    // 必須ファイルの取得・版の確認が全部済むまでは有効化しない。
     const responses = await Promise.all(
       REQUIRED_FILES.map(checkedResponse)
     );
@@ -133,8 +132,8 @@ self.addEventListener('install', function (event) {
 });
 
 self.addEventListener('activate', function (event) {
-  // この更新では旧画面用のキャッシュを削除しない。
-  // IndexedDBや送信待ちの記録には触れない。
+  // 旧画面用キャッシュとIndexedDBの記録は削除しない。
+  // 入力中の画面を自動で再読み込みしない。
   event.waitUntil(self.clients.claim());
 });
 
@@ -182,7 +181,6 @@ async function documentResponse(documentUrl) {
 }
 
 self.addEventListener('fetch', function (event) {
-  // GASへのPOST通信は処理しない。
   if (event.request.method !== 'GET') {
     return;
   }
