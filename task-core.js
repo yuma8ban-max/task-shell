@@ -3,11 +3,12 @@
   'use strict';
 
   const VERSION = 'v4.8';
-  const BUILD = 'v4.11.2';
-
+  const BUILD = 'v4.11.3';
   const SERVER_VERSION = 'v4.3';
   const SYNC_PROTOCOL = 'task-sync-v1';
   const TRACE_PROTOCOL = 'task-read-trace-v1';
+  const EDIT_PROTOCOL = 'task-edit-fields-v1';
+
   const DB_NAME = 'taskapp-unified';
   const URL_KEY = 'gasUrl_v1';
   const TOKEN_KEY = 'gasTok_v1';
@@ -43,6 +44,12 @@
     'periodicSend',
     'periodicRun',
     'automatic'
+  ];
+
+  const EDIT_FIELDS = [
+    'title',
+    'due',
+    'date'
   ];
 
   const KNOWN_STATUSES = [
@@ -220,12 +227,10 @@
       const final = new URL(finalUrl);
       const initial = new URL(initialUrl);
 
-      const finalPath = final.pathname.replace(/\/+$/, '');
-      const initialPath = initial.pathname.replace(/\/+$/, '');
-
       if (
         final.origin === initial.origin &&
-        finalPath === initialPath
+        final.pathname.replace(/\/+$/, '') ===
+          initial.pathname.replace(/\/+$/, '')
       ) {
         return '元の公開先';
       }
@@ -246,11 +251,11 @@
     }
 
     const keys = Object.keys(value);
-    const expectedKeys = ['ok', 'app', 'build', 'message'];
+    const expected = ['ok', 'app', 'build', 'message'];
 
-    return keys.length === expectedKeys.length &&
+    return keys.length === expected.length &&
       keys.every(function (key) {
-        return expectedKeys.indexOf(key) >= 0;
+        return expected.indexOf(key) >= 0;
       }) &&
       value.ok === true &&
       value.app === SERVER_VERSION &&
@@ -378,12 +383,7 @@
       }
     }
 
-    expect(
-      'snapshot',
-      snapshot,
-      isObject(snapshot),
-      '項目の組'
-    );
+    expect('snapshot', snapshot, isObject(snapshot), '項目の組');
 
     if (!isObject(snapshot)) {
       return issues;
@@ -640,10 +640,7 @@
         });
       }
 
-      if (
-        typeof result.revision !== 'string' ||
-        !result.revision
-      ) {
+      if (typeof result.revision !== 'string' || !result.revision) {
         issues.push({
           field: 'revision',
           expected: '空でない文字列',
@@ -788,12 +785,12 @@
       return false;
     }
 
-    const validEntry = function (entry) {
+    function validEntry(entry) {
       return isObject(entry) &&
         typeof entry.key === 'string' &&
         typeof entry.before === 'string' &&
         typeof entry.after === 'string';
-    };
+    }
 
     if (
       !value.days.every(validEntry) ||
@@ -832,11 +829,7 @@
   }
 
   function shortRetryAllowed(error) {
-    if (
-      !error ||
-      error.supersededRead ||
-      error.serverStatus
-    ) {
+    if (!error || error.supersededRead || error.serverStatus) {
       return false;
     }
 
@@ -856,6 +849,81 @@
       'snapshot-shape',
       'trace-mismatch'
     ].indexOf(error.receiveCode) >= 0;
+  }
+
+  function editValues(value) {
+    return {
+      title: String(value.title == null ? '' : value.title),
+      due: String(value.due == null ? '' : value.due),
+      date: String(value.date == null ? '' : value.date)
+    };
+  }
+
+  function editFieldsFor(payload) {
+    if (
+      payload.editProtocol === EDIT_PROTOCOL &&
+      isObject(payload.editBase)
+    ) {
+      return EDIT_FIELDS.filter(function (field) {
+        return payload[field] !== payload.editBase[field];
+      });
+    }
+
+    return EDIT_FIELDS.slice();
+  }
+
+  function normalizeEditConflict(value) {
+    if (
+      !isObject(value) ||
+      value.protocol !== EDIT_PROTOCOL ||
+      [
+        'missing',
+        'unavailable',
+        'legacy-version',
+        'changed-fields'
+      ].indexOf(value.kind) < 0 ||
+      ['active', 'completed', 'unknown'].indexOf(value.location) < 0 ||
+      !Array.isArray(value.fields)
+    ) {
+      return null;
+    }
+
+    let current = null;
+
+    if (value.current != null) {
+      if (
+        !isObject(value.current) ||
+        !EDIT_FIELDS.every(function (field) {
+          return typeof value.current[field] === 'string';
+        }) ||
+        typeof value.current.version !== 'string' ||
+        !value.current.version
+      ) {
+        return null;
+      }
+
+      current = Object.assign(editValues(value.current), {
+        hour: value.current.hour === null ||
+          (
+            Number.isInteger(value.current.hour) &&
+            value.current.hour >= 8 &&
+            value.current.hour <= 22
+          )
+          ? value.current.hour
+          : null,
+        version: value.current.version
+      });
+    }
+
+    return {
+      protocol: EDIT_PROTOCOL,
+      kind: value.kind,
+      location: value.location,
+      fields: value.fields.filter(function (field) {
+        return EDIT_FIELDS.indexOf(field) >= 0;
+      }),
+      current: current
+    };
   }
 
   function compareTasks(a, b) {
@@ -1247,6 +1315,44 @@
     ).size;
   }
 
+  function compatibleRecheck(job, snapshot) {
+    if (
+      !snapshot ||
+      !snapshot.features ||
+      job.state !== 'conflict' ||
+      job.serverReceipt ||
+      job.compatRechecked === 'v4.11.3'
+    ) {
+      return false;
+    }
+
+    const features = snapshot.features;
+
+    if (
+      job.payload.action === 'edit' &&
+      features.completedTaskEdit === true &&
+      features.taskEditFields === true &&
+      features.taskEditProtocol === EDIT_PROTOCOL
+    ) {
+      const legacyMissing =
+        !job.editConflict &&
+        String(job.note || '').indexOf(
+          'タスクが完了済みになったか、現在の一覧にありません。'
+        ) >= 0;
+
+      const oldServerRejectedFields =
+        !job.editConflict &&
+        job.payload.editProtocol === EDIT_PROTOCOL;
+
+      return legacyMissing || oldServerRejectedFields;
+    }
+
+    return job.payload.action === 'automatic' &&
+      features.automaticStateCheck === true &&
+      typeof job.payload.enabled === 'boolean' &&
+      job.payload.enabled === snapshot.periodic.automatic;
+  }
+
   class TaskClient {
     constructor(options) {
       this.options = options || {};
@@ -1266,7 +1372,6 @@
       this.verifiedConnection = '';
       this.verifiedFeatures = {};
       this.legacyWaitUntil = 0;
-
       this.activeRead = null;
       this.hiddenAt = document.hidden ? Date.now() : 0;
       this.lastHiddenDuration = 0;
@@ -1434,6 +1539,7 @@
       this.readEvent(operation, 'visible');
 
       const now = Date.now();
+
       const hiddenDuration = this.hiddenAt
         ? Math.max(0, now - this.hiddenAt)
         : this.lastHiddenDuration;
@@ -1443,19 +1549,23 @@
         ? Math.max(0, now - operation.networkStartedAt)
         : 0;
 
-      const stale =
-        totalAge >= REQUEST_TIMEOUT_MS ||
-        (
-          hiddenDuration >= RESUME_HIDDEN_TIME_MS &&
-          (
-            requestAge >= RESUME_REQUEST_AGE_MS ||
-            (
-              operation.phase !== 'receiving' &&
-              totalAge >= RESUME_REQUEST_AGE_MS
-            )
-          )
-        );
+      let stale = false;
 
+      if (operation.phase === 'request') {
+        // 通信開始後は、順番待ちを含む総経過時間では判定しない。
+        stale = requestAge >= REQUEST_TIMEOUT_MS ||
+          (
+            hiddenDuration >= RESUME_HIDDEN_TIME_MS &&
+            requestAge >= RESUME_REQUEST_AGE_MS
+          );
+      } else if (
+        ['waiting', 'retry-wait', 'preparing']
+          .indexOf(operation.phase) >= 0
+      ) {
+        stale = totalAge >= REQUEST_TIMEOUT_MS;
+      }
+
+      // 受信後の照合・端末保存中は、通信の古さで中断しない。
       if (!operation.cancelled && !stale) {
         return false;
       }
@@ -1631,9 +1741,6 @@
 
       window.addEventListener('pagehide', () => {
         this.paused = true;
-
-        // 通常の一覧取得だけを中断する。
-        // 更新送信の通信を一括で中断しない。
         this.cancelRead('pagehide');
 
         try {
@@ -1675,6 +1782,10 @@
           });
         }
       }, 2000);
+
+      if (!this.legacyCount) {
+        await this.rearmCompatibleConflicts();
+      }
 
       this.emit({
         kind: 'ready'
@@ -1770,6 +1881,76 @@
       });
     }
 
+    async rearmCompatibleConflicts() {
+      if (
+        !this.ready ||
+        this.legacyCount ||
+        !this.state.jobs.some((job) => {
+          return compatibleRecheck(job, this.state.snapshot);
+        })
+      ) {
+        return false;
+      }
+
+      return this.mutate(function (saved) {
+        let changed = false;
+
+        saved.jobs.forEach(function (job) {
+          if (!compatibleRecheck(job, saved.snapshot)) {
+            return;
+          }
+
+          // 受付番号・更新本文・frozenは変更しない。
+          // 古い未送信に、推測した編集前の内容を付け足さない。
+          job.compatRechecked = 'v4.11.3';
+          job.state = 'saved';
+          job.note = '';
+          job.errorStatus = '';
+          job.shortRetry = 0;
+          job.retryAt = 0;
+          changed = true;
+        });
+
+        return changed;
+      });
+    }
+
+    async recheckConflict(id) {
+      if (!navigator.onLine || !this.configured()) {
+        throw new Error('通信できる状態で確認してください。');
+      }
+
+      await this.mutate(function (saved) {
+        const job = saved.jobs.find(function (entry) {
+          return entry.id === id && entry.state === 'conflict';
+        });
+
+        if (!job) {
+          return;
+        }
+
+        if (
+          job.payload.action !== 'edit' &&
+          job.payload.action !== 'automatic'
+        ) {
+          return;
+        }
+
+        job.state = 'saved';
+        job.retryAt = 0;
+        job.shortRetry = 0;
+        job.note = '';
+        job.errorStatus = '';
+      });
+
+      await this.pump(true);
+      await this.reloadLocal();
+
+      return this.state.jobs.find(function (job) {
+        return job.id === id;
+      }) || null;
+    }
+
     readDiagnosticRecords(key) {
       return new Promise((resolve, reject) => {
         const transaction = this.db.transaction('data', 'readonly');
@@ -1777,11 +1958,9 @@
           .get(key || DIAGNOSTIC_KEY);
 
         transaction.oncomplete = function () {
-          const records = request.result;
-
           resolve(
-            Array.isArray(records)
-              ? records.slice(-DIAGNOSTIC_LIMIT)
+            Array.isArray(request.result)
+              ? request.result.slice(-DIAGNOSTIC_LIMIT)
               : []
           );
         };
@@ -1848,6 +2027,7 @@
 
         this[property].push(safeRecord);
         this[property] = this[property].slice(-DIAGNOSTIC_LIMIT);
+
         this.diagnosticWarning =
           '通信の点検記録を端末に保存できませんでした。' +
           'この画面を閉じると記録が失われる場合があります。';
@@ -1928,37 +2108,32 @@
           lines.push(
             '・試行' + attempt.number,
             '  送信開始：' + (attempt.sentAt || '送信前'),
-            '  端末側の順番待ち：' +
-              (
-                Number.isFinite(attempt.queueMs)
-                  ? attempt.queueMs + 'ミリ秒'
-                  : '未記録'
-              ),
-            '  試行時間：' +
-              (
-                Number.isFinite(response.elapsedMs)
-                  ? response.elapsedMs + 'ミリ秒'
-                  : '未記録'
-              ),
-            '  応答番号：' +
-              (
-                response.httpStatus == null
-                  ? '未取得'
-                  : response.httpStatus
-              ),
+            '  端末側の順番待ち：' + (
+              Number.isFinite(attempt.queueMs)
+                ? attempt.queueMs + 'ミリ秒'
+                : '未記録'
+            ),
+            '  試行時間：' + (
+              Number.isFinite(response.elapsedMs)
+                ? response.elapsedMs + 'ミリ秒'
+                : '未記録'
+            ),
+            '  応答番号：' + (
+              response.httpStatus == null
+                ? '未取得'
+                : response.httpStatus
+            ),
             '  GAS照合番号：' + (response.traceEcho || '返答未確認'),
-            '  保存先処理：' +
-              (
-                Number.isFinite(response.serverMs)
-                  ? response.serverMs + 'ミリ秒'
-                  : '未取得'
-              ),
-            '  判定：' +
-              (
-                attempt.accepted
-                  ? '必要な情報を確認'
-                  : attempt.code || '終了結果は未記録'
-              )
+            '  保存先処理：' + (
+              Number.isFinite(response.serverMs)
+                ? response.serverMs + 'ミリ秒'
+                : '未取得'
+            ),
+            '  判定：' + (
+              attempt.accepted
+                ? '必要な情報を確認'
+                : attempt.code || '終了結果は未記録'
+            )
           );
         });
       });
@@ -2440,10 +2615,7 @@
 
         const info = summarizeResponse(result, transport);
 
-        if (
-          !isObject(result) ||
-          typeof result.ok !== 'boolean'
-        ) {
+        if (!isObject(result) || typeof result.ok !== 'boolean') {
           throw receiveError(
             'response-envelope',
             '保存先の返答の形式を確認できませんでした。',
@@ -2615,8 +2787,10 @@
         throw interruptedRead();
       }
 
+      let accepted;
+
       if (result.unchanged) {
-        return this.mutate((saved) => {
+        accepted = await this.mutate((saved) => {
           if (operation && !this.readActive(operation)) {
             throw interruptedRead();
           }
@@ -2649,23 +2823,26 @@
           saved.lastNetworkAt = Date.now();
           return true;
         });
+      } else {
+        requireSnapshot(result.snapshot, result[RESPONSE_INFO]);
+
+        await this.mutate((saved) => {
+          if (operation && !this.readActive(operation)) {
+            throw interruptedRead();
+          }
+
+          storeSnapshot(saved, result.snapshot);
+          saved.lastNetworkAt = Date.now();
+        });
+
+        accepted = true;
       }
 
-      requireSnapshot(
-        result.snapshot,
-        result[RESPONSE_INFO]
-      );
+      if (accepted && !this.legacyCount) {
+        await this.rearmCompatibleConflicts();
+      }
 
-      await this.mutate((saved) => {
-        if (operation && !this.readActive(operation)) {
-          throw interruptedRead();
-        }
-
-        storeSnapshot(saved, result.snapshot);
-        saved.lastNetworkAt = Date.now();
-      });
-
-      return true;
+      return accepted;
     }
 
     async performRead(payload, settings, operation) {
@@ -2712,6 +2889,7 @@
             throw interruptedRead();
           }
 
+          operation.phase = 'waiting';
           const queuedAt = Date.now();
 
           const result = await this.withNetwork(async () => {
@@ -2734,7 +2912,7 @@
               return SKIPPED;
             }
 
-            operation.phase = 'request';
+            operation.phase = 'preparing';
 
             attemptRecord = {
               number: attempt,
@@ -2853,6 +3031,8 @@
             await this.saveReadTrace(operation, 'cancelled');
             return null;
           }
+
+          operation.phase = 'failed-attempt';
 
           const recordedAttempt = attemptRecord || {
             number: attempt,
@@ -3016,6 +3196,8 @@
             this.setReadStatus('deferred', payload.action, 0);
           }
         }
+
+        this.pump(false);
       });
 
       return operation.promise;
@@ -3037,6 +3219,17 @@
       const id = uuid();
 
       await this.mutate(function (saved) {
+        if (
+          payload.action === 'automatic' &&
+          saved.jobs.some(function (job) {
+            return job.payload.action === 'automatic';
+          })
+        ) {
+          throw new Error(
+            '自動追加の変更が送信待ちです。先に保存結果を確認してください。'
+          );
+        }
+
         const current = contextFor(payload, saved.snapshot, saved.jobs);
 
         const context = captured
@@ -3329,6 +3522,12 @@
                     current.retryAt = 0;
                     current.shortRetry = 0;
                     current.errorStatus = result.status;
+
+                    if (current.payload.action === 'edit') {
+                      current.editConflict = normalizeEditConflict(
+                        result.editConflict
+                      );
+                    }
                   }
 
                   if (
@@ -3360,6 +3559,7 @@
 
           if (diagnostic) {
             diagnostic.outcome = 'recovered';
+
             diagnostic.attempts.push({
               number: attempt,
               full: !!job.serverReceipt,
@@ -3635,9 +3835,9 @@
           });
 
           if (task) {
-            task.title = payload.title;
-            task.due = payload.due;
-            task.date = payload.date;
+            editFieldsFor(payload).forEach(function (field) {
+              task[field] = payload[field];
+            });
           }
         }
 
@@ -3663,7 +3863,9 @@
       return relatedJobs(this.state.jobs, id);
     }
 
-    async resolveConflict(id, useLocal, reviewedIds) {
+    async resolveConflict(id, useLocal, reviewedIds, reviewed) {
+      const review = reviewed || {};
+
       await this.mutate(function (saved) {
         const root = saved.jobs.find(function (job) {
           return job.id === id && job.state === 'conflict';
@@ -3679,9 +3881,9 @@
           return job.id;
         }).sort();
 
-        const reviewed = (reviewedIds || []).slice().sort();
+        const expected = (reviewedIds || []).slice().sort();
 
-        if (JSON.stringify(actual) !== JSON.stringify(reviewed)) {
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
           throw new Error(
             '確認中に関連する操作が増えました。確認画面を開き直してください。'
           );
@@ -3704,20 +3906,114 @@
           return;
         }
 
+        if (!saved.snapshot) {
+          throw new Error('保存先の内容を確認してから操作してください。');
+        }
+
+        let simulatedEdit = null;
+        let editVersion = '';
+        const rootTaskId = root.payload.taskId || '';
+
+        if (root.payload.action === 'edit') {
+          const features = saved.snapshot.features || {};
+          const current = normalizeEditConflict(root.editConflict);
+          const confirmed = normalizeEditConflict(review.edit);
+
+          if (
+            !features.taskEditFields ||
+            features.taskEditProtocol !== EDIT_PROTOCOL ||
+            !current ||
+            !current.current ||
+            !confirmed ||
+            !confirmed.current ||
+            JSON.stringify(current) !== JSON.stringify(confirmed)
+          ) {
+            throw new Error(
+              '編集先の内容を確認し直してください。タスクを勝手に作り直すことはありません。'
+            );
+          }
+
+          simulatedEdit = editValues(confirmed.current);
+          editVersion = confirmed.current.version;
+        } else if (root.payload.action === 'automatic') {
+          if (
+            typeof review.automatic !== 'boolean' ||
+            review.automatic !== saved.snapshot.periodic.automatic
+          ) {
+            throw new Error('設定が変わりました。確認画面を開き直してください。');
+          }
+        } else if (
+          review.revision &&
+          review.revision !== saved.snapshot.revision
+        ) {
+          throw new Error('内容が変わりました。確認画面を開き直してください。');
+        }
+
         const replacements = new Map();
 
         related.forEach(function (job) {
           replacements.set(job.id, uuid());
         });
 
-        saved.jobs.forEach(function (job) {
-          if (!ids.has(job.id)) {
-            return;
+        related.forEach(function (job) {
+          const oldId = job.id;
+          const isRoot = oldId === id;
+          const payload = job.payload;
+          const newId = replacements.get(oldId);
+
+          if (
+            simulatedEdit &&
+            payload.taskId === rootTaskId &&
+            payload.action === 'edit'
+          ) {
+            const fields = editFieldsFor(payload);
+            const base = editValues(simulatedEdit);
+            const next = editValues(base);
+
+            fields.forEach(function (field) {
+              next[field] = payload[field];
+            });
+
+            payload.title = next.title;
+            payload.due = next.due;
+            payload.date = next.date;
+            payload.editProtocol = EDIT_PROTOCOL;
+            payload.editBase = base;
+            payload.expectedTask = editVersion;
+
+            simulatedEdit = next;
+            job.label = '編集：' + next.title;
+          } else if (
+            simulatedEdit &&
+            payload.taskId === rootTaskId &&
+            payload.action === 'done'
+          ) {
+            payload.expectedTask = editVersion;
+          } else if (isRoot && payload.action === 'order') {
+            payload.expectedDay = dayVersion(saved.snapshot, payload.date);
+            payload.items = mergePlan(
+              payload.items,
+              saved.snapshot.tasks,
+              payload.date
+            );
+          } else if (isRoot && payload.action === 'automatic') {
+            payload.expectedPeriodic = saved.snapshot.periodic.version;
+            payload.expectedAutomatic = saved.snapshot.periodic.automatic;
+          } else if (isRoot && payload.expectedPeriodic) {
+            payload.expectedPeriodic = saved.snapshot.periodic.version;
+          } else if (isRoot && payload.expectedUndo) {
+            payload.expectedUndo = saved.snapshot.undo.version;
+          } else if (isRoot && payload.taskId) {
+            const task = taskById(saved.snapshot, payload.taskId);
+
+            if (!task) {
+              throw new Error('対象のタスクを確認できません。');
+            }
+
+            payload.expectedTask = task.version;
           }
 
-          const payload = job.payload;
-          const newId = replacements.get(job.id);
-
+          // 関連する別タスクの版は、無条件に最新へ置き換えない。
           job.id = newId;
           payload.requestId = newId;
           job.frozen = false;
@@ -3728,35 +4024,20 @@
           job.retryAt = 0;
           job.attempts = 0;
           job.createdAt = Date.now();
+
           delete job.firstSentAt;
           delete job.lastAttemptAt;
           delete job.serverReceipt;
+          delete job.editConflict;
+          delete job.compatRechecked;
+
+          job.keys = Array.from(new Set(
+            (job.keys || []).concat(resources(payload, saved.snapshot))
+          ));
 
           job.causes = (job.causes || []).map(function (cause) {
             return replacements.get(cause) || cause;
           });
-
-          if (payload.action === 'order') {
-            payload.expectedDay = dayVersion(saved.snapshot, payload.date);
-            payload.items = mergePlan(
-              payload.items,
-              saved.snapshot.tasks,
-              payload.date
-            );
-          }
-
-          if (payload.taskId) {
-            const task = taskById(saved.snapshot, payload.taskId);
-            payload.expectedTask = task ? task.version : '';
-          }
-
-          if (payload.expectedPeriodic) {
-            payload.expectedPeriodic = saved.snapshot.periodic.version;
-          }
-
-          if (payload.expectedUndo) {
-            payload.expectedUndo = saved.snapshot.undo.version;
-          }
         });
       });
 
@@ -3767,6 +4048,7 @@
   window.TaskCore = {
     VERSION: VERSION,
     BUILD: BUILD,
+    EDIT_PROTOCOL: EDIT_PROTOCOL,
     create: function (options) {
       return new TaskClient(options);
     },
@@ -3775,6 +4057,8 @@
     compareTasks: compareTasks,
     taskById: taskById,
     dayVersion: dayVersion,
-    mergePlan: mergePlan
+    mergePlan: mergePlan,
+    editValues: editValues,
+    editFields: editFieldsFor
   };
 })();
