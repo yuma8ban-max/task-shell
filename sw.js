@@ -1,7 +1,7 @@
-/* File: sw.js — task-v4.12.1-1 */
+/* File: sw.js — task-v4.12.2-1 */
 'use strict';
 
-const CACHE = 'task-v4.12.1-1';
+const CACHE = 'task-v4.12.2-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -48,7 +48,7 @@ async function checkedResponse(file) {
 
     if (
       file === './index.html' &&
-      text.indexOf("const VERSION = 'v4.12.1';") < 0
+      text.indexOf("const VERSION = 'v4.12.2';") < 0
     ) {
       throw new Error('画面の版が揃っていません。');
     }
@@ -81,7 +81,9 @@ async function checkedResponse(file) {
       file !== './index.html' &&
       /^\s*(?:<!doctype\s+html|<html|<head|<body)/i.test(text)
     ) {
-      throw new Error('CSSまたはJavaScriptの代わりにHTMLが返されました。');
+      throw new Error(
+        'CSSまたはJavaScriptの代わりにHTMLが返されました。'
+      );
     }
   }
 
@@ -132,8 +134,8 @@ self.addEventListener('install', function (event) {
 });
 
 self.addEventListener('activate', function (event) {
-  // 端末データと旧画面用キャッシュを削除しない。
-  // 入力中の画面を自動再読み込みしない。
+  // 端末データと旧画面用キャッシュは削除しない。
+  // 入力中の画面を自動で再読み込みしない。
   event.waitUntil(self.clients.claim());
 });
 
@@ -181,7 +183,6 @@ async function documentResponse(documentUrl) {
 }
 
 self.addEventListener('fetch', function (event) {
-  // 保存先へのPOST通信は処理しない。
   if (event.request.method !== 'GET') {
     return;
   }
