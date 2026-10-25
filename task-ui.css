@@ -1,7 +1,7 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.12.1
+ * UI build: v4.12.3
  *
  * Application-specific styles.
  * The following license accompanies the separately distributed,
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.12.1;
+  --task-ui-version: v4.12.3;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -277,6 +277,15 @@ body.sheet-open {
   color: #62728b;
   background: #f8fafd;
   opacity: 1;
+}
+
+/* SVGのhiddenプロパティに依存せず、更新状態で表示を切り替える。 */
+.task-app #reload[aria-busy="true"] #reload-icon {
+  display: none !important;
+}
+
+.task-app #reload[aria-busy="false"] #reload-spinner {
+  display: none !important;
 }
 
 .sr-only {
@@ -1072,12 +1081,6 @@ body.sheet-open {
   text-align: center;
 }
 
-.task-app .backlog-hint {
-  flex: none;
-  margin-bottom: 14px;
-  font-size: 13px;
-}
-
 .task-app .backlog-list {
   flex: 1;
   min-height: 0;
@@ -1619,6 +1622,15 @@ body.sheet-open {
 
 .task-app dialog.backlog-dialog {
   width: min(620px, calc(100vw - 28px));
+  height: min(720px, calc(100vh - 40px));
+  height: min(
+    720px,
+    calc(
+      100dvh - 40px -
+      env(safe-area-inset-top) -
+      env(safe-area-inset-bottom)
+    )
+  );
   overflow: hidden;
 }
 
@@ -1633,11 +1645,15 @@ body.sheet-open {
 }
 
 .task-app .backlog-dialog-list {
-  flex: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   padding: 2px;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ---------- 絞り込み ---------- */
@@ -2289,6 +2305,12 @@ body.sheet-open {
     border-left: 0;
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -10px 45px rgba(26, 42, 69, .18);
+  }
+
+  /* 上限だけでなく実際の高さを指定し、一覧領域を確保する。 */
+  .task-app dialog.backlog-dialog {
+    height: 84vh;
+    height: 84dvh;
   }
 
   .task-app dialog.filter-dialog::backdrop,
