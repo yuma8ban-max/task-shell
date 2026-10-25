@@ -1,7 +1,7 @@
-/* File: sw.js — task-v4.12.2-1 */
+/* File: sw.js — task-v4.12.3-1 */
 'use strict';
 
-const CACHE = 'task-v4.12.2-1';
+const CACHE = 'task-v4.12.3-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -62,7 +62,7 @@ async function checkedResponse(file) {
 
     if (
       file.indexOf('./task-ui.css') === 0 &&
-      text.indexOf('--task-ui-version: v4.12.1;') < 0
+      text.indexOf('--task-ui-version: v4.12.3;') < 0
     ) {
       throw new Error('UIスタイルの版が揃っていません。');
     }
@@ -134,8 +134,8 @@ self.addEventListener('install', function (event) {
 });
 
 self.addEventListener('activate', function (event) {
-  // 端末データと旧画面用キャッシュは削除しない。
-  // 入力中の画面を自動で再読み込みしない。
+  // IndexedDB・未送信・旧画面用キャッシュは削除しない。
+  // 入力中の画面を自動再読み込みしない。
   event.waitUntil(self.clients.claim());
 });
 
