@@ -16,7 +16,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
   <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
-  <link rel="stylesheet" href="./task-ui.css?v=4.11.3">
+  <link rel="stylesheet" href="./task-ui.css?v=4.12.1">
 </head>
 <body class="task-app">
   <svg
@@ -71,9 +71,9 @@
       <path d="M16 5l3 3"></path>
       <path d="M4 20h4L20 8a2.83 2.83 0 0 0-4-4L4 16v4"></path>
     </symbol>
-    <symbol id="icon-alert" viewBox="0 0 24 24">
-      <path d="M10.3 4.5L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z"></path>
-      <path d="M12 9v4M12 17h.01"></path>
+    <symbol id="icon-inbox" viewBox="0 0 24 24">
+      <path d="M5 4h14l2 10v6H3v-6L5 4z"></path>
+      <path d="M3 14h5l2 3h4l2-3h5"></path>
     </symbol>
   </svg>
 
@@ -89,52 +89,44 @@
       </div>
 
       <div class="nav-items">
-        <button
-          type="button"
-          data-page="plan"
-          class="nav-link active"
-          aria-current="page">
+        <button type="button" data-page="plan" class="nav-link active" aria-current="page">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <use href="#icon-plan"></use>
           </svg>
-          <span class="nav-label">1日の計画</span>
+          <span>1日の計画</span>
         </button>
-
         <button type="button" data-page="tasks" class="nav-link">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <use href="#icon-list"></use>
           </svg>
-          <span class="nav-label">タスク一覧</span>
+          <span>タスク一覧</span>
         </button>
-
         <button type="button" data-page="periodic" class="nav-link">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <use href="#icon-repeat"></use>
           </svg>
-          <span class="nav-label">定期タスク</span>
+          <span>定期タスク</span>
         </button>
-
         <button type="button" data-page="history" class="nav-link">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <use href="#icon-done"></use>
           </svg>
-          <span class="nav-label">完了済み</span>
+          <span>完了済み</span>
         </button>
-
         <button type="button" data-page="wishes" class="nav-link">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <use href="#icon-wish"></use>
           </svg>
-          <span class="nav-label">したいこと</span>
+          <span>したいこと</span>
         </button>
       </div>
     </nav>
 
-    <main>
+    <main id="main">
       <header class="app-header">
         <div class="app-heading">
           <h1>タスク</h1>
-          <span class="badge version">v4.11.3</span>
+          <span class="badge version">v4.12.1</span>
         </div>
 
         <div class="header-actions">
@@ -146,19 +138,10 @@
           </button>
 
           <button id="reload" class="btn" type="button" disabled>
-            <svg
-              id="reload-icon"
-              class="ui-icon"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              focusable="false">
+            <svg id="reload-icon" class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <use href="#icon-refresh"></use>
             </svg>
-            <span
-              id="reload-spinner"
-              class="button-spinner"
-              aria-hidden="true"
-              hidden></span>
+            <span id="reload-spinner" class="button-spinner" aria-hidden="true" hidden></span>
             <span id="reload-label">更新</span>
           </button>
 
@@ -176,11 +159,7 @@
       <div id="message" class="notice" hidden aria-live="polite">
         <div class="notice-row">
           <span id="message-text"></span>
-          <button
-            id="message-close"
-            class="notice-close"
-            type="button"
-            aria-label="お知らせを閉じる">
+          <button id="message-close" class="notice-close" type="button" aria-label="お知らせを閉じる">
             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <use href="#icon-close"></use>
             </svg>
@@ -201,27 +180,38 @@
     </main>
   </div>
 
-  <dialog
-    id="task-filter-dialog"
-    class="filter-dialog"
-    aria-labelledby="task-filter-title">
-    <div class="filter-dialog-heading">
-      <h2 id="task-filter-title">絞り込み</h2>
-      <button
-        id="task-filter-close"
-        class="filter-close"
-        type="button"
-        aria-label="絞り込みを閉じる">
+  <div id="plan-return-zone" class="plan-return-zone" hidden>
+    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <use href="#icon-inbox"></use>
+    </svg>
+    <span>実行日なしへ戻す</span>
+  </div>
+
+  <div id="drag-announcement" class="sr-only" aria-live="polite"></div>
+
+  <dialog id="backlog-dialog" class="backlog-dialog" aria-labelledby="backlog-dialog-title">
+    <div class="sheet-heading">
+      <h2 id="backlog-dialog-title">実行日なし</h2>
+      <button id="backlog-close" class="filter-close" type="button" aria-label="候補一覧を閉じる">
         <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <use href="#icon-close"></use>
         </svg>
       </button>
     </div>
-    <div
-      id="task-filter-options"
-      class="filter-options"
-      role="menu"
-      aria-label="表示するタスク"></div>
+    <p id="backlog-target-date" class="sub"></p>
+    <div id="backlog-dialog-list" class="backlog-dialog-list"></div>
+  </dialog>
+
+  <dialog id="task-filter-dialog" class="filter-dialog" aria-labelledby="task-filter-title">
+    <div class="filter-dialog-heading">
+      <h2 id="task-filter-title">絞り込み</h2>
+      <button id="task-filter-close" class="filter-close" type="button" aria-label="絞り込みを閉じる">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#icon-close"></use>
+        </svg>
+      </button>
+    </div>
+    <div id="task-filter-options" class="filter-options" role="menu" aria-label="表示するタスク"></div>
   </dialog>
 
   <dialog id="editor" aria-labelledby="editor-title">
@@ -233,13 +223,12 @@
       </span>
       <h2 id="editor-title"></h2>
     </div>
-
     <form id="editor-form">
       <div id="editor-fields"></div>
       <div id="editor-note" class="form-error" hidden aria-live="polite"></div>
       <div class="dialog-actions">
-        <button type="button" id="editor-cancel" class="btn">キャンセル</button>
-        <button type="submit" class="btn btn-primary primary" id="editor-submit">保存</button>
+        <button id="editor-cancel" class="btn" type="button">キャンセル</button>
+        <button id="editor-submit" class="btn btn-primary primary" type="submit">保存</button>
       </div>
     </form>
   </dialog>
@@ -256,23 +245,11 @@
 
     <label class="field">
       <span class="form-label">接続先</span>
-      <input
-        id="url"
-        class="form-control"
-        type="text"
-        autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false">
+      <input id="url" class="form-control" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
     </label>
-
     <label class="field">
       <span class="form-label">合い言葉</span>
-      <input
-        id="token"
-        class="form-control"
-        type="password"
-        autocomplete="off"
-        autocapitalize="off">
+      <input id="token" class="form-control" type="password" autocomplete="off" autocapitalize="off">
     </label>
 
     <div class="toolbar">
@@ -294,39 +271,33 @@
       <summary>使い方</summary>
       <ul>
         <li>＊は必須項目です。期限・実行日は空欄でも追加できます。</li>
-        <li>実行日が空欄のタスクは「実行日なし」で表示できます。</li>
-        <li>日付は「期限」「実行」のラベルの下に表示します。今年以外の日付には年も表示します。</li>
-        <li>「1日の計画」では、タスクには期限だけを表示します。</li>
-        <li>「期限切れ」と「実行日超過」は別の状態です。表示のために日付を変更しません。</li>
+        <li>「実行日なし」は実行日が空欄の未完了タスクです。期限の有無は問いません。</li>
+        <li>PCの計画画面では、右の候補から中央の時間枠へ移動できます。</li>
+        <li>移動つまみ、または件名部分の0.6秒長押しで移動を始めます。離すと端末に保存します。</li>
+        <li>中央の「時間未定」は、表示中の日に実行するタスクのうち、時間帯が未定のものです。</li>
+        <li>中央から「実行日なし」へ戻すと、実行日だけが空欄になります。期限と時間帯は残ります。</li>
+        <li>iPhoneでは「実行日なし」から候補を開き、「この日に入れる」を押します。設定済みの時間帯は保持します。</li>
+        <li>狭い画面で計画のタスクを移動中は、下部の「実行日なしへ戻す」に置くことでも戻せます。</li>
+        <li>置けない場所で離すと変更しません。移動中に日付は切り替えません。</li>
+        <li>新規追加の登録確認前のタスクは、まだ移動・編集・完了にできません。</li>
+        <li>タスク一覧の「昨日以前」は、実行日が昨日以前の未完了タスクです。期限切れとは別です。</li>
         <li>「今週」は今日から日曜日までの実行日が対象です。</li>
-        <li>実行日の「昨日以前」は、未完了タスクを古い実行日順で表示します。</li>
-        <li>「期限なし」は期限が空欄、「期限・実行日なし」は両方が空欄のタスクです。</li>
-        <li>新規タスクの編集・完了・移動は、登録確認後に使えます。</li>
-        <li>左の丸で完了、編集ボタンで件名・期限・実行日を変更します。</li>
-        <li>右の移動つまみをつかむか、件名部分を0.6秒長押しすると移動できます。離すと端末に保存します。</li>
-        <li>実行日を変えても、設定済みの時間帯は残ります。</li>
-        <li>新しい編集では、変更した欄だけを反映します。同じ欄が別端末でも変更された場合は確認します。</li>
-        <li>別端末で完了したタスクへの編集は、照合できれば完了状態と完了日時を維持して反映します。タスクを作り直しません。</li>
-        <li>以前の形式の未送信は、受付番号や更新内容を勝手に変更しません。安全に照合できない場合は確認を残します。</li>
-        <li>確認画面の「この端末の変更を取り下げる」は、関連する未送信を反映しない選択です。保存先のタスクは削除しません。</li>
-        <li>自動追加のスイッチは、保存先で確認できた状態を表示します。変更中は切り替え先を併記し、同じ設定を重ねて送りません。</li>
+        <li>通常の変更競合は、操作時刻と順序に基づき自動処理します。遅れて届いた古い操作で新しい変更を戻さない方式です。</li>
+        <li>端末時計の補正は概算です。完全オフライン時などの厳密な前後関係を保証するものではありません。</li>
+        <li>旧記録の変更順を復元できない場合は、保存先の現在値を基準に処理します。処理結果を確認してから送信待ちを解消します。</li>
+        <li>完了済みへの編集は完了状態を維持します。並べ替えで完了済みのタスクを復活させません。</li>
+        <li>「直前の完了を戻す」は、操作時点で確認した対象を戻します。</li>
+        <li>自動追加のスイッチは保存先で確認できた状態を表示します。変更中は切り替え先を併記します。</li>
         <li>定期タスクの頻度は、毎日・毎週月曜日・毎月15日・3日ごとなどです。「不定期」は自動追加の対象外です。</li>
-        <li>予定分の期限は本来の追加予定日が基準です。「今すぐ1件追加」は押した日が基準です。</li>
+        <li>予定分の期限は本来の追加予定日が基準です。「今すぐ1件追加」は従来の個別追加処理を使います。</li>
         <li>期限の0日後は基準日当日です。土日も数え、その月にない指定日は月末にします。</li>
-        <li>「したいこと」の編集は件名だけを変え、達成状態を変えません。通信がないときも端末に保存します。</li>
-        <li>「したいこと」の新規追加の送信待ちや、確認が必要な項目は、先に保存結果を確認してください。</li>
-        <li>小窓は追加後も残ります。閉じるときは右上の×を使ってください。</li>
-        <li>通常画面が開いていれば、小窓終了後の送信確認を引き継ぎます。</li>
-        <li>通常は表示中のページを約20秒ごとに更新します。送信待ちを優先します。</li>
-        <li>通常タスクの一覧取得で一時的な404や不正な返答があった場合は、2秒後に全体を1回だけ取り直します。</li>
-        <li>通常タスクの更新送信では、一時的な404や不正な返答を2秒後・さらに5秒後まで再確認します。受付番号と更新内容は変えません。</li>
-        <li>保存成功の返答を確認した後に一覧確認だけ失敗した場合は、更新要求ではなく一覧を確認します。</li>
-        <li>復帰時の通信開始後の判定には、通信開始前の順番待ちを含めません。更新送信は一括で中断しません。</li>
-        <li>ブラウザーで一覧取得を中断しても、保存先の処理停止を意味しません。</li>
-        <li>正常な一覧を受け取るまでは前回の表示を残し、再確認にも失敗した場合はエラーを表示します。</li>
-        <li>通信の点検記録には、合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
-        <li>読み取りの照合番号は、タスクIDや保存操作の受付番号とは別の番号です。</li>
-        <li>「したいこと」独自の再送処理は従来どおりです。</li>
+        <li>「したいこと」の編集は件名だけを変更します。達成状態は別に扱います。</li>
+        <li>通常画面が開いていれば、小窓終了後の送信確認を引き継ぎます。小窓は追加後も閉じません。</li>
+        <li>一覧の自動更新より送信待ちを優先します。</li>
+        <li>一時的な404などは短く再確認します。60秒の通信制限を延長する変更はしていません。</li>
+        <li>保存先の処理を確認した後に一覧確認だけ失敗した場合は、更新要求ではなく一覧を確認します。</li>
+        <li>認証・入力・端末保存・対象の消失など、本当に確認が必要な異常は表示します。</li>
+        <li>点検記録には、合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
         <li>iPhoneショートカットの未送信は「ファイル」アプリで管理し、この画面の送信待ちとは別です。</li>
       </ul>
     </details>
@@ -337,46 +308,17 @@
     </div>
   </dialog>
 
-  <dialog id="conflict-dialog" aria-labelledby="conflict-title">
-    <div class="dialog-heading warning">
-      <span class="dialog-icon" aria-hidden="true">
-        <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
-          <use href="#icon-alert"></use>
-        </svg>
-      </span>
-      <h2 id="conflict-title">変更内容を確認</h2>
-    </div>
-
-    <p id="conflict-note" class="dialog-text"></p>
-
-    <div class="comparison">
-      <section>
-        <h3 id="conflict-server-title">保存済み</h3>
-        <div id="conflict-server"></div>
-      </section>
-      <section>
-        <h3>この端末の変更</h3>
-        <div id="conflict-local"></div>
-      </section>
-    </div>
-
-    <div class="dialog-actions">
-      <button id="conflict-close" class="btn" type="button">後で確認</button>
-      <button id="conflict-remote" class="btn" type="button">この端末の変更を取り下げる</button>
-      <button id="conflict-apply" class="btn btn-primary primary" type="button">変更を反映</button>
-    </div>
-  </dialog>
-
-  <script src="./task-core.js?v=4.11.3"></script>
+  <script src="./task-core.js?v=4.12.1"></script>
   <script src="./wish-client.js?v=4.10"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.11.3';
-      const REQUIRED_CORE_BUILD = 'v4.11.3';
+      const VERSION = 'v4.12.1';
+      const REQUIRED_CORE_BUILD = 'v4.12.1';
       const UI_KIT_VERSION = '1.0.0';
       const EDIT_PROTOCOL = 'task-edit-fields-v1';
+      const PLAN_PROTOCOL = 'task-plan-move-v1';
 
       const FILTER_GROUPS = [
         {
@@ -418,8 +360,8 @@
         WishClient.VERSION !== 'v4.10'
       ) {
         $('status').textContent =
-          '画面に対応する共通処理を読み込めません。' +
-          'task-core.js（v4.11.3）と wish-client.js（v4.10）を確認してください。' +
+          '対応する共通処理を読み込めません。' +
+          'task-core.js（v4.12.1）とwish-client.js（v4.10）を確認してください。' +
           '端末の記録は消さないでください。';
         return;
       }
@@ -433,6 +375,7 @@
       let client = null;
       let wishes = null;
       let page = 'plan';
+
       let selectedDate = japanDate();
       let taskView = 'list';
       let taskFilter = 'all';
@@ -475,16 +418,16 @@
       let editorSaving = false;
       let periodicAdding = false;
 
-      let conflictId = null;
-      let conflictSource = 'tasks';
-      let conflictReviewed = [];
-      let conflictReview = null;
-      let conflictOpening = false;
-      let conflictSaving = false;
-      let wishReviewedVersion = '';
       let messageTimer = null;
       let messageKind = '';
       let cacheVersion = '未確認';
+
+      let backlogScroll = 0;
+      let backlogDialogScroll = 0;
+      let backlogDialogDate = selectedDate;
+      let backlogAdding = false;
+      let highlightId = '';
+      let highlightTimer = null;
 
       const shownAttention = new Set();
 
@@ -499,7 +442,8 @@
       let autoTimer = null;
       let autoDirection = 0;
       let suppressClickUntil = 0;
-      let dragContext = null;
+      let renderDeferred = false;
+      let scrollFrame = null;
 
       function make(tag, text, className) {
         const element = document.createElement(tag);
@@ -531,15 +475,15 @@
       }
 
       function button(text, handler, className) {
-        const element = make(
+        const control = make(
           'button',
           text,
           'btn' + (className ? ' ' + className : '')
         );
 
-        element.type = 'button';
-        element.addEventListener('click', handler);
-        return element;
+        control.type = 'button';
+        control.addEventListener('click', handler);
+        return control;
       }
 
       function notify(text, error, detail, kind) {
@@ -647,23 +591,24 @@
         }
       }
 
-      function periodicSupported() {
-        return !!(
-          state.snapshot &&
-          state.snapshot.features &&
-          state.snapshot.features.periodicDue
-        );
+      function features() {
+        return state.snapshot && state.snapshot.features || {};
       }
 
-      function fieldEditingSupported() {
-        const features = state.snapshot && state.snapshot.features;
+      function periodicSupported() {
+        return features().periodicDue === true;
+      }
 
-        return !!(
-          features &&
-          features.taskEditFields &&
-          features.completedTaskEdit &&
-          features.taskEditProtocol === EDIT_PROTOCOL
-        );
+      function editingSupported() {
+        return client.latestSupported() &&
+          features().taskEditFields === true &&
+          features().taskEditProtocol === EDIT_PROTOCOL;
+      }
+
+      function planningSupported() {
+        return client.latestSupported() &&
+          features().planMove === true &&
+          features().planMoveProtocol === PLAN_PROTOCOL;
       }
 
       function onlineRequired() {
@@ -678,8 +623,8 @@
       function anyDialogOpen() {
         return $('editor').open ||
           $('settings-dialog').open ||
-          $('conflict-dialog').open ||
-          $('task-filter-dialog').open;
+          $('task-filter-dialog').open ||
+          $('backlog-dialog').open;
       }
 
       function failed(text, error) {
@@ -695,8 +640,7 @@
       }
 
       function retryingRead(action) {
-        return client &&
-          client.readStatus.phase === 'retrying' &&
+        return client.readStatus.phase === 'retrying' &&
           (!action || client.readStatus.action === action);
       }
 
@@ -758,13 +702,35 @@
           notify(text, true, detail);
         },
         onSaved: function (job, result) {
-          if (!client.lastReadError) {
+          if (client.lastReadError) {
+            return;
+          }
+
+          const outcome = result.result && result.result.latestOutcome;
+
+          if (outcome === 'superseded') {
+            notify('より新しい操作を反映しました');
+          } else if (outcome === 'baseline') {
+            notify('旧記録を保存先の内容に合わせました');
+          } else if (outcome === 'completed') {
+            notify('完了済みのため配置は変更しませんでした');
+          } else if (outcome === 'expired') {
+            notify('日付が変わった追加要求は実行していません');
+          } else if (outcome === 'merged') {
+            notify('他の新しい変更と合わせて反映しました');
+          } else if (
+            result.result &&
+            result.result.editLocation === 'completed'
+          ) {
+            notify('完了済みの内容を更新しました');
+          } else if (job.payload.action === 'planMove') {
             notify(
-              result.result && result.result.editLocation === 'completed'
-                ? '完了済みの内容を更新しました'
-                : '保存しました',
-              false
+              job.payload.date
+                ? shortDate(job.payload.date) + 'の計画に反映しました'
+                : '実行日なしへ戻しました'
             );
+          } else {
+            notify('保存しました');
           }
         }
       });
@@ -833,7 +799,8 @@
         $('add').disabled =
           !client.ready ||
           !!client.legacyCount ||
-          (page === 'wishes' && (!wishes || !wishes.ready));
+          (page === 'wishes' && (!wishes || !wishes.ready)) ||
+          !!drag;
 
         const loading = page === 'history'
           ? historyLoading
@@ -846,12 +813,14 @@
         $('reload').disabled =
           !client.ready ||
           !!client.legacyCount ||
-          busy;
+          busy ||
+          !!drag;
 
         $('reload').setAttribute('aria-busy', String(!!busy));
         $('reload-label').textContent = busy ? '更新中' : '更新';
         $('reload-icon').hidden = !!busy;
         $('reload-spinner').hidden = !busy;
+        $('settings').disabled = !!drag;
 
         if ($('settings-dialog').open) {
           renderSettingsState();
@@ -859,10 +828,13 @@
       }
 
       function jobStateLabel(job) {
+        if (job.state === 'conflict') {
+          return '自動反映の準備待ち';
+        }
+
         if (
-          job.state === 'conflict' ||
           job.state === 'blocked' ||
-          job.errorStatus === 'authentication'
+          ['settings', 'authentication'].indexOf(job.errorStatus) >= 0
         ) {
           return '確認が必要';
         }
@@ -871,17 +843,40 @@
           return job.shortRetry
             ? '再確認中'
             : job.serverReceipt
-              ? '保存後の一覧を確認中'
+              ? '処理後の一覧を確認中'
               : '保存結果を確認中';
         }
 
         return job.state === 'unknown' ? '再確認待ち' : '送信待ち';
       }
 
+      async function retrySending(source) {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        try {
+          await client.read({
+            action: 'load'
+          }, {
+            forceFull: true
+          });
+
+          if (source === 'wishes') {
+            await wishes.reloadLocal();
+            await wishes.pump(true);
+          } else {
+            await client.pump(true);
+          }
+        } catch (error) {
+          failed('送信を再開できませんでした', error);
+        }
+      }
+
       function renderOutbox() {
         const container = $('outbox-items');
 
-        const openedDetails = new Set(
+        const openDetails = new Set(
           Array.from(container.querySelectorAll('details[data-job]'))
             .filter(function (element) {
               return element.open;
@@ -906,18 +901,17 @@
         }));
 
         const attention = entries.filter(function (entry) {
-          return entry.job.state === 'conflict' ||
-            entry.job.state === 'blocked' ||
+          return entry.job.state === 'blocked' ||
             entry.job.state === 'unknown' ||
-            entry.job.errorStatus === 'authentication';
+            ['settings', 'authentication'].indexOf(entry.job.errorStatus) >= 0;
         });
 
-        const activeKeys = new Set(entries.map(function (entry) {
+        const active = new Set(entries.map(function (entry) {
           return entry.source + ':' + entry.job.id;
         }));
 
         Array.from(shownAttention).forEach(function (key) {
-          if (!activeKeys.has(key.split('|')[0])) {
+          if (!active.has(key.split('|')[0])) {
             shownAttention.delete(key);
           }
         });
@@ -945,15 +939,10 @@
           const job = entry.job;
           const row = make('div', null, 'job');
           const heading = make('div', null, 'job-heading');
-
-          const needsCheck =
-            job.state === 'conflict' ||
-            job.state === 'blocked' ||
-            job.state === 'unknown' ||
-            job.errorStatus === 'authentication';
+          const needsCheck = attention.indexOf(entry) >= 0;
 
           heading.append(
-            make('div', job.label, 'job-title'),
+            make('div', job.label || '未送信の操作', 'job-title'),
             make(
               'span',
               jobStateLabel(job),
@@ -963,41 +952,27 @@
 
           row.appendChild(heading);
 
-          if (job.state === 'conflict') {
-            const review = button('確認する', function () {
-              if (entry.source === 'wishes') {
-                openWishConflict(job.id);
-              } else {
-                openConflict(job.id);
-              }
-            });
-
-            review.disabled = !navigator.onLine || conflictOpening;
-            row.appendChild(review);
-          } else if (job.errorStatus === 'authentication') {
+          if (
+            ['settings', 'authentication'].indexOf(job.errorStatus) >= 0
+          ) {
             row.appendChild(button('設定を確認', openSettings));
           } else if (
             job.state !== 'blocked' &&
             job.state !== 'sending'
           ) {
             const send = button('今すぐ送信', function () {
-              if (entry.source === 'wishes') {
-                wishes.pump(true);
-              } else {
-                client.pump(true);
-              }
+              retrySending(entry.source);
             });
 
             send.disabled = !navigator.onLine;
             row.appendChild(send);
           }
 
-          if (job.note) {
+          if (job.note && job.state !== 'conflict') {
             const details = make('details');
             const key = entry.source + ':' + job.id;
-
             details.dataset.job = key;
-            details.open = openedDetails.has(key);
+            details.open = openDetails.has(key);
 
             details.append(
               make('summary', '詳細'),
@@ -1044,19 +1019,33 @@
       }
 
       function render() {
-        const position = drag ? null : capturePosition();
+        const position = capturePosition();
         const oldAchieved = $('wish-achieved');
+        const oldBacklog = $('backlog-list');
 
         if (oldAchieved) {
           achievedOpen = oldAchieved.open;
         }
 
+        if (oldBacklog) {
+          backlogScroll = oldBacklog.scrollTop;
+        }
+
         renderStatus();
         renderOutbox();
 
-        if (drag || $('task-filter-dialog').open) {
+        if (
+          drag ||
+          holdTimer ||
+          $('task-filter-dialog').open ||
+          $('backlog-dialog').open
+        ) {
+          renderDeferred = true;
           return;
         }
+
+        renderDeferred = false;
+        $('main').classList.toggle('plan-wide', page === 'plan');
 
         document.querySelectorAll('nav [data-page]').forEach(function (element) {
           const active = element.dataset.page === page;
@@ -1112,12 +1101,14 @@
         }
 
         restorePosition(position);
+        updatePoolHeight();
       }
 
       function completeButton(task) {
         const control = button('', function () {
           if (
             task.localOnly ||
+            task.blocked ||
             drag ||
             Date.now() < suppressClickUntil ||
             !confirm('「' + task.title + '」を完了にしますか。')
@@ -1128,7 +1119,7 @@
           const original = taskById(state.snapshot, task.taskId);
 
           if (!original) {
-            notify('タスクが見つかりません', true);
+            notify('一覧が更新されています。更新してから操作してください');
             return;
           }
 
@@ -1145,7 +1136,8 @@
         control.disabled =
           !client.ready ||
           !!client.legacyCount ||
-          !!task.localOnly;
+          !!task.localOnly ||
+          !!task.blocked;
 
         control.setAttribute('aria-label', task.title + 'を完了');
         control.appendChild(make('span', null, 'circle'));
@@ -1156,13 +1148,22 @@
         const control = button('編集', function () {
           if (
             task.localOnly ||
+            task.blocked ||
             drag ||
             Date.now() < suppressClickUntil
           ) {
             return;
           }
 
-          openTaskEditor(task.taskId);
+          if ($('backlog-dialog').open) {
+            $('backlog-dialog').close();
+
+            setTimeout(function () {
+              openTaskEditor(task.taskId);
+            }, 0);
+          } else {
+            openTaskEditor(task.taskId);
+          }
         }, className || '');
 
         control.dataset.act = 'edit';
@@ -1170,776 +1171,27 @@
           !client.ready ||
           !!client.legacyCount ||
           !navigator.onLine ||
-          !!task.localOnly;
+          !!task.localOnly ||
+          !!task.blocked;
 
         control.setAttribute('aria-label', task.title + 'を編集');
         return control;
       }
 
-      /* ---------- したいこと ---------- */
+      function makeGrip(task) {
+        const grip = make('button', null, 'grip');
+        grip.type = 'button';
+        grip.dataset.act = 'grip';
+        grip.disabled = !!task.localOnly ||
+          !!task.blocked ||
+          !planningSupported();
 
-      function loadWishes(background) {
-        if (wishReadPromise) {
-          return wishReadPromise;
-        }
-
-        if (!wishes.ready) {
-          wishLoading = true;
-          render();
-          return Promise.resolve(null);
-        }
-
-        if (!navigator.onLine || !client.configured()) {
-          wishLoading = false;
-          wishError = !navigator.onLine
-            ? '通信がありません。端末に保存した内容を表示しています。'
-            : '接続先と合い言葉を設定してください。';
-          render();
-          return Promise.resolve(null);
-        }
-
-        wishLoading = true;
-        wishError = '';
-        render();
-
-        wishReadPromise = wishes.read(!!background).catch(function (error) {
-          if (!client.paused) {
-            wishError = String(error.message || error);
-          }
-
-          return null;
-        }).finally(function () {
-          wishLoading = false;
-          wishReadPromise = null;
-          nextAutoRead = Date.now() + (wishError ? 60000 : 20000);
-          render();
-        });
-
-        return wishReadPromise;
+        grip.setAttribute('aria-label', task.title + 'を移動');
+        grip.appendChild(icon('grip'));
+        return grip;
       }
 
-      function renderWishes(content) {
-        content.appendChild(make('h2', 'したいこと'));
-
-        if (wishLoading || !wishes.ready) {
-          const loading = make('p', '更新中…', 'loading');
-          loading.setAttribute('role', 'status');
-          content.appendChild(loading);
-        }
-
-        if (wishError) {
-          const box = make('div', null, 'notice error');
-          box.appendChild(make(
-            'p',
-            navigator.onLine ? '一覧を更新できませんでした' : '通信なし'
-          ));
-
-          const retry = button('再試行', function () {
-            loadWishes(false);
-          });
-
-          retry.disabled = !navigator.onLine || wishLoading;
-          box.appendChild(retry);
-
-          const details = make('details');
-          details.append(
-            make('summary', '詳細'),
-            make('div', wishError, 'detail-text')
-          );
-
-          box.appendChild(details);
-          content.appendChild(box);
-        }
-
-        const items = wishes.effectiveItems();
-
-        const active = items.filter(function (item) {
-          return !item.done;
-        }).sort(function (a, b) {
-          return a.row - b.row;
-        });
-
-        const completed = items.filter(function (item) {
-          return item.done;
-        }).sort(function (a, b) {
-          return b.doneAt - a.doneAt || b.row - a.row;
-        });
-
-        const list = make('div', null, 'cards wish-list');
-
-        active.forEach(function (item) {
-          list.appendChild(wishCard(item));
-        });
-
-        content.appendChild(list);
-
-        if (
-          !active.length &&
-          !wishLoading &&
-          wishes.state.snapshot
-        ) {
-          content.appendChild(make('p', 'まだありません', 'sub'));
-        }
-
-        const achieved = make('details', null, 'wish-completed');
-        achieved.id = 'wish-achieved';
-        achieved.open = achievedOpen;
-        achieved.appendChild(make('summary', '達成済み ' + completed.length + '件'));
-
-        const doneList = make('div', null, 'cards');
-
-        completed.forEach(function (item) {
-          doneList.appendChild(wishCard(item));
-        });
-
-        achieved.appendChild(doneList);
-
-        achieved.addEventListener('toggle', function () {
-          if (document.contains(achieved)) {
-            achievedOpen = achieved.open;
-          }
-        });
-
-        content.appendChild(achieved);
-      }
-
-      function wishUnavailable(item) {
-        return !wishes.ready ||
-          !!client.legacyCount ||
-          !!item.localOnly ||
-          !!item.pendingAdd ||
-          !!item.needsCheck;
-      }
-
-      function wishCard(item) {
-        const row = make(
-          'div',
-          null,
-          'card' +
-            (item.done ? ' wish-achieved' : '') +
-            (item.pending ? ' pending-add' : '')
-        );
-
-        const main = make('div', null, 'card-main');
-        main.appendChild(make('div', item.title, 'card-title'));
-
-        if (item.pending) {
-          const job = wishes.state.jobs.find(function (entry) {
-            return entry.id === item.jobId;
-          });
-
-          main.appendChild(make(
-            'div',
-            item.needsCheck
-              ? '確認が必要'
-              : job
-                ? jobStateLabel(job)
-                : '送信待ち',
-            'pending-label'
-          ));
-        }
-
-        const actions = make('div', null, 'card-actions');
-
-        const edit = button('編集', function () {
-          openWishEditor(item.wishId);
-        });
-
-        edit.disabled = wishUnavailable(item);
-        edit.setAttribute('aria-label', item.title + 'を編集');
-        actions.appendChild(edit);
-
-        if (item.done) {
-          const restore = button('戻す', function () {
-            changeWish(item, false);
-          });
-
-          restore.disabled = wishUnavailable(item);
-          actions.appendChild(restore);
-          row.append(main, actions);
-        } else {
-          const done = button('', function () {
-            changeWish(item, true);
-          }, 'hit');
-
-          done.setAttribute('aria-label', item.title + 'を達成済みにする');
-          done.disabled = wishUnavailable(item);
-          done.appendChild(make('span', null, 'circle'));
-          row.append(done, main, actions);
-        }
-
-        return row;
-      }
-
-      async function changeWish(item, done) {
-        if (wishUnavailable(item)) {
-          return;
-        }
-
-        if (!confirm(
-          '「' + item.title + '」を' +
-          (done ? '達成済みにしますか。' : 'したいことに戻しますか。')
-        )) {
-          return;
-        }
-
-        try {
-          await wishes.setDone(item, done);
-          notify('送信待ち');
-        } catch (error) {
-          failed('保存できませんでした', error);
-        }
-      }
-
-      function openWishAdd() {
-        showEditor(
-          'したいことを追加',
-          async function (form) {
-            const title = String(form.get('title') || '').trim();
-
-            if (!title || title.length > 200) {
-              throw new Error('件名は1～200文字で入力してください。');
-            }
-
-            await wishes.add(title);
-            notify('送信待ち');
-          },
-          '追加'
-        );
-
-        field('title', '件名＊', 'text', '', true).focus();
-      }
-
-      function openWishEditor(id) {
-        const original = wishes.state.snapshot &&
-          wishes.state.snapshot.items.find(function (item) {
-            return item.wishId === id;
-          });
-
-        const visible = wishes.effectiveItems().find(function (item) {
-          return item.wishId === id;
-        });
-
-        if (!original || !visible || wishUnavailable(visible)) {
-          notify('先にこの項目の保存結果を確認してください', true);
-          return;
-        }
-
-        const capturedVersion = original.version;
-        const context = wishes.context(id);
-
-        showEditor(
-          'したいことを編集',
-          async function (form) {
-            const title = String(form.get('title') || '').trim();
-
-            if (!title || title.length > 200) {
-              throw new Error('件名は1～200文字で入力してください。');
-            }
-
-            await wishes.edit(id, title, capturedVersion, context);
-            notify('送信待ち');
-          }
-        );
-
-        field('title', '件名＊', 'text', visible.title, true).focus();
-      }
-
-      async function openWishConflict(id) {
-        if (conflictOpening || !onlineRequired()) {
-          return;
-        }
-
-        conflictOpening = true;
-        renderOutbox();
-
-        try {
-          await wishes.read(false);
-
-          const job = wishes.state.jobs.find(function (entry) {
-            return entry.id === id && entry.state === 'conflict';
-          });
-
-          if (!job) {
-            return;
-          }
-
-          const item = wishes.state.snapshot.items.find(function (entry) {
-            return entry.wishId === job.payload.wishId;
-          });
-
-          const local = wishes.effectiveItems().find(function (entry) {
-            return entry.wishId === job.payload.wishId;
-          });
-
-          const related = wishes.relatedJobs(id);
-
-          conflictSource = 'wishes';
-          conflictId = id;
-          conflictReview = null;
-          conflictReviewed = related.map(function (entry) {
-            return entry.id;
-          });
-
-          wishReviewedVersion = item ? item.version : '';
-
-          $('conflict-title').textContent = '変更内容を確認';
-          $('conflict-server-title').textContent = '保存済み';
-          $('conflict-apply').textContent = '変更を反映';
-
-          $('conflict-note').textContent =
-            job.note + '\n関連する未送信 ' + related.length +
-            '件が対象です。取り下げると、対象の端末側変更は反映しません。' +
-            '\n保存先の項目は削除しません。';
-
-          $('conflict-server').replaceChildren(make(
-            'p',
-            item
-              ? item.title + '\n' + (item.done ? '達成済み' : '未達成')
-              : '対象が見つかりません。'
-          ));
-
-          $('conflict-local').replaceChildren(
-            make(
-              'p',
-              local
-                ? local.title + '\n' + (local.done ? '達成済み' : '未達成')
-                : '対象が見つかりません。'
-            ),
-            make('p', related.map(function (entry) {
-              return '・' + entry.label;
-            }).join('\n'))
-          );
-
-          $('conflict-apply').hidden = !item;
-          $('conflict-dialog').showModal();
-        } catch (error) {
-          failed('一覧を確認できませんでした', error);
-        } finally {
-          conflictOpening = false;
-          renderOutbox();
-        }
-      }
-
-      /* ---------- 1日の計画 ---------- */
-
-      function renderPlan(content) {
-        content.appendChild(make('h2', '1日の計画'));
-
-        const tools = make('div', null, 'toolbar plan-tools');
-        const date = make('input', null, 'form-control plan-date');
-        date.type = 'date';
-        date.value = selectedDate;
-        date.setAttribute('aria-label', '計画の日付');
-
-        date.addEventListener('change', function () {
-          if (date.value) {
-            selectedDate = date.value;
-            render();
-          }
-        });
-
-        tools.append(
-          button('前日', function () {
-            selectedDate = dateShift(selectedDate, -1);
-            render();
-          }),
-          date,
-          button('今日', function () {
-            selectedDate = japanDate();
-            render();
-          }),
-          button('翌日', function () {
-            selectedDate = dateShift(selectedDate, 1);
-            render();
-          })
-        );
-
-        content.appendChild(tools);
-
-        const tasks = client.effectiveTasks().filter(function (task) {
-          return task.date === selectedDate;
-        }).sort(compareTasks);
-
-        content.appendChild(make('div', tasks.length + '件', 'sub'));
-
-        const timeline = make('div', null, 'timeline');
-        timeline.id = 'timeline';
-        timeline.dataset.date = selectedDate;
-
-        [null].concat(Array.from({
-          length: 15
-        }, function (_, index) {
-          return index + 8;
-        })).forEach(function (hour) {
-          const section = make('section', null, 'slot');
-          section.dataset.hour = hour === null ? '' : String(hour);
-          section.appendChild(make('div', hourLabel(hour), 'slot-label'));
-
-          const list = make('ul', null, 'slot-list');
-
-          tasks.filter(function (task) {
-            return task.hour === hour;
-          }).forEach(function (task) {
-            const row = make(
-              'li',
-              null,
-              'task' + (task.localOnly ? ' pending-add' : '')
-            );
-
-            row.dataset.id = task.taskId;
-            row.dataset.local = task.localOnly ? 'true' : 'false';
-
-            const text = make('div', null, 'ttl');
-            text.appendChild(make('div', task.title));
-            appendTaskDates(text, task, true);
-
-            if (task.localOnly) {
-              text.appendChild(make('div', task.pendingText, 'pending-label'));
-            }
-
-            const grip = make('button', null, 'grip');
-            grip.type = 'button';
-            grip.dataset.act = 'grip';
-            grip.disabled = !!task.localOnly;
-            grip.setAttribute('aria-label', task.title + 'を移動');
-            grip.appendChild(icon('grip'));
-
-            row.append(
-              completeButton(task),
-              text,
-              editButton(task, 'plan-edit'),
-              grip
-            );
-
-            list.appendChild(row);
-          });
-
-          section.appendChild(list);
-          timeline.appendChild(section);
-        });
-
-        timeline.appendChild(make('div', '23:00', 'timeline-end'));
-
-        const line = make('div', null, 'now-line');
-        line.id = 'now-line';
-        line.hidden = true;
-        line.appendChild(make('span'));
-        timeline.appendChild(line);
-
-        content.appendChild(timeline);
-        updateNow();
-      }
-
-      function visibleItems() {
-        return Array.from(
-          document.querySelectorAll('#timeline .task[data-local="false"]')
-        ).map(function (row) {
-          const value = row.closest('.slot').dataset.hour;
-
-          return {
-            id: row.dataset.id,
-            hour: value === '' ? null : Number(value)
-          };
-        });
-      }
-
-      function clearHold() {
-        if (holdTimer) {
-          clearTimeout(holdTimer);
-        }
-
-        holdTimer = null;
-        candidate = null;
-      }
-
-      function startDrag(row, id) {
-        if (
-          !state.snapshot ||
-          drag ||
-          row.dataset.local === 'true' ||
-          !document.contains(row)
-        ) {
-          return;
-        }
-
-        clearHold();
-
-        const payload = {
-          action: 'order',
-          date: selectedDate,
-          expectedDay: dayVersion(state.snapshot, selectedDate)
-        };
-
-        dragContext = {
-          payload: payload,
-          context: client.context(payload, state.snapshot)
-        };
-
-        drag = row;
-        pointerId = id;
-        row.classList.add('dragging');
-
-        try {
-          $('content').setPointerCapture(id);
-        } catch (error) {
-          // 終了は画面全体でも受け取る。
-        }
-
-        if (navigator.vibrate) {
-          navigator.vibrate(15);
-        }
-      }
-
-      function stopAuto() {
-        if (autoTimer) {
-          clearInterval(autoTimer);
-        }
-
-        autoTimer = null;
-        autoDirection = 0;
-      }
-
-      function placeDrag(x, y) {
-        const timeline = $('timeline');
-
-        if (!drag || !timeline) {
-          return;
-        }
-
-        const boundary = timeline.getBoundingClientRect();
-
-        if (x < boundary.left || x > boundary.right) {
-          return;
-        }
-
-        const slot = Array.from(timeline.querySelectorAll('.slot'))
-          .find(function (section) {
-            const rect = section.getBoundingClientRect();
-            return y >= rect.top && y < rect.bottom;
-          });
-
-        if (!slot) {
-          return;
-        }
-
-        const list = slot.querySelector('.slot-list');
-
-        const before = Array.from(list.querySelectorAll('.task'))
-          .find(function (row) {
-            if (row === drag) {
-              return false;
-            }
-
-            const rect = row.getBoundingClientRect();
-            return y < rect.top + rect.height / 2;
-          }) || null;
-
-        if (
-          drag.parentNode !== list ||
-          (before && drag.nextElementSibling !== before) ||
-          (!before && drag.nextElementSibling)
-        ) {
-          list.insertBefore(drag, before);
-          updateNow();
-        }
-      }
-
-      function autoScroll(y) {
-        autoDirection = y < 85
-          ? -10
-          : y > window.innerHeight - 100
-            ? 10
-            : 0;
-
-        if (!autoDirection) {
-          stopAuto();
-          return;
-        }
-
-        if (!autoTimer) {
-          autoTimer = setInterval(function () {
-            window.scrollBy(0, autoDirection);
-            placeDrag(pointerX, pointerY);
-          }, 16);
-        }
-      }
-
-      async function endDrag(cancelled) {
-        clearHold();
-
-        if (!drag) {
-          pointerId = null;
-          return;
-        }
-
-        const items = visibleItems();
-        const captured = dragContext;
-        const id = pointerId;
-
-        drag.classList.remove('dragging');
-        drag = null;
-        dragContext = null;
-        pointerId = null;
-        suppressClickUntil = Date.now() + 500;
-        stopAuto();
-
-        try {
-          if ($('content').hasPointerCapture(id)) {
-            $('content').releasePointerCapture(id);
-          }
-        } catch (error) {
-          // 指が離れた後はそのまま終了する。
-        }
-
-        if (cancelled) {
-          render();
-          return;
-        }
-
-        try {
-          const payload = Object.assign({}, captured.payload, {
-            items: items
-          });
-
-          await client.enqueue(
-            payload,
-            payload.date + ' の時間帯・並び順',
-            captured.context
-          );
-        } catch (error) {
-          failed('移動を保存できませんでした', error);
-          render();
-        }
-      }
-
-      $('content').addEventListener('pointerdown', function (event) {
-        if (
-          page !== 'plan' ||
-          event.isPrimary === false ||
-          (event.pointerType === 'mouse' && event.button !== 0)
-        ) {
-          return;
-        }
-
-        const row = event.target.closest('.task');
-
-        if (
-          !row ||
-          row.dataset.local === 'true' ||
-          event.target.closest('[data-act="done"], [data-act="edit"]')
-        ) {
-          return;
-        }
-
-        clearHold();
-        pointerId = event.pointerId;
-        startX = event.clientX;
-        startY = event.clientY;
-        pointerX = event.clientX;
-        pointerY = event.clientY;
-
-        if (event.target.closest('[data-act="grip"]')) {
-          event.preventDefault();
-          startDrag(row, event.pointerId);
-          return;
-        }
-
-        candidate = row;
-        const heldId = event.pointerId;
-
-        holdTimer = setTimeout(function () {
-          if (candidate === row) {
-            startDrag(row, heldId);
-          }
-        }, 600);
-      });
-
-      document.addEventListener('pointermove', function (event) {
-        if (pointerId !== null && event.pointerId !== pointerId) {
-          return;
-        }
-
-        if (!drag) {
-          if (
-            holdTimer &&
-            (
-              Math.abs(event.clientX - startX) > 8 ||
-              Math.abs(event.clientY - startY) > 8
-            )
-          ) {
-            clearHold();
-          }
-
-          return;
-        }
-
-        if (event.cancelable) {
-          event.preventDefault();
-        }
-
-        pointerX = event.clientX;
-        pointerY = event.clientY;
-        placeDrag(pointerX, pointerY);
-        autoScroll(pointerY);
-      }, {
-        passive: false
-      });
-
-      document.addEventListener('touchmove', function (event) {
-        if (drag && event.cancelable) {
-          event.preventDefault();
-        }
-      }, {
-        passive: false
-      });
-
-      document.addEventListener('pointerup', function (event) {
-        if (pointerId === null || pointerId === event.pointerId) {
-          endDrag(false);
-        }
-      });
-
-      document.addEventListener('pointercancel', function (event) {
-        if (pointerId === null || pointerId === event.pointerId) {
-          endDrag(true);
-        }
-      });
-
-      function updateNow() {
-        const line = $('now-line');
-        const timeline = $('timeline');
-
-        if (!line || !timeline) {
-          return;
-        }
-
-        const now = new Date(Date.now() + 9 * 3600000);
-        const hour = now.getUTCHours();
-        const minute = now.getUTCMinutes();
-        const slot = timeline.querySelector('.slot[data-hour="' + hour + '"]');
-
-        if (
-          selectedDate !== now.toISOString().slice(0, 10) ||
-          hour < 8 ||
-          hour >= 23 ||
-          !slot
-        ) {
-          line.hidden = true;
-          return;
-        }
-
-        line.style.top =
-          slot.offsetTop + slot.offsetHeight * minute / 60 + 'px';
-
-        line.firstElementChild.textContent =
-          String(hour).padStart(2, '0') + ':' +
-          String(minute).padStart(2, '0');
-
-        line.hidden = false;
-      }
-
-      /* ---------- 日付ラベル ---------- */
+      /* ---------- 日付表示 ---------- */
 
       function dateMark(kind, value, hour) {
         const valid = /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -2005,31 +1257,1002 @@
         }
       }
 
+      /* ---------- 計画と候補 ---------- */
+
+      function undatedTasks() {
+        return client.effectiveTasks().filter(function (task) {
+          return !task.date;
+        }).sort(function (a, b) {
+          if (a.due && !b.due) {
+            return -1;
+          }
+
+          if (!a.due && b.due) {
+            return 1;
+          }
+
+          return (a.due || '').localeCompare(b.due || '') ||
+            a.row - b.row;
+        });
+      }
+
+      function makePlanRow(task, placeholder) {
+        const row = make(
+          'li',
+          null,
+          'task' +
+            (task.localOnly ? ' pending-add' : '') +
+            (task.taskId === highlightId ? ' fresh-placement' : '') +
+            (placeholder ? ' drop-placeholder' : '')
+        );
+
+        row.dataset.id = task.taskId;
+        row.dataset.local = task.localOnly ? 'true' : 'false';
+        row.dataset.zone = 'plan';
+
+        const text = make('div', null, 'ttl');
+        text.appendChild(make('div', task.title));
+        appendTaskDates(text, task, true);
+
+        if (task.localOnly || task.pendingPlanning) {
+          text.appendChild(make(
+            'div',
+            task.pendingText || '送信待ち',
+            'pending-label'
+          ));
+        }
+
+        row.append(
+          completeButton(task),
+          text,
+          editButton(task, 'plan-edit'),
+          makeGrip(task)
+        );
+
+        if (placeholder) {
+          row.dataset.placeholder = 'true';
+          row.setAttribute('aria-hidden', 'true');
+
+          row.querySelectorAll('button').forEach(function (control) {
+            control.disabled = true;
+          });
+        }
+
+        return row;
+      }
+
+      function renderBacklog(container, dialogMode) {
+        container.replaceChildren();
+        const tasks = undatedTasks();
+
+        if (!tasks.length) {
+          container.appendChild(make('p', '実行日なしのタスクはありません', 'empty-backlog'));
+          return;
+        }
+
+        const cards = make('div', null, 'cards');
+
+        tasks.forEach(function (task) {
+          const card = make(
+            'div',
+            null,
+            'card backlog-task' + (task.localOnly ? ' pending-add' : '')
+          );
+
+          card.dataset.id = task.taskId;
+          card.dataset.local = task.localOnly ? 'true' : 'false';
+          card.dataset.zone = 'pool';
+
+          const head = make('div', null, 'backlog-card-head');
+          const main = make('div', null, 'card-main backlog-main');
+          main.appendChild(make('div', task.title, 'card-title'));
+          appendTaskDates(main, task, false);
+
+          if (task.localOnly || task.pendingPlanning) {
+            main.appendChild(make(
+              'div',
+              task.pendingText || '送信待ち',
+              'pending-label'
+            ));
+          }
+
+          head.appendChild(main);
+
+          if (!dialogMode) {
+            head.appendChild(makeGrip(task));
+          }
+
+          const actions = make('div', null, 'backlog-actions');
+          const assign = button('この日に入れる', function () {
+            addFromBacklog(
+              task.taskId,
+              dialogMode ? backlogDialogDate : selectedDate
+            );
+          }, 'backlog-assign');
+
+          assign.dataset.act = 'assign';
+          assign.disabled =
+            !planningSupported() ||
+            task.localOnly ||
+            task.blocked ||
+            backlogAdding;
+
+          actions.append(
+            completeButton(task),
+            editButton(task),
+            assign
+          );
+
+          card.append(head, actions);
+          cards.appendChild(card);
+        });
+
+        container.appendChild(cards);
+      }
+
+      function renderPlan(content) {
+        const board = make('div', null, 'plan-board');
+        const main = make('section', null, 'plan-main');
+        main.id = 'plan-main';
+
+        const heading = make('div', null, 'plan-heading');
+        heading.appendChild(make('h2', '1日の計画'));
+
+        const poolButton = button('', openBacklog, 'pool-open');
+        poolButton.append(
+          icon('inbox'),
+          make('span', '実行日なし ' + undatedTasks().length + '件')
+        );
+
+        heading.appendChild(poolButton);
+        main.appendChild(heading);
+
+        const tools = make('div', null, 'toolbar plan-tools');
+        const date = make('input', null, 'form-control plan-date');
+        date.type = 'date';
+        date.value = selectedDate;
+        date.setAttribute('aria-label', '計画の日付');
+
+        date.addEventListener('change', function () {
+          if (!drag && date.value) {
+            selectedDate = date.value;
+            render();
+          }
+        });
+
+        tools.append(
+          button('前日', function () {
+            if (!drag) {
+              selectedDate = dateShift(selectedDate, -1);
+              render();
+            }
+          }),
+          date,
+          button('今日', function () {
+            if (!drag) {
+              selectedDate = japanDate();
+              render();
+            }
+          }),
+          button('翌日', function () {
+            if (!drag) {
+              selectedDate = dateShift(selectedDate, 1);
+              render();
+            }
+          })
+        );
+
+        main.appendChild(tools);
+
+        if (state.snapshot && !planningSupported()) {
+          main.appendChild(make(
+            'p',
+            '移動を使うには、保存先のv4.12.1への更新が必要です。',
+            'form-error'
+          ));
+        }
+
+        const tasks = client.effectiveTasks().filter(function (task) {
+          return task.date === selectedDate;
+        }).sort(compareTasks);
+
+        main.appendChild(make('div', tasks.length + '件', 'sub'));
+
+        const timeline = make('div', null, 'timeline');
+        timeline.id = 'timeline';
+        timeline.dataset.date = selectedDate;
+
+        [null].concat(Array.from({
+          length: 15
+        }, function (_, index) {
+          return index + 8;
+        })).forEach(function (hour) {
+          const section = make('section', null, 'slot');
+          section.dataset.hour = hour === null ? '' : String(hour);
+          section.appendChild(make('div', hourLabel(hour), 'slot-label'));
+
+          const list = make('ul', null, 'slot-list');
+
+          tasks.filter(function (task) {
+            return task.hour === hour;
+          }).forEach(function (task) {
+            list.appendChild(makePlanRow(task, false));
+          });
+
+          section.appendChild(list);
+          timeline.appendChild(section);
+        });
+
+        timeline.appendChild(make('div', '23:00', 'timeline-end'));
+
+        const line = make('div', null, 'now-line');
+        line.id = 'now-line';
+        line.hidden = true;
+        line.appendChild(make('span'));
+        timeline.appendChild(line);
+        main.appendChild(timeline);
+
+        const pool = make('aside', null, 'plan-backlog');
+        pool.id = 'plan-backlog';
+
+        const poolHeading = make('div', null, 'backlog-heading');
+        poolHeading.append(
+          make('h3', '実行日なし'),
+          make('span', String(undatedTasks().length), 'backlog-count')
+        );
+
+        const hint = make(
+          'p',
+          '計画へドラッグして配置',
+          'sub backlog-hint'
+        );
+
+        const list = make('div', null, 'backlog-list');
+        list.id = 'backlog-list';
+        renderBacklog(list, false);
+
+        pool.append(poolHeading, hint, list);
+        board.append(main, pool);
+        content.appendChild(board);
+
+        list.scrollTop = backlogScroll;
+        updateNow();
+      }
+
+      function updatePoolHeight() {
+        const pool = $('plan-backlog');
+
+        if (!pool || !pool.getClientRects().length) {
+          return;
+        }
+
+        const top = pool.getBoundingClientRect().top;
+        const height = Math.max(180, window.innerHeight - Math.max(12, top) - 12);
+        const value = height + 'px';
+
+        if (pool.style.maxHeight !== value) {
+          pool.style.maxHeight = value;
+        }
+      }
+
+      function openBacklog() {
+        if (drag || anyDialogOpen()) {
+          return;
+        }
+
+        backlogDialogDate = selectedDate;
+        $('backlog-target-date').textContent =
+          dateLabel(backlogDialogDate) + 'の計画に入れます';
+
+        renderBacklog($('backlog-dialog-list'), true);
+        document.body.classList.add('sheet-open');
+        $('backlog-dialog').showModal();
+        $('backlog-dialog-list').scrollTop = backlogDialogScroll;
+      }
+
+      $('backlog-close').addEventListener('click', function () {
+        $('backlog-dialog').close();
+      });
+
+      $('backlog-dialog').addEventListener('close', function () {
+        backlogDialogScroll = $('backlog-dialog-list').scrollTop;
+        document.body.classList.remove('sheet-open');
+        render();
+      });
+
+      function planMovePayload(task, snapshot, date, hour, items) {
+        const original = taskById(snapshot, task.taskId);
+
+        if (!original) {
+          throw new Error('対象のタスクを確認できません。更新してから操作してください。');
+        }
+
+        return {
+          action: 'planMove',
+          planProtocol: PLAN_PROTOCOL,
+          taskId: task.taskId,
+          expectedTask: original.version,
+          expectedPlacement: {
+            date: task.date || '',
+            hour: task.hour
+          },
+          fromDate: task.date || '',
+          date: date,
+          hour: hour,
+          expectedFromDay: task.date ? dayVersion(snapshot, task.date) : '',
+          expectedDay: date ? dayVersion(snapshot, date) : '',
+          items: items
+        };
+      }
+
+      function highlightTask(id, scroll) {
+        highlightId = id;
+
+        if (highlightTimer) {
+          clearTimeout(highlightTimer);
+        }
+
+        render();
+
+        requestAnimationFrame(function () {
+          const row = Array.from(
+            document.querySelectorAll('#timeline .task[data-id]')
+          ).find(function (element) {
+            return element.dataset.id === id;
+          });
+
+          if (row && scroll) {
+            row.scrollIntoView({
+              block: 'nearest'
+            });
+          }
+
+          updatePoolHeight();
+        });
+
+        highlightTimer = setTimeout(function () {
+          highlightId = '';
+
+          document.querySelectorAll('.fresh-placement').forEach(function (row) {
+            row.classList.remove('fresh-placement');
+          });
+        }, 1600);
+      }
+
+      async function addFromBacklog(id, date) {
+        if (backlogAdding || !planningSupported()) {
+          return;
+        }
+
+        const tasks = client.effectiveTasks();
+        const task = tasks.find(function (entry) {
+          return entry.taskId === id;
+        });
+
+        if (!task || task.localOnly || task.blocked || task.date) {
+          notify('一覧が更新されています。表示を更新してください');
+          return;
+        }
+
+        const target = tasks.filter(function (entry) {
+          return entry.date === date && !entry.localOnly;
+        }).sort(compareTasks).map(function (entry) {
+          return {
+            id: entry.taskId,
+            hour: entry.hour
+          };
+        });
+
+        target.push({
+          id: task.taskId,
+          hour: task.hour
+        });
+
+        target.sort(function (a, b) {
+          return (a.hour === null ? 7 : a.hour) -
+            (b.hour === null ? 7 : b.hour);
+        });
+
+        const snapshot = clone(state.snapshot);
+        const payload = planMovePayload(task, snapshot, date, task.hour, target);
+        const captured = client.context(payload, snapshot);
+
+        backlogAdding = true;
+
+        $('backlog-dialog-list').querySelectorAll('button').forEach(function (control) {
+          control.disabled = true;
+        });
+
+        try {
+          await client.enqueue(
+            payload,
+            '計画へ配置：' + task.title + ' ／ ' + date,
+            captured
+          );
+
+          if ($('backlog-dialog').open) {
+            $('backlog-dialog').close();
+          }
+
+          selectedDate = date;
+          highlightTask(id, true);
+        } catch (error) {
+          failed('移動を端末に保存できませんでした', error);
+        } finally {
+          backlogAdding = false;
+
+          if ($('backlog-dialog').open) {
+            renderBacklog($('backlog-dialog-list'), true);
+          } else {
+            render();
+          }
+        }
+      }
+
+      function readPlanItems() {
+        return Array.from(
+          document.querySelectorAll(
+            '#timeline .task[data-local="false"]:not(.drag-origin)'
+          )
+        ).map(function (row) {
+          const slot = row.closest('.slot');
+          const value = slot.dataset.hour;
+
+          return {
+            id: row.dataset.id,
+            hour: value === '' ? null : Number(value)
+          };
+        });
+      }
+
+      function clearHold() {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+        }
+
+        holdTimer = null;
+        candidate = null;
+
+        if (renderDeferred && !drag) {
+          requestAnimationFrame(function () {
+            if (renderDeferred && !drag && !holdTimer && !anyDialogOpen()) {
+              render();
+            }
+          });
+        }
+      }
+
+      function setPlanControlsDisabled(disabled) {
+        document.querySelectorAll('.plan-tools button, .plan-tools input, .pool-open')
+          .forEach(function (control) {
+            control.disabled = disabled;
+          });
+      }
+
+      function startDrag(row, id) {
+        if (
+          !planningSupported() ||
+          !state.snapshot ||
+          drag ||
+          !document.contains(row) ||
+          anyDialogOpen()
+        ) {
+          clearHold();
+          return;
+        }
+
+        const source = row.dataset.zone;
+        const task = client.effectiveTasks().find(function (entry) {
+          return entry.taskId === row.dataset.id;
+        });
+
+        if (
+          !task ||
+          task.localOnly ||
+          task.blocked ||
+          (source === 'pool' && task.date) ||
+          (source === 'plan' && task.date !== selectedDate)
+        ) {
+          clearHold();
+          render();
+          return;
+        }
+
+        const snapshot = clone(state.snapshot);
+        const beforeItems = readPlanItems();
+
+        const contextPayload = {
+          action: 'planMove',
+          taskId: task.taskId,
+          fromDate: task.date || '',
+          date: selectedDate
+        };
+
+        const context = client.context(contextPayload, snapshot);
+        const rect = row.getBoundingClientRect();
+        const placeholder = makePlanRow(task, true);
+        const ghost = make('div', null, 'drag-ghost');
+        ghost.appendChild(make('div', task.title, 'card-title'));
+        ghost.style.width = Math.min(280, Math.max(180, rect.width)) + 'px';
+
+        clearHold();
+
+        drag = {
+          source: source,
+          origin: row,
+          task: clone(task),
+          snapshot: snapshot,
+          date: selectedDate,
+          beforeItems: beforeItems,
+          context: context,
+          placeholder: placeholder,
+          ghost: ghost,
+          target: source === 'plan' ? 'plan' : 'none'
+        };
+
+        pointerId = id;
+        row.classList.add('drag-origin');
+
+        if (source === 'plan') {
+          row.parentNode.insertBefore(placeholder, row.nextSibling);
+        }
+
+        document.body.appendChild(ghost);
+        document.body.classList.add('is-planning-drag');
+        setPlanControlsDisabled(true);
+
+        $('plan-return-zone').hidden = !(
+          source === 'plan' &&
+          window.matchMedia('(max-width: 1100px)').matches
+        );
+
+        $('drag-announcement').textContent =
+          '移動中。時間枠へ置くと配置します。置けない場所で離すと変更しません。';
+
+        try {
+          $('content').setPointerCapture(id);
+        } catch (error) {
+          // 画面全体でも終了を受け取る。
+        }
+
+        updateGhost();
+        renderStatus();
+
+        if (navigator.vibrate) {
+          navigator.vibrate(15);
+        }
+      }
+
+      function updateGhost() {
+        if (!drag) {
+          return;
+        }
+
+        const width = drag.ghost.offsetWidth || 220;
+
+        drag.ghost.style.left = Math.max(
+          8,
+          Math.min(pointerX + 14, window.innerWidth - width - 8)
+        ) + 'px';
+
+        drag.ghost.style.top = Math.max(
+          8,
+          Math.min(pointerY + 14, window.innerHeight - 90)
+        ) + 'px';
+      }
+
+      function inElement(element, x, y) {
+        if (!element || !element.getClientRects().length) {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+
+        return x >= rect.left &&
+          x <= rect.right &&
+          y >= rect.top &&
+          y <= rect.bottom;
+      }
+
+      function clearDropHighlight() {
+        document.querySelectorAll('.is-drop-target').forEach(function (element) {
+          element.classList.remove('is-drop-target');
+        });
+      }
+
+      function placeDrag(x, y) {
+        if (!drag) {
+          return;
+        }
+
+        clearDropHighlight();
+
+        const pool = $('plan-backlog');
+        const returnZone = $('plan-return-zone');
+
+        if (
+          drag.source === 'plan' &&
+          (
+            inElement(pool, x, y) ||
+            (!returnZone.hidden && inElement(returnZone, x, y))
+          )
+        ) {
+          drag.target = 'pool';
+          drag.placeholder.remove();
+
+          if (inElement(pool, x, y)) {
+            pool.classList.add('is-drop-target');
+          } else {
+            returnZone.classList.add('is-drop-target');
+          }
+
+          updateNow();
+          return;
+        }
+
+        const timeline = $('timeline');
+
+        if (!inElement(timeline, x, y)) {
+          drag.target = 'none';
+          drag.placeholder.remove();
+          updateNow();
+          return;
+        }
+
+        const slot = Array.from(timeline.querySelectorAll('.slot'))
+          .find(function (section) {
+            return inElement(section, x, y);
+          });
+
+        if (!slot) {
+          drag.target = 'none';
+          drag.placeholder.remove();
+          updateNow();
+          return;
+        }
+
+        const list = slot.querySelector('.slot-list');
+
+        const others = Array.from(
+          list.querySelectorAll('.task[data-local="false"]')
+        ).filter(function (entry) {
+          return entry !== drag.placeholder &&
+            !entry.classList.contains('drag-origin');
+        });
+
+        const before = others.find(function (entry) {
+          const rect = entry.getBoundingClientRect();
+          return y < rect.top + rect.height / 2;
+        }) || list.querySelector('.task[data-local="true"]');
+
+        if (
+          drag.placeholder.parentNode !== list ||
+          drag.placeholder.nextElementSibling !== before
+        ) {
+          list.insertBefore(drag.placeholder, before || null);
+        }
+
+        drag.target = 'plan';
+        slot.classList.add('is-drop-target');
+        updateNow();
+      }
+
+      function stopAuto() {
+        if (autoTimer) {
+          clearInterval(autoTimer);
+        }
+
+        autoTimer = null;
+        autoDirection = 0;
+      }
+
+      function autoScroll(y) {
+        if (!drag) {
+          stopAuto();
+          return;
+        }
+
+        const main = $('plan-main');
+        const rect = main ? main.getBoundingClientRect() : null;
+
+        if (
+          drag.target === 'pool' ||
+          !rect ||
+          pointerX < rect.left ||
+          pointerX > rect.right
+        ) {
+          stopAuto();
+          return;
+        }
+
+        autoDirection = y < 85
+          ? -10
+          : y > window.innerHeight - 100
+            ? 10
+            : 0;
+
+        if (!autoDirection) {
+          stopAuto();
+          return;
+        }
+
+        if (!autoTimer) {
+          autoTimer = setInterval(function () {
+            window.scrollBy(0, autoDirection);
+            updatePoolHeight();
+            placeDrag(pointerX, pointerY);
+          }, 16);
+        }
+      }
+
+      async function endDrag(cancelled) {
+        clearHold();
+
+        if (!drag) {
+          pointerId = null;
+          return;
+        }
+
+        const current = drag;
+        const id = pointerId;
+        const target = current.target;
+        let payload = null;
+        let label = '';
+
+        if (
+          !cancelled &&
+          target === 'plan' &&
+          current.placeholder.parentNode
+        ) {
+          const items = readPlanItems();
+          const slot = current.placeholder.closest('.slot');
+          const hour = slot.dataset.hour === '' ? null : Number(slot.dataset.hour);
+
+          if (current.source === 'pool') {
+            payload = planMovePayload(
+              current.task,
+              current.snapshot,
+              current.date,
+              hour,
+              items
+            );
+
+            label = '計画へ配置：' + current.task.title + ' ／ ' + current.date;
+          } else if (JSON.stringify(items) !== JSON.stringify(current.beforeItems)) {
+            payload = {
+              action: 'order',
+              date: current.date,
+              expectedDay: dayVersion(current.snapshot, current.date),
+              movedTaskId: current.task.taskId,
+              fromHour: current.task.hour,
+              items: items
+            };
+
+            label = current.date + ' の時間帯・並び順';
+          }
+        } else if (!cancelled && target === 'pool' && current.source === 'plan') {
+          payload = planMovePayload(
+            current.task,
+            current.snapshot,
+            '',
+            current.task.hour,
+            []
+          );
+
+          label = '実行日なしへ：' + current.task.title;
+        }
+
+        drag = null;
+        pointerId = null;
+        suppressClickUntil = Date.now() + 500;
+        stopAuto();
+        clearDropHighlight();
+        current.origin.classList.remove('drag-origin');
+        current.placeholder.remove();
+        current.ghost.remove();
+
+        document.body.classList.remove('is-planning-drag');
+        $('plan-return-zone').hidden = true;
+        setPlanControlsDisabled(false);
+
+        try {
+          if ($('content').hasPointerCapture(id)) {
+            $('content').releasePointerCapture(id);
+          }
+        } catch (error) {
+          // 指が離れた後は終了する。
+        }
+
+        if (!payload) {
+          $('drag-announcement').textContent = '移動を終了しました。';
+          render();
+          return;
+        }
+
+        try {
+          await client.enqueue(payload, label, current.context);
+          $('drag-announcement').textContent = '移動を端末に保存しました。';
+          highlightTask(current.task.taskId, false);
+        } catch (error) {
+          failed('移動を端末に保存できませんでした', error);
+          render();
+        }
+      }
+
+      $('content').addEventListener('pointerdown', function (event) {
+        if (
+          page !== 'plan' ||
+          event.isPrimary === false ||
+          anyDialogOpen() ||
+          (event.pointerType === 'mouse' && event.button !== 0)
+        ) {
+          return;
+        }
+
+        const row = event.target.closest('.task[data-zone], .backlog-task[data-zone]');
+
+        if (
+          !row ||
+          row.dataset.local === 'true' ||
+          event.target.closest('[data-act="done"], [data-act="edit"], [data-act="assign"]')
+        ) {
+          return;
+        }
+
+        if (
+          row.dataset.zone === 'pool' &&
+          window.matchMedia('(max-width: 1100px)').matches
+        ) {
+          return;
+        }
+
+        clearHold();
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startY = event.clientY;
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+
+        if (event.target.closest('[data-act="grip"]')) {
+          event.preventDefault();
+          startDrag(row, event.pointerId);
+          return;
+        }
+
+        if (!event.target.closest('.ttl, .backlog-main')) {
+          pointerId = null;
+          return;
+        }
+
+        candidate = row;
+        const heldId = event.pointerId;
+
+        holdTimer = setTimeout(function () {
+          if (candidate === row) {
+            startDrag(row, heldId);
+          }
+        }, 600);
+      });
+
+      document.addEventListener('pointermove', function (event) {
+        if (pointerId !== null && event.pointerId !== pointerId) {
+          return;
+        }
+
+        if (!drag) {
+          if (
+            holdTimer &&
+            (
+              Math.abs(event.clientX - startX) > 8 ||
+              Math.abs(event.clientY - startY) > 8
+            )
+          ) {
+            clearHold();
+          }
+
+          return;
+        }
+
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+        updateGhost();
+        placeDrag(pointerX, pointerY);
+        autoScroll(pointerY);
+      }, {
+        passive: false
+      });
+
+      document.addEventListener('touchmove', function (event) {
+        if (drag && event.cancelable) {
+          event.preventDefault();
+        }
+      }, {
+        passive: false
+      });
+
+      document.addEventListener('pointerup', function (event) {
+        if (pointerId === null || pointerId === event.pointerId) {
+          if (drag) {
+            pointerX = event.clientX;
+            pointerY = event.clientY;
+            placeDrag(pointerX, pointerY);
+          }
+
+          endDrag(false).catch(function (error) {
+            failed('移動を終了できませんでした', error);
+          });
+        }
+      });
+
+      document.addEventListener('pointercancel', function (event) {
+        if (pointerId === null || pointerId === event.pointerId) {
+          endDrag(true);
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && (drag || holdTimer)) {
+          event.preventDefault();
+          endDrag(true);
+        }
+      });
+
+      function updateNow() {
+        const line = $('now-line');
+        const timeline = $('timeline');
+
+        if (!line || !timeline) {
+          return;
+        }
+
+        const now = new Date(Date.now() + 9 * 3600000);
+        const hour = now.getUTCHours();
+        const minute = now.getUTCMinutes();
+        const slot = timeline.querySelector('.slot[data-hour="' + hour + '"]');
+
+        if (
+          timeline.dataset.date !== now.toISOString().slice(0, 10) ||
+          hour < 8 ||
+          hour >= 23 ||
+          !slot
+        ) {
+          line.hidden = true;
+          return;
+        }
+
+        line.style.top =
+          slot.offsetTop + slot.offsetHeight * minute / 60 + 'px';
+
+        line.firstElementChild.textContent =
+          String(hour).padStart(2, '0') + ':' +
+          String(minute).padStart(2, '0');
+
+        line.hidden = false;
+      }
+
       /* ---------- 絞り込み ---------- */
 
       function filterLabel() {
-        switch (taskFilter) {
-          case 'today':
-            return '実行日：今日';
-          case 'week':
-            return '実行日：今週';
-          case 'date':
-            return '実行日：' + (filterDate ? shortDate(filterDate) : '日付を指定');
-          case 'runoverdue':
-            return '実行日：昨日以前';
-          case 'hasdue':
-            return '期限あり';
-          case 'overdue':
-            return '期限切れ';
-          case 'nodue':
-            return '期限なし';
-          case 'nodate':
-            return '実行日なし';
-          case 'noboth':
-            return '期限・実行日なし';
-          default:
-            return 'すべて';
+        const labels = {
+          today: '実行日：今日',
+          week: '実行日：今週',
+          runoverdue: '実行日：昨日以前',
+          hasdue: '期限あり',
+          overdue: '期限切れ',
+          nodue: '期限なし',
+          nodate: '実行日なし',
+          noboth: '期限・実行日なし'
+        };
+
+        if (taskFilter === 'date') {
+          return '実行日：' + (filterDate ? shortDate(filterDate) : '日付を指定');
         }
+
+        return labels[taskFilter] || 'すべて';
       }
 
       function positionTaskFilter() {
@@ -2110,7 +2333,6 @@
             option.tabIndex = selected ? 0 : -1;
 
             const check = make('span', null, 'filter-option-check');
-            check.setAttribute('aria-hidden', 'true');
 
             if (selected) {
               check.appendChild(icon('check'));
@@ -2132,9 +2354,7 @@
 
         $('task-filter-trigger').setAttribute('aria-expanded', 'true');
         document.body.classList.add('filter-open');
-
-        const dialog = $('task-filter-dialog');
-        dialog.showModal();
+        $('task-filter-dialog').showModal();
         positionTaskFilter();
 
         const selected = options.querySelector('[aria-checked="true"]');
@@ -2191,9 +2411,7 @@
       });
 
       $('task-filter-options').addEventListener('keydown', function (event) {
-        if (
-          ['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0
-        ) {
+        if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0) {
           return;
         }
 
@@ -2206,17 +2424,19 @@
         }
 
         event.preventDefault();
-
         const current = options.indexOf(document.activeElement);
-        let next = current;
+        let next;
 
         if (event.key === 'Home') {
           next = 0;
         } else if (event.key === 'End') {
           next = options.length - 1;
         } else {
-          const direction = event.key === 'ArrowDown' ? 1 : -1;
-          next = (current + direction + options.length) % options.length;
+          next = (
+            current +
+            (event.key === 'ArrowDown' ? 1 : -1) +
+            options.length
+          ) % options.length;
         }
 
         options.forEach(function (option, index) {
@@ -2224,11 +2444,6 @@
         });
 
         options[next].focus();
-      });
-
-      window.addEventListener('resize', positionTaskFilter);
-      window.addEventListener('scroll', positionTaskFilter, {
-        passive: true
       });
 
       /* ---------- タスク一覧・カレンダー ---------- */
@@ -2281,8 +2496,12 @@
           main.appendChild(make('div', task.title, 'card-title'));
           appendTaskDates(main, task, false);
 
-          if (task.localOnly) {
-            main.appendChild(make('div', task.pendingText, 'pending-label'));
+          if (task.localOnly || task.pendingPlanning) {
+            main.appendChild(make(
+              'div',
+              task.pendingText || '送信待ち',
+              'pending-label'
+            ));
           }
 
           card.append(completeButton(task), main, editButton(task));
@@ -2348,6 +2567,7 @@
 
         const arrow = make('span', null, 'filter-trigger-arrow');
         arrow.appendChild(icon('chevron-down'));
+
         trigger.append(value, arrow);
         field.append(label, trigger);
         tools.appendChild(field);
@@ -2369,6 +2589,7 @@
         }
 
         content.appendChild(tools);
+
         const tasks = client.effectiveTasks().filter(filterTask);
         let orderLabel = '';
 
@@ -2376,13 +2597,11 @@
           tasks.sort(function (a, b) {
             return a.due.localeCompare(b.due) || a.row - b.row;
           });
-
           orderLabel = '期限が近い順';
         } else if (taskFilter === 'runoverdue') {
           tasks.sort(function (a, b) {
             return a.date.localeCompare(b.date) || compareTasks(a, b);
           });
-
           orderLabel = '実行日が古い順';
         }
 
@@ -2417,7 +2636,6 @@
 
         const calendar = make('section', null, 'calendar');
         const tools = make('div', null, 'toolbar calendar-tools');
-
         const monthText = Number(calendarMonth.slice(0, 4)) + '年' +
           Number(calendarMonth.slice(5, 7)) + '月';
 
@@ -2555,7 +2773,6 @@
       function selectField(name, label, options, value) {
         const wrapper = make('label', null, 'field');
         wrapper.appendChild(make('span', label, 'form-label'));
-
         const select = make('select', null, 'form-select');
         select.name = name;
 
@@ -2607,19 +2824,14 @@
               (due ? ' ／ 期限：' + due : '')
             );
 
-            notify(
-              date
-                ? '追加先：' + dateLabel(date) + '（送信待ち）'
-                : '追加先：実行日なし（送信待ち）'
-            );
+            notify('端末に保存しました');
           },
           '追加'
         );
 
-        const title = field('title', '件名＊', 'text', '', true);
+        field('title', '件名＊', 'text', '', true).focus();
         field('due', '期限', 'date', '', false);
         field('date', '実行日', 'date', '', false);
-        title.focus();
       }
 
       function openTaskEditor(id) {
@@ -2627,11 +2839,11 @@
           return;
         }
 
-        if (!fieldEditingSupported()) {
+        if (!editingSupported()) {
           notify(
             '保存先の更新が必要です',
             true,
-            'コード.gsのv4.11.3を同じ公開先へ反映してから、一覧を更新してください。'
+            'コード.gsと変更順.gsのv4.12.1を反映し、一覧を更新してください。'
           );
           return;
         }
@@ -2641,8 +2853,8 @@
           return task.taskId === id && !task.localOnly;
         });
 
-        if (!original || !visible) {
-          notify('タスクが見つかりません', true);
+        if (!original || !visible || visible.blocked) {
+          notify('タスクの状態を確認してください', true);
           return;
         }
 
@@ -2686,13 +2898,7 @@
             date: date
           }), '編集：' + title, context);
 
-          notify(
-            captured.date === date
-              ? '送信待ち'
-              : date
-                ? dateLabel(date) + 'へ変更（送信待ち）'
-                : '実行日なしへ変更（送信待ち）'
-          );
+          notify('端末に保存しました');
         });
 
         field('title', '件名＊', 'text', captured.title, true).focus();
@@ -2733,6 +2939,7 @@
 
         const handler = editorHandler;
         const form = new FormData($('editor-form'));
+
         editorSaving = true;
         $('editor-submit').disabled = true;
         $('editor-cancel').disabled = true;
@@ -2773,6 +2980,266 @@
         });
       });
 
+      /* ---------- したいこと ---------- */
+
+      function loadWishes(background) {
+        if (wishReadPromise) {
+          return wishReadPromise;
+        }
+
+        if (!wishes.ready) {
+          wishLoading = true;
+          render();
+          return Promise.resolve(null);
+        }
+
+        if (!navigator.onLine || !client.configured()) {
+          wishLoading = false;
+          wishError = !navigator.onLine
+            ? '通信がありません。端末に保存した内容を表示しています。'
+            : '接続先と合い言葉を設定してください。';
+
+          render();
+          return Promise.resolve(null);
+        }
+
+        wishLoading = true;
+        wishError = '';
+        render();
+
+        wishReadPromise = wishes.read(!!background).catch(function (error) {
+          if (!client.paused) {
+            wishError = String(error.message || error);
+          }
+
+          return null;
+        }).finally(function () {
+          wishLoading = false;
+          wishReadPromise = null;
+          nextAutoRead = Date.now() + (wishError ? 60000 : 20000);
+          render();
+        });
+
+        return wishReadPromise;
+      }
+
+      function renderWishes(content) {
+        content.appendChild(make('h2', 'したいこと'));
+
+        if (wishLoading || !wishes.ready) {
+          const loading = make('p', '更新中…', 'loading');
+          loading.setAttribute('role', 'status');
+          content.appendChild(loading);
+        }
+
+        if (wishError) {
+          const box = make('div', null, 'notice error');
+
+          box.appendChild(make(
+            'p',
+            navigator.onLine ? '一覧を更新できませんでした' : '通信なし'
+          ));
+
+          const retry = button('再試行', function () {
+            loadWishes(false);
+          });
+
+          retry.disabled = !navigator.onLine || wishLoading;
+          box.appendChild(retry);
+
+          const details = make('details');
+          details.append(
+            make('summary', '詳細'),
+            make('div', wishError, 'detail-text')
+          );
+
+          box.appendChild(details);
+          content.appendChild(box);
+        }
+
+        const items = wishes.effectiveItems();
+
+        const active = items.filter(function (item) {
+          return !item.done;
+        }).sort(function (a, b) {
+          return a.row - b.row;
+        });
+
+        const completed = items.filter(function (item) {
+          return item.done;
+        }).sort(function (a, b) {
+          return b.doneAt - a.doneAt || b.row - a.row;
+        });
+
+        const list = make('div', null, 'cards wish-list');
+
+        active.forEach(function (item) {
+          list.appendChild(wishCard(item));
+        });
+
+        content.appendChild(list);
+
+        if (!active.length && !wishLoading && wishes.state.snapshot) {
+          content.appendChild(make('p', 'まだありません', 'sub'));
+        }
+
+        const achieved = make('details', null, 'wish-completed');
+        achieved.id = 'wish-achieved';
+        achieved.open = achievedOpen;
+        achieved.appendChild(make('summary', '達成済み ' + completed.length + '件'));
+
+        const doneList = make('div', null, 'cards');
+
+        completed.forEach(function (item) {
+          doneList.appendChild(wishCard(item));
+        });
+
+        achieved.appendChild(doneList);
+
+        achieved.addEventListener('toggle', function () {
+          if (document.contains(achieved)) {
+            achievedOpen = achieved.open;
+          }
+        });
+
+        content.appendChild(achieved);
+      }
+
+      function wishUnavailable(item) {
+        return !wishes.ready ||
+          !!client.legacyCount ||
+          !!item.localOnly ||
+          !!item.pendingAdd ||
+          !!item.needsCheck;
+      }
+
+      function wishCard(item) {
+        const row = make(
+          'div',
+          null,
+          'card' +
+            (item.done ? ' wish-achieved' : '') +
+            (item.pending ? ' pending-add' : '')
+        );
+
+        const main = make('div', null, 'card-main');
+        main.appendChild(make('div', item.title, 'card-title'));
+
+        if (item.pending) {
+          const job = wishes.state.jobs.find(function (entry) {
+            return entry.id === item.jobId;
+          });
+
+          main.appendChild(make(
+            'div',
+            job ? jobStateLabel(job) : '送信待ち',
+            'pending-label'
+          ));
+        }
+
+        const actions = make('div', null, 'card-actions');
+
+        const edit = button('編集', function () {
+          openWishEditor(item.wishId);
+        });
+
+        edit.disabled = wishUnavailable(item);
+        edit.setAttribute('aria-label', item.title + 'を編集');
+        actions.appendChild(edit);
+
+        if (item.done) {
+          const restore = button('戻す', function () {
+            changeWish(item, false);
+          });
+
+          restore.disabled = wishUnavailable(item);
+          actions.appendChild(restore);
+          row.append(main, actions);
+        } else {
+          const done = button('', function () {
+            changeWish(item, true);
+          }, 'hit');
+
+          done.setAttribute('aria-label', item.title + 'を達成済みにする');
+          done.disabled = wishUnavailable(item);
+          done.appendChild(make('span', null, 'circle'));
+          row.append(done, main, actions);
+        }
+
+        return row;
+      }
+
+      async function changeWish(item, done) {
+        if (wishUnavailable(item)) {
+          return;
+        }
+
+        if (!confirm(
+          '「' + item.title + '」を' +
+          (done ? '達成済みにしますか。' : 'したいことに戻しますか。')
+        )) {
+          return;
+        }
+
+        try {
+          await wishes.setDone(item, done);
+          notify('端末に保存しました');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      function openWishAdd() {
+        showEditor(
+          'したいことを追加',
+          async function (form) {
+            const title = String(form.get('title') || '').trim();
+
+            if (!title || title.length > 200) {
+              throw new Error('件名は1～200文字で入力してください。');
+            }
+
+            await wishes.add(title);
+            notify('端末に保存しました');
+          },
+          '追加'
+        );
+
+        field('title', '件名＊', 'text', '', true).focus();
+      }
+
+      function openWishEditor(id) {
+        const original = wishes.state.snapshot &&
+          wishes.state.snapshot.items.find(function (item) {
+            return item.wishId === id;
+          });
+
+        const visible = wishes.effectiveItems().find(function (item) {
+          return item.wishId === id;
+        });
+
+        if (!original || !visible || wishUnavailable(visible)) {
+          notify('先にこの項目の保存結果を確認してください', true);
+          return;
+        }
+
+        const version = original.version;
+        const captured = wishes.context(id);
+
+        showEditor('したいことを編集', async function (form) {
+          const title = String(form.get('title') || '').trim();
+
+          if (!title || title.length > 200) {
+            throw new Error('件名は1～200文字で入力してください。');
+          }
+
+          await wishes.edit(id, title, version, captured);
+          notify('端末に保存しました');
+        });
+
+        field('title', '件名＊', 'text', visible.title, true).focus();
+      }
+
       /* ---------- 定期タスク ---------- */
 
       function automaticJobs() {
@@ -2792,7 +3259,6 @@
         const latest = pending.length ? pending[pending.length - 1] : null;
 
         const control = button('', toggleAutomatic, 'auto-switch');
-        control.id = 'automatic-switch';
         control.setAttribute('role', 'switch');
         control.setAttribute('aria-checked', String(periodic.automatic));
         control.setAttribute('aria-labelledby', 'automatic-label');
@@ -2831,13 +3297,11 @@
         if (latest) {
           const destination = latest.payload.enabled ? 'ON' : 'OFF';
           const attention = pending.some(function (job) {
-            return job.state === 'conflict' ||
-              job.state === 'blocked' ||
-              job.state === 'unknown';
+            return job.state === 'blocked' || job.state === 'unknown';
           });
 
           status.textContent = attention
-            ? destination + 'への変更結果を確認してください'
+            ? destination + 'への変更結果を確認しています'
             : destination + 'へ変更中';
 
           status.classList.toggle('has-error', attention);
@@ -2858,6 +3322,7 @@
         }
 
         const tools = make('div', null, 'toolbar');
+
         const add = button('定期タスクを追加', function () {
           openPeriodicEditor(null);
         });
@@ -2921,7 +3386,7 @@
 
             if (!confirm(
               '「' + item.name + '」を今日の時間未定に追加しますか。\n' +
-              '期限：' + dueRuleLabel(item.dueRule) + '\n基準日：今日'
+              '期限：' + dueRuleLabel(item.dueRule)
             )) {
               return;
             }
@@ -2930,6 +3395,7 @@
               await client.enqueue({
                 action: 'periodicSend',
                 row: item.row,
+                periodicId: item.periodicId || '',
                 expectedPeriodic: periodic.version
               }, '定期追加：' + item.name);
             } catch (error) {
@@ -2975,10 +3441,6 @@
             return;
           }
 
-          if (!result.preview) {
-            throw new Error('追加対象を確認できませんでした。');
-          }
-
           const preview = result.preview;
           const errors = preview.errors || [];
 
@@ -2991,13 +3453,12 @@
             return;
           }
 
-          const text =
+          if (!confirm(
             preview.items.length + '件を今日の時間未定に追加しますか。' +
             (errors.length
-              ? '\n\n次の設定は追加されません。\n' + errors.join('\n')
-              : '');
-
-          if (!confirm(text)) {
+              ? '\n\n追加されない設定：\n' + errors.join('\n')
+              : '')
+          )) {
             return;
           }
 
@@ -3145,6 +3606,7 @@
 
         const value = item || {
           row: 0,
+          periodicId: '',
           name: '',
           freq: '毎日',
           next: japanDate(),
@@ -3156,7 +3618,16 @@
         const payload = {
           action: 'periodicSave',
           row: value.row,
-          expectedPeriodic: state.snapshot.periodic.version
+          periodicId: value.periodicId || '',
+          expectedPeriodic: state.snapshot.periodic.version,
+          periodicBase: {
+            name: value.name,
+            freq: value.freq,
+            next: value.next,
+            dueRule: clone(value.dueRule || {
+              type: 'none'
+            })
+          }
         };
 
         const captured = client.context(payload);
@@ -3181,7 +3652,7 @@
               dueRule: dueRuleFromForm(form)
             }), '定期設定：' + name, captured);
 
-            notify('送信待ち');
+            notify('端末に保存しました');
           }
         );
 
@@ -3245,24 +3716,13 @@
           return;
         }
 
-        const payload = {
-          action: 'automatic',
-          expectedPeriodic: periodic.version,
-          enabled: enabled
-        };
-
-        if (
-          state.snapshot.features &&
-          state.snapshot.features.automaticStateCheck
-        ) {
-          payload.expectedAutomatic = periodic.automatic;
-        }
-
         try {
-          await client.enqueue(
-            payload,
-            '毎日の自動追加を' + (enabled ? 'ON' : 'OFF') + 'にする'
-          );
+          await client.enqueue({
+            action: 'automatic',
+            expectedPeriodic: periodic.version,
+            expectedAutomatic: periodic.automatic,
+            enabled: enabled
+          }, '毎日の自動追加を' + (enabled ? 'ON' : 'OFF') + 'にする');
         } catch (error) {
           failed('保存できませんでした', error);
         }
@@ -3309,6 +3769,7 @@
           historyError = navigator.onLine
             ? '接続先と合い言葉を設定してください。'
             : '通信がありません。通信が戻ると更新します。';
+
           historyFailedMore = !!more;
           render();
           return Promise.resolve(null);
@@ -3328,13 +3789,6 @@
         }).then(function (result) {
           if (!result) {
             return null;
-          }
-
-          if (
-            !result.history ||
-            !Array.isArray(result.history.items)
-          ) {
-            throw new Error('完了済みの一覧を読み取れませんでした。');
           }
 
           historyData = {
@@ -3410,8 +3864,7 @@
         }
 
         const pending = state.jobs.filter(function (job) {
-          return job.payload.action === 'done' ||
-            job.payload.action === 'undo';
+          return job.payload.action === 'done' || job.payload.action === 'undo';
         }).length;
 
         if (pending) {
@@ -3457,7 +3910,6 @@
         historyData.items.forEach(function (item) {
           const card = make('div', null, 'card');
           const mark = make('span', null, 'history-mark');
-          mark.setAttribute('aria-hidden', 'true');
           mark.appendChild(icon('check'));
 
           const main = make('div', null, 'card-main');
@@ -3488,8 +3940,10 @@
           return;
         }
 
-        if (state.jobs.length) {
-          notify('先に送信待ちを確認してください', true);
+        if (state.jobs.some(function (job) {
+          return job.payload.action === 'done' || job.payload.action === 'undo';
+        })) {
+          notify('直前の完了を確認中です。保存結果が分かってから戻せます');
           return;
         }
 
@@ -3497,6 +3951,16 @@
 
         if (!undo || !undo.count) {
           notify('戻せる完了はありません');
+          return;
+        }
+
+        if (
+          !Array.isArray(undo.targets) ||
+          !undo.targets.every(function (id) {
+            return typeof id === 'string' && !!id;
+          })
+        ) {
+          notify('保存先を更新してから、完了済みの一覧を更新してください', true);
           return;
         }
 
@@ -3509,322 +3973,13 @@
         try {
           await client.enqueue({
             action: 'undo',
-            expectedUndo: undo.version
+            expectedUndo: undo.version,
+            undoTargets: undo.targets.slice()
           }, '直前の完了を戻す');
         } catch (error) {
           failed('保存できませんでした', error);
         }
       }
-
-      /* ---------- 変更の確認 ---------- */
-
-      function editDescription(value) {
-        return value.title +
-          '\n期限：' + (value.due || 'なし') +
-          '\n実行日：' + (value.date || 'なし');
-      }
-
-      function describePayload(payload, local) {
-        if (!state.snapshot) {
-          return '一覧を更新してください。';
-        }
-
-        if (payload.action === 'order') {
-          const tasks = local
-            ? client.effectiveTasks()
-            : state.snapshot.tasks;
-
-          return tasks.filter(function (task) {
-            return task.date === payload.date && !task.localOnly;
-          }).sort(compareTasks).map(function (task) {
-            return hourLabel(task.hour) + '：' + task.title;
-          }).join('\n') || 'この日のタスクはありません。';
-        }
-
-        if (payload.action === 'automatic') {
-          const enabled = local
-            ? payload.enabled
-            : state.snapshot.periodic.automatic;
-
-          return '毎日の自動追加：' + (enabled ? 'ON' : 'OFF');
-        }
-
-        if (payload.taskId) {
-          const task = taskById(state.snapshot, payload.taskId);
-
-          if (!local) {
-            return task
-              ? editDescription(task) + '\n' + hourLabel(task.hour)
-              : '現在の未完了一覧にはありません。';
-          }
-
-          return payload.action === 'done'
-            ? 'このタスクを完了にする'
-            : editDescription(payload);
-        }
-
-        if (payload.action === 'periodicSave') {
-          const item = state.snapshot.periodic.items.find(function (entry) {
-            return entry.row === payload.row;
-          });
-
-          if (!local) {
-            return item
-              ? item.name +
-                '\n' + item.freq +
-                '\n次回：' + (item.next || 'なし') +
-                '\n期限：' + dueRuleLabel(item.dueRule)
-              : '既存の対象はありません。';
-          }
-
-          return payload.name +
-            '\n' + payload.freq +
-            '\n次回：' + (payload.next || 'なし') +
-            '\n期限：' + dueRuleLabel(
-              Object.prototype.hasOwnProperty.call(payload, 'dueRule')
-                ? payload.dueRule
-                : item && item.dueRule
-            );
-        }
-
-        return local
-          ? 'この操作を実行する'
-          : '保存済みの内容を確認してから操作し直してください。';
-      }
-
-      async function openConflict(id) {
-        if (conflictOpening || !onlineRequired()) {
-          return;
-        }
-
-        conflictOpening = true;
-        renderOutbox();
-
-        try {
-          let job = state.jobs.find(function (entry) {
-            return entry.id === id && entry.state === 'conflict';
-          });
-
-          if (!job) {
-            return;
-          }
-
-          if (
-            fieldEditingSupported() &&
-            (
-              job.payload.action === 'edit' ||
-              job.payload.action === 'automatic'
-            )
-          ) {
-            job = await client.recheckConflict(id);
-
-            if (!job) {
-              return;
-            }
-
-            if (job.state !== 'conflict') {
-              notify(
-                '保存結果の再確認を続けています',
-                job.state === 'blocked',
-                job.note || ''
-              );
-              return;
-            }
-          } else {
-            const updated = await refresh();
-
-            if (!updated) {
-              return;
-            }
-
-            job = state.jobs.find(function (entry) {
-              return entry.id === id && entry.state === 'conflict';
-            });
-
-            if (!job) {
-              return;
-            }
-          }
-
-          if (!state.snapshot) {
-            return;
-          }
-
-          conflictSource = 'tasks';
-          conflictId = id;
-
-          const related = client.relatedJobs(id);
-
-          conflictReviewed = related.map(function (entry) {
-            return entry.id;
-          });
-
-          conflictReview = {
-            revision: state.snapshot.revision,
-            edit: job.editConflict ? clone(job.editConflict) : null,
-            automatic: state.snapshot.periodic.automatic
-          };
-
-          $('conflict-title').textContent = '変更内容を確認';
-          $('conflict-server-title').textContent = '保存済み';
-          $('conflict-apply').textContent = '変更を反映';
-
-          let serverText = describePayload(job.payload, false);
-          let localText = describePayload(job.payload, true);
-          let canApply = ['order', 'done', 'periodicSave', 'automatic']
-            .indexOf(job.payload.action) >= 0;
-
-          const notes = [
-            job.note,
-            '関連する未送信 ' + related.length + '件が対象です。',
-            '取り下げると、対象の端末側変更は反映しません。保存先のタスクは削除しません。'
-          ];
-
-          if (job.payload.action === 'edit') {
-            const detail = job.editConflict;
-            canApply = !!(
-              fieldEditingSupported() &&
-              detail &&
-              detail.current
-            );
-
-            if (detail && detail.current) {
-              serverText = editDescription(detail.current);
-
-              const desired = TaskCore.editValues(detail.current);
-
-              TaskCore.editFields(job.payload).forEach(function (field) {
-                desired[field] = job.payload[field];
-              });
-
-              localText = editDescription(desired);
-
-              if (detail.location === 'completed') {
-                $('conflict-title').textContent = '完了済みの編集を確認';
-                $('conflict-server-title').textContent = '保存済み・完了済み';
-                $('conflict-apply').textContent = '完了を維持して反映';
-                notes.push('完了状態と完了日時は変えずに、編集内容だけを反映します。');
-              } else {
-                $('conflict-title').textContent = '変更した項目を確認';
-              }
-            } else {
-              $('conflict-title').textContent = '編集先を確認できません';
-              serverText = detail && detail.kind === 'missing'
-                ? '未完了・完了済みのどちらにも、対象が見つかりません。'
-                : '編集先の場所や状態を確認できません。';
-
-              notes.push(
-                'タスクの作り直しや、完了の取り消しは自動では行いません。'
-              );
-            }
-          } else if (job.payload.action === 'automatic') {
-            $('conflict-title').textContent = '自動追加の設定を確認';
-            $('conflict-apply').textContent = 'この設定に変更';
-          } else if (
-            job.payload.action === 'done' &&
-            !taskById(state.snapshot, job.payload.taskId)
-          ) {
-            canApply = false;
-          }
-
-          if (related.some(function (entry) {
-            return entry.id !== id && entry.frozen;
-          })) {
-            canApply = false;
-            notes.push('関連する送信結果を確認してから反映できます。');
-          }
-
-          $('conflict-note').textContent = notes.filter(Boolean).join('\n');
-          $('conflict-server').replaceChildren(make('p', serverText));
-
-          $('conflict-local').replaceChildren(
-            make('p', localText),
-            make('p', related.map(function (entry) {
-              return '・' + entry.label;
-            }).join('\n'))
-          );
-
-          $('conflict-apply').hidden = !canApply;
-          $('conflict-dialog').showModal();
-        } catch (error) {
-          failed('変更内容を確認できませんでした', error);
-        } finally {
-          conflictOpening = false;
-          renderOutbox();
-        }
-      }
-
-      async function resolveConflict(useLocal) {
-        if (conflictSaving) {
-          return;
-        }
-
-        conflictSaving = true;
-
-        [
-          'conflict-close',
-          'conflict-remote',
-          'conflict-apply'
-        ].forEach(function (id) {
-          $(id).disabled = true;
-        });
-
-        try {
-          if (conflictSource === 'wishes') {
-            await wishes.resolveConflict(
-              conflictId,
-              useLocal,
-              wishReviewedVersion,
-              conflictReviewed
-            );
-          } else {
-            await client.resolveConflict(
-              conflictId,
-              useLocal,
-              conflictReviewed,
-              conflictReview
-            );
-          }
-
-          $('conflict-dialog').close();
-
-          notify(
-            useLocal
-              ? '送信待ち'
-              : 'この端末の変更を取り下げました'
-          );
-        } catch (error) {
-          $('conflict-note').textContent = String(error.message || error);
-        } finally {
-          conflictSaving = false;
-
-          [
-            'conflict-close',
-            'conflict-remote',
-            'conflict-apply'
-          ].forEach(function (id) {
-            $(id).disabled = false;
-          });
-        }
-      }
-
-      $('conflict-close').onclick = function () {
-        $('conflict-dialog').close();
-      };
-
-      $('conflict-remote').onclick = function () {
-        resolveConflict(false);
-      };
-
-      $('conflict-apply').onclick = function () {
-        resolveConflict(true);
-      };
-
-      $('conflict-dialog').addEventListener('cancel', function (event) {
-        if (conflictSaving) {
-          event.preventDefault();
-        }
-      });
 
       /* ---------- 設定・点検 ---------- */
 
@@ -3841,19 +3996,8 @@
           return '未取得';
         }
 
-        const names = {
-          add: '追加',
-          done: '完了',
-          edit: '編集',
-          order: '配置',
-          undo: '取り消し',
-          periodicSave: '定期設定',
-          periodicSend: '定期追加',
-          periodicRun: '今日の定期追加',
-          automatic: '自動追加設定'
-        };
-
-        return (names[info.action] || info.action) +
+        return TaskCore.actionLabel(info.action) +
+          '\n処理結果 ' + TaskCore.outcomeLabel(info.outcome) +
           '\n開始まで ' + seconds(info.waitMs) +
           '\n確認完了まで ' + seconds(info.roundTripMs) +
           '\n保存先処理 ' + seconds(info.serverMs);
@@ -3895,10 +4039,9 @@
             '保存先の改修版',
             state.snapshot ? state.snapshot.build || '未取得' : '未取得'
           ],
-          [
-            '完了済みへの編集・項目別照合',
-            fieldEditingSupported() ? '対応' : '保存先の更新が必要'
-          ],
+          ['変更の自動反映', client.latestSupported() ? '対応' : '保存先の更新が必要'],
+          ['計画と実行日なしの移動', planningSupported() ? '対応' : '保存先の更新が必要'],
+          ['操作時刻の補正', client.clockStatusLabel()],
           ['オフライン機能の版', cacheVersion],
           ['一覧の確認', client.readStatusLabel()],
           ['異常な返答の記録', client.readDiagnostics.length + '件'],
@@ -3906,9 +4049,7 @@
           ['送信の引き継ぎ', client.fastHandoff ? '自動' : '従来方式'],
           [
             '旧画面の送信記録',
-            client.legacyWaitUntil > Date.now()
-              ? '終了確認待ち'
-              : '待ちなし'
+            client.legacyWaitUntil > Date.now() ? '終了確認待ち' : '待ちなし'
           ],
           ['直近のタスク送信', sendTiming()],
           ['更新エラー', client.lastReadError || 'なし'],
@@ -3958,6 +4099,10 @@
       }
 
       async function openSettings() {
+        if (drag) {
+          return;
+        }
+
         const config = client.config();
         $('url').value = config.url;
         $('token').value = config.token;
@@ -4010,19 +4155,25 @@
               saved.lastNetworkAt = 0;
             });
 
-            await wishes.mutate(function (saved) {
-              saved.snapshot = null;
-              saved.transitions = [];
-              saved.lastNetworkAt = 0;
-            });
+            if (wishes.ready) {
+              await wishes.mutate(function (saved) {
+                saved.snapshot = null;
+                saved.transitions = [];
+                saved.lastNetworkAt = 0;
+              });
+            }
           }
 
           $('settings-dialog').close();
           notify('設定を保存しました');
 
-          await client.pump(true);
-          await wishes.pump(true);
           await refresh();
+          await client.pump(true);
+
+          if (wishes.ready) {
+            await wishes.reloadLocal();
+            await wishes.pump(true);
+          }
 
           if (page === 'wishes') {
             await loadWishes(false);
@@ -4052,14 +4203,12 @@
             forceFull: true
           });
 
-          if (!result) {
-            return;
+          if (result) {
+            alert(
+              '改修版：' + (result.build || '未取得') +
+              '\n\n' + result.checks.join('\n')
+            );
           }
-
-          alert(
-            '改修版：' + (result.build || '未取得') +
-            '\n\n' + result.checks.join('\n')
-          );
         } catch (error) {
           alert(String(error.message || error));
         } finally {
@@ -4171,7 +4320,6 @@
           wishReadPromise ||
           manualReloading ||
           periodicAdding ||
-          conflictOpening ||
           resumePromise ||
           allPendingCount() ||
           Date.now() < nextAutoRead
@@ -4256,13 +4404,13 @@
         return resumePromise;
       }
 
-      document.querySelectorAll('nav [data-page]').forEach(function (element) {
-        element.addEventListener('click', function () {
+      document.querySelectorAll('nav [data-page]').forEach(function (control) {
+        control.addEventListener('click', function () {
           if (drag) {
             return;
           }
 
-          page = element.dataset.page;
+          page = control.dataset.page;
 
           if (page === 'history') {
             loadHistory(false);
@@ -4298,19 +4446,28 @@
         renderStatus();
 
         try {
+          await client.read({
+            action: 'load'
+          });
+
           await client.pump(true);
+          await wishes.reloadLocal();
           await wishes.pump(true);
 
           if (page === 'history') {
             await loadHistory(false);
           } else if (page === 'wishes') {
             await loadWishes(false);
-          } else {
-            await refresh();
           }
+
+          if (messageKind === 'read' && !client.lastReadError) {
+            notify('');
+          }
+        } catch (error) {
+          failed('更新できませんでした', error);
         } finally {
           manualReloading = false;
-          renderStatus();
+          render();
         }
       };
 
@@ -4344,7 +4501,30 @@
         }
       });
 
-      window.addEventListener('resize', updateNow);
+      window.addEventListener('resize', function () {
+        if (drag) {
+          endDrag(true);
+        }
+
+        positionTaskFilter();
+        updatePoolHeight();
+        updateNow();
+      });
+
+      window.addEventListener('scroll', function () {
+        if (scrollFrame) {
+          return;
+        }
+
+        scrollFrame = requestAnimationFrame(function () {
+          scrollFrame = null;
+          positionTaskFilter();
+          updatePoolHeight();
+        });
+      }, {
+        passive: true
+      });
+
       setInterval(automaticRead, 5000);
 
       setInterval(function () {
@@ -4383,21 +4563,20 @@
       (async function () {
         try {
           await client.start();
-          await wishes.start();
           render();
 
+          if (client.configured() && !client.legacyCount && navigator.onLine) {
+            await refresh();
+          }
+
+          await wishes.start();
+          render();
+          await client.pump(false);
+
           if (page === 'history') {
-            client.pump(false);
             await loadHistory(false);
           } else if (page === 'wishes') {
-            client.pump(false);
             await loadWishes(false);
-          } else if (client.configured() && !client.legacyCount) {
-            const changed = await client.pump(false);
-
-            if (!changed || !state.snapshot) {
-              await refresh();
-            }
           }
         } catch (error) {
           failed('端末への保存を準備できません', error);
