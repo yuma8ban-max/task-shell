@@ -1,10 +1,10 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.12.3
+ * UI build: v4.12.4
  *
  * Application-specific styles.
- * The following license accompanies the separately distributed,
+ * This license accompanies the separately distributed,
  * unmodified Tabler 1.0.0 stylesheet, tabler.css.
  *
  * The MIT License (MIT)
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.12.3;
+  --task-ui-version: v4.12.4;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -279,7 +279,6 @@ body.sheet-open {
   opacity: 1;
 }
 
-/* SVGのhiddenプロパティに依存せず、更新状態で表示を切り替える。 */
 .task-app #reload[aria-busy="true"] #reload-icon {
   display: none !important;
 }
@@ -851,6 +850,10 @@ body.sheet-open {
   gap: 24px;
 }
 
+.task-app .plan-board.is-backlog-collapsed {
+  grid-template-columns: minmax(0, 1fr) 52px;
+}
+
 .task-app .plan-main {
   min-width: 0;
 }
@@ -1056,16 +1059,27 @@ body.sheet-open {
     border-color .12s ease;
 }
 
+.task-app .plan-backlog.is-collapsed {
+  min-height: 0;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .task-app .backlog-heading {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 5px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .task-app .backlog-heading h3 {
+  flex: 1;
+  min-width: 0;
   margin: 0;
 }
 
@@ -1079,6 +1093,40 @@ body.sheet-open {
   font-weight: 650;
   line-height: 1.4;
   text-align: center;
+}
+
+.task-app .btn.backlog-toggle {
+  flex: none;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-color: transparent;
+  color: #526176;
+  background: transparent;
+  box-shadow: none;
+}
+
+.task-app .btn.backlog-reopen {
+  flex-direction: column;
+  gap: 7px;
+  width: 52px;
+  min-width: 52px;
+  min-height: 78px;
+  padding: 10px 4px;
+  border-color: var(--line);
+  border-radius: 12px;
+  color: #526176;
+  background: #f8fafd;
+  box-shadow: none;
+}
+
+.task-app .backlog-reopen .backlog-count {
+  max-width: 44px;
+  padding-right: 5px;
+  padding-left: 5px;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .task-app .backlog-list {
@@ -2307,7 +2355,6 @@ body.sheet-open {
     box-shadow: 0 -10px 45px rgba(26, 42, 69, .18);
   }
 
-  /* 上限だけでなく実際の高さを指定し、一覧領域を確保する。 */
   .task-app dialog.backlog-dialog {
     height: 84vh;
     height: 84dvh;
