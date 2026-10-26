@@ -16,7 +16,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
   <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
-  <link rel="stylesheet" href="./task-ui.css?v=4.12.1">
+  <link rel="stylesheet" href="./task-ui.css?v=4.12.4">
 </head>
 <body class="task-app">
   <svg
@@ -35,6 +35,9 @@
     </symbol>
     <symbol id="icon-chevron-down" viewBox="0 0 24 24">
       <path d="M6 9l6 6 6-6"></path>
+    </symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+      <path d="M9 6l6 6-6 6"></path>
     </symbol>
     <symbol id="icon-grip" viewBox="0 0 24 24">
       <path d="M6 7h12M6 12h12M6 17h12"></path>
@@ -126,7 +129,7 @@
       <header class="app-header">
         <div class="app-heading">
           <h1>タスク</h1>
-          <span class="badge version">v4.12.2</span>
+          <span class="badge version">v4.12.4</span>
         </div>
 
         <div class="header-actions">
@@ -273,18 +276,17 @@
         <li>＊は必須項目です。期限・実行日は空欄でも追加できます。</li>
         <li>「実行日なし」は実行日が空欄の未完了タスクです。期限の有無は問いません。</li>
         <li>PCでは、右の候補から中央の時間枠へ移動できます。</li>
+        <li>右欄は見出し横のボタンで折り畳めます。閉じたときはアイコンと件数のボタンで戻せます。開閉状態と候補の表示位置は端末ごとに記憶します。</li>
         <li>移動つまみ、または件名部分の0.6秒長押しで移動を始めます。離すと端末に保存します。</li>
         <li>中央の「時間未定」は、表示中の日に実行するタスクのうち、時間帯が未定のものです。</li>
         <li>中央から「実行日なし」へ戻すと、実行日だけが空欄になります。期限と時間帯は残ります。</li>
-        <li>候補の「追加」は、表示中の日の計画へ既存のタスクを配置します。タスクを複製する操作ではありません。</li>
+        <li>候補の「追加」は、表示中の日の計画へ既存のタスクを配置します。タスクは複製しません。</li>
         <li>iPhoneでは「実行日なし」から候補を開き、「追加」を押します。設定済みの時間帯は保持します。</li>
-        <li>狭い画面で移動中は、下部の「実行日なしへ戻す」に置くことでも戻せます。</li>
-        <li>置けない場所で離すと変更しません。移動中に日付は切り替えません。</li>
+        <li>右欄を閉じているときや狭い画面では、移動中に下部へ出る「実行日なしへ戻す」に置くことでも戻せます。</li>
+        <li>置けない場所で離すと変更しません。移動中は日付や右欄の開閉を変更しません。</li>
         <li>新規追加の登録確認前のタスクは、まだ移動・編集・完了にできません。</li>
-        <li>「昨日以前」は、実行日が昨日以前の未完了タスクです。期限切れとは別です。</li>
-        <li>「今週」は今日から日曜日までの実行日が対象です。</li>
-        <li>通常の変更競合は、操作時刻と順序に基づき自動処理します。</li>
-        <li>端末時計の補正は概算です。完全オフライン時などの厳密な前後関係を保証するものではありません。</li>
+        <li>「昨日以前」は、実行日が昨日以前の未完了タスクです。期限切れとは別です。「今週」は今日から日曜日までです。</li>
+        <li>通常の変更競合は、操作時刻と順序に基づき自動処理します。時刻の補正は概算です。</li>
         <li>旧記録の順序を復元できない場合は保存先の現在値を基準に処理し、結果を確認してから送信待ちを解消します。</li>
         <li>完了済みへの編集は完了状態を維持します。並べ替えで完了済みを復活させません。</li>
         <li>「直前の完了を戻す」は、操作時点で確認した対象を戻します。</li>
@@ -294,9 +296,7 @@
         <li>期限の0日後は基準日当日です。土日も数え、その月にない指定日は月末にします。</li>
         <li>「したいこと」の編集は件名だけを変更します。達成状態は別に扱います。</li>
         <li>通常画面が開いていれば、小窓終了後の送信確認を引き継ぎます。小窓は追加後も閉じません。</li>
-        <li>一覧の自動更新より送信待ちを優先します。</li>
-        <li>一時的な404などは短く再確認します。60秒の通信制限を延長する変更はしていません。</li>
-        <li>保存先の処理を確認した後に一覧確認だけ失敗した場合は、更新要求ではなく一覧を確認します。</li>
+        <li>一覧の自動更新より送信待ちを優先します。保存先の処理確認後に一覧確認だけ失敗した場合は、更新要求ではなく一覧を確認します。</li>
         <li>認証・入力・端末保存・対象の消失など、本当に確認が必要な異常は表示します。</li>
         <li>点検記録には合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
         <li>iPhoneショートカットの未送信は「ファイル」アプリで管理し、この画面の送信待ちとは別です。</li>
@@ -315,11 +315,12 @@
     (function () {
       'use strict';
 
-      const VERSION = 'v4.12.2';
+      const VERSION = 'v4.12.4';
       const REQUIRED_CORE_BUILD = 'v4.12.1';
       const UI_KIT_VERSION = '1.0.0';
       const EDIT_PROTOCOL = 'task-edit-fields-v1';
       const PLAN_PROTOCOL = 'task-plan-move-v1';
+      const POOL_PREF_KEY = 'task-plan-backlog-ui-v1';
 
       const FILTER_GROUPS = [
         {
@@ -371,6 +372,7 @@
       const compareTasks = TaskCore.compareTasks;
       const taskById = TaskCore.taskById;
       const dayVersion = TaskCore.dayVersion;
+      const poolPreferences = readPoolPreferences();
 
       let state = TaskCore.emptyState();
       let client = null;
@@ -423,7 +425,9 @@
       let messageKind = '';
       let cacheVersion = '未確認';
 
-      let backlogScroll = 0;
+      let backlogCollapsed = poolPreferences.collapsed;
+      let backlogScroll = poolPreferences.scrollTop;
+      let poolSaveTimer = null;
       let backlogDialogScroll = 0;
       let backlogDialogDate = selectedDate;
       let backlogAdding = false;
@@ -445,6 +449,100 @@
       let suppressClickUntil = 0;
       let renderDeferred = false;
       let scrollFrame = null;
+
+      function readPoolPreferences() {
+        try {
+          const value = JSON.parse(localStorage.getItem(POOL_PREF_KEY) || 'null');
+
+          return {
+            collapsed: !!(value && value.collapsed === true),
+            scrollTop: value && Number.isFinite(value.scrollTop)
+              ? Math.max(0, value.scrollTop)
+              : 0
+          };
+        } catch (error) {
+          return {
+            collapsed: false,
+            scrollTop: 0
+          };
+        }
+      }
+
+      function savePoolPreferences(immediate) {
+        if (poolSaveTimer) {
+          clearTimeout(poolSaveTimer);
+          poolSaveTimer = null;
+        }
+
+        function save() {
+          poolSaveTimer = null;
+
+          try {
+            localStorage.setItem(POOL_PREF_KEY, JSON.stringify({
+              collapsed: backlogCollapsed,
+              scrollTop: Math.max(0, Math.round(backlogScroll))
+            }));
+          } catch (error) {
+            // 表示設定を保存できなくても、タスクの操作は止めない。
+          }
+        }
+
+        if (immediate) {
+          save();
+        } else {
+          poolSaveTimer = setTimeout(save, 200);
+        }
+      }
+
+      function rememberPoolScroll() {
+        const list = $('backlog-list');
+
+        if (
+          !backlogCollapsed &&
+          list &&
+          !list.hidden &&
+          list.getClientRects().length
+        ) {
+          backlogScroll = list.scrollTop;
+        }
+      }
+
+      function restorePoolScroll() {
+        const list = $('backlog-list');
+
+        if (
+          !backlogCollapsed &&
+          list &&
+          !list.hidden &&
+          list.getClientRects().length
+        ) {
+          list.scrollTop = backlogScroll;
+        }
+      }
+
+      function toggleBacklog() {
+        if (
+          drag ||
+          holdTimer ||
+          anyDialogOpen() ||
+          Date.now() < suppressClickUntil
+        ) {
+          return;
+        }
+
+        rememberPoolScroll();
+        backlogCollapsed = !backlogCollapsed;
+        savePoolPreferences(true);
+        render();
+
+        const control = $('backlog-toggle');
+
+        if (control) {
+          control.focus({
+            preventScroll: true
+          });
+        }
+      }
 
       function make(tag, text, className) {
         const element = document.createElement(tag);
@@ -1002,36 +1100,59 @@
           return null;
         }
 
+        const anchor = Array.from(timeline.querySelectorAll('.slot'))
+          .find(function (slot) {
+            return slot.getBoundingClientRect().bottom > 12;
+          });
+
         return {
           date: selectedDate,
           x: window.scrollX,
-          y: window.scrollY
+          y: window.scrollY,
+          hour: anchor ? anchor.dataset.hour : null,
+          top: anchor ? anchor.getBoundingClientRect().top : null
         };
       }
 
       function restorePosition(position) {
         if (
-          position &&
-          page === 'plan' &&
-          selectedDate === position.date
+          !position ||
+          page !== 'plan' ||
+          selectedDate !== position.date
         ) {
-          window.scrollTo(position.x, position.y);
+          return;
         }
+
+        if (position.hour !== null && Number.isFinite(position.top)) {
+          const anchor = Array.from(
+            document.querySelectorAll('#timeline .slot')
+          ).find(function (slot) {
+            return slot.dataset.hour === position.hour;
+          });
+
+          if (anchor) {
+            window.scrollTo(
+              position.x,
+              window.scrollY +
+                anchor.getBoundingClientRect().top -
+                position.top
+            );
+            return;
+          }
+        }
+
+        window.scrollTo(position.x, position.y);
       }
 
       function render() {
         const position = capturePosition();
         const oldAchieved = $('wish-achieved');
-        const oldBacklog = $('backlog-list');
 
         if (oldAchieved) {
           achievedOpen = oldAchieved.open;
         }
 
-        if (oldBacklog) {
-          backlogScroll = oldBacklog.scrollTop;
-        }
-
+        rememberPoolScroll();
         renderStatus();
         renderOutbox();
 
@@ -1103,6 +1224,7 @@
 
         restorePosition(position);
         updatePoolHeight();
+        restorePoolScroll();
       }
 
       function completeButton(task) {
@@ -1403,17 +1525,24 @@
       }
 
       function renderPlan(content) {
-        const board = make('div', null, 'plan-board');
+        const board = make(
+          'div',
+          null,
+          'plan-board' + (backlogCollapsed ? ' is-backlog-collapsed' : '')
+        );
+
         const main = make('section', null, 'plan-main');
         main.id = 'plan-main';
 
         const heading = make('div', null, 'plan-heading');
         heading.appendChild(make('h2', '1日の計画'));
 
+        const poolCount = undatedTasks().length;
         const poolButton = button('', openBacklog, 'pool-open');
+
         poolButton.append(
           icon('inbox'),
-          make('span', '実行日なし ' + undatedTasks().length + '件')
+          make('span', '実行日なし ' + poolCount + '件')
         );
 
         heading.appendChild(poolButton);
@@ -1504,24 +1633,75 @@
         timeline.appendChild(line);
         main.appendChild(timeline);
 
-        const pool = make('aside', null, 'plan-backlog');
+        const pool = make(
+          'aside',
+          null,
+          'plan-backlog' + (backlogCollapsed ? ' is-collapsed' : '')
+        );
+
         pool.id = 'plan-backlog';
 
-        const poolHeading = make('div', null, 'backlog-heading');
-        poolHeading.append(
-          make('h3', '実行日なし'),
-          make('span', String(undatedTasks().length), 'backlog-count')
+        const toggle = button(
+          '',
+          toggleBacklog,
+          backlogCollapsed ? 'backlog-reopen' : 'backlog-toggle'
         );
+
+        toggle.id = 'backlog-toggle';
+        toggle.setAttribute('aria-controls', 'backlog-list');
+        toggle.setAttribute('aria-expanded', String(!backlogCollapsed));
 
         const list = make('div', null, 'backlog-list');
         list.id = 'backlog-list';
-        renderBacklog(list, false);
+        list.hidden = backlogCollapsed;
 
-        pool.append(poolHeading, list);
+        if (backlogCollapsed) {
+          toggle.setAttribute(
+            'aria-label',
+            '実行日なし ' + poolCount + '件を展開'
+          );
+
+          toggle.append(
+            icon('inbox'),
+            make('span', String(poolCount), 'backlog-count')
+          );
+
+          pool.append(toggle, list);
+        } else {
+          toggle.setAttribute('aria-label', '実行日なしを折りたたむ');
+          toggle.appendChild(icon('chevron-right'));
+
+          const poolHeading = make('div', null, 'backlog-heading');
+
+          poolHeading.append(
+            make('h3', '実行日なし'),
+            make('span', String(poolCount), 'backlog-count'),
+            toggle
+          );
+
+          renderBacklog(list, false);
+
+          list.addEventListener('scroll', function () {
+            if (
+              document.contains(list) &&
+              !backlogCollapsed &&
+              !list.hidden &&
+              list.getClientRects().length
+            ) {
+              backlogScroll = list.scrollTop;
+              savePoolPreferences(false);
+            }
+          }, {
+            passive: true
+          });
+
+          pool.append(poolHeading, list);
+        }
+
         board.append(main, pool);
         content.appendChild(board);
-
-        list.scrollTop = backlogScroll;
+        updatePoolHeight();
+        restorePoolScroll();
         updateNow();
       }
 
@@ -1529,6 +1709,11 @@
         const pool = $('plan-backlog');
 
         if (!pool || !pool.getClientRects().length) {
+          return;
+        }
+
+        if (backlogCollapsed) {
+          pool.style.removeProperty('max-height');
           return;
         }
 
@@ -1748,7 +1933,7 @@
 
       function setPlanControlsDisabled(disabled) {
         document.querySelectorAll(
-          '.plan-tools button, .plan-tools input, .pool-open'
+          '.plan-tools button, .plan-tools input, .pool-open, #backlog-toggle'
         ).forEach(function (control) {
           control.disabled = disabled;
         });
@@ -1830,7 +2015,10 @@
 
         $('plan-return-zone').hidden = !(
           source === 'plan' &&
-          window.matchMedia('(max-width: 1100px)').matches
+          (
+            backlogCollapsed ||
+            window.matchMedia('(max-width: 1100px)').matches
+          )
         );
 
         $('drag-announcement').textContent =
@@ -1897,18 +2085,18 @@
 
         const pool = $('plan-backlog');
         const returnZone = $('plan-return-zone');
+        const overPool = !backlogCollapsed && inElement(pool, x, y);
+        const overReturn = !returnZone.hidden &&
+          inElement(returnZone, x, y);
 
         if (
           drag.source === 'plan' &&
-          (
-            inElement(pool, x, y) ||
-            (!returnZone.hidden && inElement(returnZone, x, y))
-          )
+          (overPool || overReturn)
         ) {
           drag.target = 'pool';
           drag.placeholder.remove();
 
-          if (inElement(pool, x, y)) {
+          if (overPool) {
             pool.classList.add('is-drop-target');
           } else {
             returnZone.classList.add('is-drop-target');
@@ -4527,6 +4715,8 @@
               return;
             }
 
+            rememberPoolScroll();
+            savePoolPreferences(true);
             page = control.dataset.page;
 
             if (page === 'history') {
@@ -4598,6 +4788,9 @@
 
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) {
+          rememberPoolScroll();
+          savePoolPreferences(true);
+
           if (drag || holdTimer) {
             endDrag(true);
           }
@@ -4606,6 +4799,11 @@
         }
 
         resumeScreen();
+      });
+
+      window.addEventListener('pagehide', function () {
+        rememberPoolScroll();
+        savePoolPreferences(true);
       });
 
       window.addEventListener('pageshow', function (event) {
@@ -4627,6 +4825,7 @@
 
         positionTaskFilter();
         updatePoolHeight();
+        restorePoolScroll();
         updateNow();
       });
 
