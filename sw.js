@@ -1,7 +1,7 @@
-/* File: sw.js — task-v4.12.3-1 */
+/* File: sw.js — task-v4.12.4-1 */
 'use strict';
 
-const CACHE = 'task-v4.12.3-1';
+const CACHE = 'task-v4.12.4-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -11,7 +11,7 @@ const REQUIRED_FILES = [
   './index.html',
   './quick-add.html',
   './tabler.css?v=1.0.0',
-  './task-ui.css?v=4.12.1',
+  './task-ui.css?v=4.12.4',
   './task-core.js?v=4.12.1',
   './task-core.js?v=4.8',
   './wish-client.js?v=4.10',
@@ -48,7 +48,7 @@ async function checkedResponse(file) {
 
     if (
       file === './index.html' &&
-      text.indexOf("const VERSION = 'v4.12.2';") < 0
+      text.indexOf("const VERSION = 'v4.12.4';") < 0
     ) {
       throw new Error('画面の版が揃っていません。');
     }
@@ -62,7 +62,7 @@ async function checkedResponse(file) {
 
     if (
       file.indexOf('./task-ui.css') === 0 &&
-      text.indexOf('--task-ui-version: v4.12.3;') < 0
+      text.indexOf('--task-ui-version: v4.12.4;') < 0
     ) {
       throw new Error('UIスタイルの版が揃っていません。');
     }
