@@ -4287,6 +4287,42 @@
     return index < 0 ? undefined : SLOT_HOURS[index + step];
   }
 
+  // 今日の並べ替え：items（{id, hour}、表示順）の from 番目を to 番目へ動かした新しい並びを返す。
+  // 計画は時間の早い順に並ぶため、動かしたタスクの時間が前後と食い違うときは、隣のタスクの時間に合わせる
+  function reorderDay(items, from, to) {
+    if (
+      !Array.isArray(items) ||
+      !Number.isInteger(from) ||
+      !Number.isInteger(to) ||
+      from < 0 || from >= items.length ||
+      to < 0 || to >= items.length
+    ) {
+      return items;
+    }
+
+    const next = items.map(function (item) {
+      return { id: item.id, hour: item.hour };
+    });
+
+    const moved = next.splice(from, 1)[0];
+    next.splice(to, 0, moved);
+
+    const rank = function (hour) {
+      return hour == null ? -1 : hour;
+    };
+
+    const before = to > 0 ? next[to - 1] : null;
+    const after = to < next.length - 1 ? next[to + 1] : null;
+
+    if (before && rank(moved.hour) < rank(before.hour)) {
+      moved.hour = before.hour;
+    } else if (after && rank(moved.hour) > rank(after.hour)) {
+      moved.hour = after.hour;
+    }
+
+    return next;
+  }
+
   // 画面内のキー操作。判定（keyCommand）と画面のキー一覧が同じ表を使う
   const KEY_COMMANDS = [
     { id: 'next', keys: ['arrowdown', 'j'], show: '↓ / J', text: '次のタスクを選ぶ' },
@@ -4338,6 +4374,7 @@
   window.TaskCore = {
     SLOT_HOURS: SLOT_HOURS,
     shiftSlot: shiftSlot,
+    reorderDay: reorderDay,
     KEY_COMMANDS: KEY_COMMANDS,
     keyCommand: keyCommand,
     VERSION: VERSION,
