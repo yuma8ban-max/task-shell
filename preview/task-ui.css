@@ -1,7 +1,7 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.14.0
+ * UI build: v4.15.0
  *
  * Application-specific styles.
  * This license accompanies the separately distributed,
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.14.0;
+  --task-ui-version: v4.15.0;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -2107,7 +2107,7 @@ body.sheet-open {
 
   .task-app .nav-items {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 2px;
   }
 
@@ -2496,4 +2496,51 @@ body.sheet-open {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 実行中（TSK-04〜06） */
+.task-app .run-toggle {
+  flex: none;
+  white-space: nowrap;
+}
+
+.task-app .run-toggle.is-running {
+  border-color: #7da5f6;
+  color: #1d4ed8;
+}
+
+.task-app .run-rank {
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-app .run-card.is-locked {
+  opacity: .85;
+}
+
+.task-app .run-progress {
+  margin: 8px 0;
+  resize: vertical;
+}
+
+.task-app .run-progress-text {
+  margin: 6px 0;
+  color: #44546a;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.task-app .run-lock {
+  margin: 6px 0;
+  color: #8a5a00;
+  font-size: 13px;
+}
+
+.task-app .run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }

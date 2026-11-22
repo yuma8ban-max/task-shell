@@ -67,7 +67,11 @@
     'periodicSave',
     'periodicSend',
     'periodicRun',
-    'automatic'
+    'automatic',
+    'runStart',
+    'runStop',
+    'runOrder',
+    'runProgress'
   ];
 
   const WISH_ACTIONS = [
@@ -323,6 +327,10 @@
       periodicSend: '定期追加',
       periodicRun: '今日の定期追加',
       automatic: '自動追加設定',
+      runStart: '実行中にする',
+      runStop: '実行中の解除',
+      runOrder: '実行中の順位',
+      runProgress: '進捗の保存',
       wishList: 'したいこと更新',
       wishAdd: 'したいこと追加',
       wishEdit: 'したいこと編集',
@@ -992,6 +1000,15 @@
       keys.push('undo');
     }
 
+    // 実行中の順位・進捗と完了は互いに影響するため、同じ資源として順に送る
+    if (
+      payload.action === 'done' ||
+      payload.action === 'undo' ||
+      payload.action.indexOf('run') === 0
+    ) {
+      keys.push('running');
+    }
+
     if (payload.action === 'undo' && Array.isArray(payload.undoTargets)) {
       payload.undoTargets.forEach(function (taskId) {
         keys.push('task:' + taskId);
@@ -1196,6 +1213,10 @@
 
     if (patch.undo) {
       next.undo = patch.undo;
+    }
+
+    if (patch.running) {
+      next.running = patch.running;
     }
 
     next.addLinks = patch.addLinks || {};
@@ -4215,6 +4236,33 @@
     return '';
   }
 
+  // 進捗の上限は保存先の1マスの上限（5万字）。保存先側は 実行中.js の RUN_PROGRESS_MAX（同じ値）
+  const PROGRESS_MAX_LENGTH = 50000;
+
+  function progressProblem(text) {
+    return String(text || '').trim().length > PROGRESS_MAX_LENGTH
+      ? '進捗が長すぎます。5万字以内にしてください。'
+      : '';
+  }
+
+  // 実行中の一覧（順位順）。保存先が対応していなければ null
+  function runningItems(snapshot) {
+    return snapshot && snapshot.running && Array.isArray(snapshot.running.items)
+      ? snapshot.running.items
+      : null;
+  }
+
+  // タスクの実行中の情報（実行中でなければ null）。rank は 1 が先頭
+  function runningInfo(snapshot, taskId) {
+    const items = runningItems(snapshot);
+
+    return items
+      ? items.find(function (item) {
+        return item.taskId === taskId;
+      }) || null
+      : null;
+  }
+
   // 件名の入力欄で Enter を保存の合図として扱うか。
   // PC は Enter で保存・Shift+Enter で改行。スマホ（指で操作する端末）は Enter で改行。日本語変換中は扱わない
   function titleEnterSaves(event) {
@@ -4250,6 +4298,9 @@
     editFields: editFieldsFor,
     actionLabel: actionLabel,
     outcomeLabel: outcomeLabel,
+    progressProblem: progressProblem,
+    runningItems: runningItems,
+    runningInfo: runningInfo,
     titleProblem: titleProblem,
     titleEnterSaves: titleEnterSaves
   };
