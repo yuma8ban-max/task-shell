@@ -1,0 +1,4945 @@
+<!-- Output: html -->
+<!-- File: index.html -->
+<!DOCTYPE html>
+<html lang="ja" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="style-src 'self' 'unsafe-inline'; font-src 'none';">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="タスク">
+  <title>タスク</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="./icon-check-32.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
+  <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
+  <link rel="stylesheet" href="./task-ui.css?v=4.13.0">
+  <link rel="stylesheet" href="./shared_side-panel.css?v=4.13.0">
+</head>
+<body class="task-app">
+  <svg
+    class="icon-sprite"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false">
+    <symbol id="icon-check" viewBox="0 0 24 24">
+      <path d="M5 12l4 4L19 6"></path>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14"></path>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M6 18L18 6"></path>
+    </symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+      <path d="M6 9l6 6 6-6"></path>
+    </symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+      <path d="M9 6l6 6-6 6"></path>
+    </symbol>
+    <symbol id="icon-grip" viewBox="0 0 24 24">
+      <path d="M6 7h12M6 12h12M6 17h12"></path>
+    </symbol>
+    <symbol id="icon-plan" viewBox="0 0 24 24">
+      <rect x="4" y="5" width="16" height="16" rx="3"></rect>
+      <path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"></path>
+    </symbol>
+    <symbol id="icon-list" viewBox="0 0 24 24">
+      <path d="M9 6h11M9 12h11M9 18h11"></path>
+      <path d="M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"></path>
+    </symbol>
+    <symbol id="icon-repeat" viewBox="0 0 24 24">
+      <path d="M17 3l3 3-3 3M20 6H8a4 4 0 0 0-4 4v1"></path>
+      <path d="M7 21l-3-3 3-3M4 18h12a4 4 0 0 0 4-4v-1"></path>
+    </symbol>
+    <symbol id="icon-done" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"></circle>
+      <path d="M8 12l3 3 5-6"></path>
+    </symbol>
+    <symbol id="icon-wish" viewBox="0 0 24 24">
+      <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3z"></path>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+      <path d="M4 7h2M12 7h8M4 17h8M18 17h2"></path>
+      <circle cx="9" cy="7" r="3"></circle>
+      <circle cx="15" cy="17" r="3"></circle>
+    </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24">
+      <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
+      <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
+    </symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24">
+      <path d="M16 5l3 3"></path>
+      <path d="M4 20h4L20 8a2.83 2.83 0 0 0-4-4L4 16v4"></path>
+    </symbol>
+    <symbol id="icon-inbox" viewBox="0 0 24 24">
+      <path d="M5 4h14l2 10v6H3v-6L5 4z"></path>
+      <path d="M3 14h5l2 3h4l2-3h5"></path>
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <nav class="app-nav" aria-label="画面の切り替え">
+      <div class="nav-brand" aria-hidden="true">
+        <span class="brand-mark">
+          <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+            <use href="#icon-check"></use>
+          </svg>
+        </span>
+        <span>タスク</span>
+      </div>
+
+      <div class="nav-items">
+        <button type="button" data-page="plan" class="nav-link active" aria-current="page">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-plan"></use>
+          </svg>
+          <span>1日の計画</span>
+        </button>
+        <button type="button" data-page="tasks" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-list"></use>
+          </svg>
+          <span>タスク一覧</span>
+        </button>
+        <button type="button" data-page="periodic" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-repeat"></use>
+          </svg>
+          <span>定期タスク</span>
+        </button>
+        <button type="button" data-page="history" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-done"></use>
+          </svg>
+          <span>完了済み</span>
+        </button>
+        <button type="button" data-page="wishes" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-wish"></use>
+          </svg>
+          <span>したいこと</span>
+        </button>
+      </div>
+    </nav>
+
+    <main id="main">
+      <header class="app-header">
+        <div class="app-heading">
+          <h1>タスク</h1>
+          <span class="badge version">v4.13.0</span>
+        </div>
+
+        <div class="header-actions">
+          <button id="add" class="btn btn-primary primary" type="button" disabled>
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-plus"></use>
+            </svg>
+            <span id="add-label">タスクを追加</span>
+          </button>
+
+          <button id="reload" class="btn" type="button" disabled>
+            <svg id="reload-icon" class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-refresh"></use>
+            </svg>
+            <span id="reload-spinner" class="button-spinner" aria-hidden="true" hidden></span>
+            <span id="reload-label">更新</span>
+          </button>
+
+          <button id="settings" class="btn" type="button">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-settings"></use>
+            </svg>
+            <span>設定</span>
+          </button>
+        </div>
+      </header>
+
+      <div id="status" class="status" aria-live="polite">準備中</div>
+
+      <div id="message" class="notice" hidden aria-live="polite">
+        <div class="notice-row">
+          <span id="message-text"></span>
+          <button id="message-close" class="notice-close" type="button" aria-label="お知らせを閉じる">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <use href="#icon-close"></use>
+            </svg>
+          </button>
+        </div>
+        <details id="message-details" hidden>
+          <summary>詳細</summary>
+          <div id="message-detail-body" class="detail-text"></div>
+        </details>
+      </div>
+
+      <details id="outbox" hidden>
+        <summary id="outbox-summary">送信待ち</summary>
+        <div id="outbox-items"></div>
+      </details>
+
+      <section id="content" class="panel"></section>
+    </main>
+  </div>
+
+  <div id="plan-return-zone" class="plan-return-zone" hidden>
+    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <use href="#icon-inbox"></use>
+    </svg>
+    <span>実行日なしへ戻す</span>
+  </div>
+
+  <div id="drag-announcement" class="sr-only" aria-live="polite"></div>
+
+  <dialog id="backlog-dialog" class="backlog-dialog" aria-labelledby="backlog-dialog-title">
+    <div class="sheet-heading">
+      <h2 id="backlog-dialog-title">実行日なし</h2>
+      <button id="backlog-close" class="filter-close" type="button" aria-label="候補一覧を閉じる">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#icon-close"></use>
+        </svg>
+      </button>
+    </div>
+    <p id="backlog-target-date" class="sub"></p>
+    <div id="backlog-dialog-list" class="backlog-dialog-list"></div>
+  </dialog>
+
+  <dialog id="task-filter-dialog" class="filter-dialog" aria-labelledby="task-filter-title">
+    <div class="filter-dialog-heading">
+      <h2 id="task-filter-title">絞り込み</h2>
+      <button id="task-filter-close" class="filter-close" type="button" aria-label="絞り込みを閉じる">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#icon-close"></use>
+        </svg>
+      </button>
+    </div>
+    <div id="task-filter-options" class="filter-options" role="menu" aria-label="表示するタスク"></div>
+  </dialog>
+
+  <dialog id="editor" aria-labelledby="editor-title">
+    <div class="dialog-heading">
+      <span class="dialog-icon" aria-hidden="true">
+        <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+          <use href="#icon-edit"></use>
+        </svg>
+      </span>
+      <h2 id="editor-title"></h2>
+    </div>
+    <form id="editor-form">
+      <div id="editor-fields"></div>
+      <div id="editor-note" class="form-error" hidden aria-live="polite"></div>
+      <div class="dialog-actions">
+        <button id="editor-cancel" class="btn" type="button">キャンセル</button>
+        <button id="editor-submit" class="btn btn-primary primary" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="dialog-heading">
+      <span class="dialog-icon" aria-hidden="true">
+        <svg class="ui-icon" viewBox="0 0 24 24" focusable="false">
+          <use href="#icon-settings"></use>
+        </svg>
+      </span>
+      <h2 id="settings-title">設定</h2>
+    </div>
+
+    <label class="field">
+      <span class="form-label">接続先</span>
+      <input id="url" class="form-control" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+    <label class="field">
+      <span class="form-label">合い言葉</span>
+      <input id="token" class="form-control" type="password" autocomplete="off" autocapitalize="off">
+    </label>
+
+    <div class="toolbar">
+      <button id="check" class="btn" type="button">動作確認</button>
+      <button id="copy" class="btn" type="button">診断情報をコピー</button>
+    </div>
+
+    <details class="settings-section">
+      <summary>詳しい状態</summary>
+      <dl id="settings-state" class="settings-state"></dl>
+    </details>
+
+    <details class="settings-section">
+      <summary>通信の点検記録</summary>
+      <div id="receipt-log" class="diagnostic-text"></div>
+    </details>
+
+    <details class="settings-section">
+      <summary>使い方</summary>
+      <ul>
+        <li>＊は必須項目です。期限・実行日は空欄でも追加できます。</li>
+        <li>「実行日なし」は実行日が空欄の未完了タスクです。期限の有無は問いません。</li>
+        <li>PCでは、右の候補から中央の時間枠へ移動できます。</li>
+        <li>右欄は見出し横のボタンで折り畳めます。閉じたときはアイコンと件数のボタンで戻せます。開閉状態と候補の表示位置は端末ごとに記憶します。</li>
+        <li>移動つまみ、または件名部分の0.6秒長押しで移動を始めます。離すと端末に保存します。</li>
+        <li>中央の「時間未定」は、表示中の日に実行するタスクのうち、時間帯が未定のものです。</li>
+        <li>中央から「実行日なし」へ戻すと、実行日だけが空欄になります。期限と時間帯は残ります。</li>
+        <li>候補の「追加」は、表示中の日の計画へ既存のタスクを配置します。タスクは複製しません。</li>
+        <li>iPhoneでは「実行日なし」から候補を開き、「追加」を押します。設定済みの時間帯は保持します。</li>
+        <li>右欄を閉じているときや狭い画面では、移動中に下部へ出る「実行日なしへ戻す」に置くことでも戻せます。</li>
+        <li>置けない場所で離すと変更しません。移動中は日付や右欄の開閉を変更しません。</li>
+        <li>新規追加の登録確認前のタスクは、まだ移動・編集・完了にできません。</li>
+        <li>「昨日以前」は、実行日が昨日以前の未完了タスクです。期限切れとは別です。「今週」は今日から日曜日までです。</li>
+        <li>通常の変更競合は、操作時刻と順序に基づき自動処理します。時刻の補正は概算です。</li>
+        <li>旧記録の順序を復元できない場合は保存先の現在値を基準に処理し、結果を確認してから送信待ちを解消します。</li>
+        <li>完了済みへの編集は完了状態を維持します。並べ替えで完了済みを復活させません。</li>
+        <li>「直前の完了を戻す」は、操作時点で確認した対象を戻します。</li>
+        <li>自動追加のスイッチは保存先で確認できた状態を表示し、変更中は切り替え先を併記します。</li>
+        <li>定期タスクの頻度は毎日・毎週月曜日・毎月15日・3日ごとなどです。「不定期」は自動追加の対象外です。</li>
+        <li>予定分の期限は本来の追加予定日が基準です。既存タスクの期限を設定変更で書き換えません。</li>
+        <li>期限の0日後は基準日当日です。土日も数え、その月にない指定日は月末にします。</li>
+        <li>「したいこと」の編集は件名だけを変更します。達成状態は別に扱います。</li>
+        <li>通常画面が開いていれば、小窓終了後の送信確認を引き継ぎます。小窓は追加後も閉じません。</li>
+        <li>一覧の自動更新より送信待ちを優先します。保存先の処理確認後に一覧確認だけ失敗した場合は、更新要求ではなく一覧を確認します。</li>
+        <li>認証・入力・端末保存・対象の消失など、本当に確認が必要な異常は表示します。</li>
+        <li>点検記録には合い言葉・件名・タスクID・接続先の実際の値を残しません。</li>
+        <li>iPhoneショートカットの未送信は「ファイル」アプリで管理し、この画面の送信待ちとは別です。</li>
+      </ul>
+    </details>
+
+    <div class="dialog-actions">
+      <button id="settings-close" class="btn" type="button">閉じる</button>
+      <button id="settings-save" class="btn btn-primary primary" type="button">保存</button>
+    </div>
+  </dialog>
+
+  <script src="./task-core.js?v=4.12.1"></script>
+  <script src="./wish-client.js?v=4.10"></script>
+  <script src="./shared_side-panel.js?v=4.13.0"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const VERSION = 'v4.13.0';
+      const REQUIRED_CORE_BUILD = 'v4.12.1';
+      const UI_KIT_VERSION = '1.0.0';
+      const EDIT_PROTOCOL = 'task-edit-fields-v1';
+      const PLAN_PROTOCOL = 'task-plan-move-v1';
+      const POOL_PREF_KEY = (window.TaskCore ? TaskCore.SCOPE : '') + 'task-plan-backlog-ui-v1';
+
+      const FILTER_GROUPS = [
+        {
+          label: '全体',
+          items: [
+            ['all', 'すべて'],
+            ['noboth', '期限・実行日なし']
+          ]
+        },
+        {
+          label: '期限',
+          items: [
+            ['hasdue', '期限あり（近い順）'],
+            ['overdue', '期限切れ'],
+            ['nodue', '期限なし']
+          ]
+        },
+        {
+          label: '実行日',
+          items: [
+            ['today', '今日'],
+            ['week', '今週'],
+            ['date', '日付を指定'],
+            ['runoverdue', '昨日以前'],
+            ['nodate', '実行日なし']
+          ]
+        }
+      ];
+
+      function $(id) {
+        return document.getElementById(id);
+      }
+
+      if (
+        !window.TaskCore ||
+        TaskCore.VERSION !== 'v4.8' ||
+        TaskCore.BUILD !== REQUIRED_CORE_BUILD ||
+        !window.WishClient ||
+        WishClient.VERSION !== 'v4.10'
+      ) {
+        $('status').textContent =
+          '対応する共通処理を読み込めません。' +
+          'task-core.js（v4.12.1）とwish-client.js（v4.10）を確認してください。' +
+          '端末の記録は消さないでください。';
+        return;
+      }
+
+      const clone = TaskCore.clone;
+      const compareTasks = TaskCore.compareTasks;
+      const taskById = TaskCore.taskById;
+      const dayVersion = TaskCore.dayVersion;
+      const poolPreferences = readPoolPreferences();
+
+      let state = TaskCore.emptyState();
+      let client = null;
+      let wishes = null;
+      let page = 'plan';
+
+      let selectedDate = japanDate();
+      let taskView = 'list';
+      let taskFilter = 'all';
+      let filterDate = selectedDate;
+      let filterFocusDate = false;
+      let calendarMonth = selectedDate.slice(0, 7);
+      let calendarDate = selectedDate;
+      let calendarUndated = false;
+
+      let refreshPromise = null;
+      let manualReloading = false;
+      let checking = false;
+      let autoBusy = false;
+      let nextAutoRead = 0;
+      let lastDateSeen = japanDate();
+      let resumePromise = null;
+
+      let historyData = {
+        items: [],
+        total: 0,
+        loaded: false
+      };
+
+      let historyPromise = null;
+      let historyLoading = false;
+      let historyError = '';
+      let historyFailedMore = false;
+      let historyAgain = false;
+      let historyRefreshTimer = null;
+
+      let wishLoading = false;
+      let wishError = '';
+      let wishReadPromise = null;
+      let achievedOpen = false;
+
+      let editorHandler = null;
+      let editorPosition = null;
+      let editorComposing = false;
+      let editorImeUntil = 0;
+      let editorSaving = false;
+      let periodicAdding = false;
+
+      let messageTimer = null;
+      let messageKind = '';
+      let cacheVersion = '未確認';
+
+      let backlogCollapsed = poolPreferences.collapsed;
+      let backlogScroll = poolPreferences.scrollTop;
+      let poolSaveTimer = null;
+      let backlogDialogScroll = 0;
+      let backlogDialogDate = selectedDate;
+      let backlogAdding = false;
+      let highlightId = '';
+      let highlightTimer = null;
+
+      const shownAttention = new Set();
+
+      let drag = null;
+      let candidate = null;
+      let holdTimer = null;
+      let pointerId = null;
+      let startX = 0;
+      let startY = 0;
+      let pointerX = 0;
+      let pointerY = 0;
+      let autoTimer = null;
+      let autoDirection = 0;
+      let suppressClickUntil = 0;
+      let renderDeferred = false;
+      let scrollFrame = null;
+
+      function readPoolPreferences() {
+        try {
+          const value = JSON.parse(localStorage.getItem(POOL_PREF_KEY) || 'null');
+
+          return {
+            collapsed: !!(value && value.collapsed === true),
+            scrollTop: value && Number.isFinite(value.scrollTop)
+              ? Math.max(0, value.scrollTop)
+              : 0
+          };
+        } catch (error) {
+          return {
+            collapsed: false,
+            scrollTop: 0
+          };
+        }
+      }
+
+      function savePoolPreferences(immediate) {
+        if (poolSaveTimer) {
+          clearTimeout(poolSaveTimer);
+          poolSaveTimer = null;
+        }
+
+        function save() {
+          poolSaveTimer = null;
+
+          try {
+            localStorage.setItem(POOL_PREF_KEY, JSON.stringify({
+              collapsed: backlogCollapsed,
+              scrollTop: Math.max(0, Math.round(backlogScroll))
+            }));
+          } catch (error) {
+            // 表示設定を保存できなくても、タスクの操作は止めない。
+          }
+        }
+
+        if (immediate) {
+          save();
+        } else {
+          poolSaveTimer = setTimeout(save, 200);
+        }
+      }
+
+      function rememberPoolScroll() {
+        const list = $('backlog-list');
+
+        if (
+          !backlogCollapsed &&
+          list &&
+          !list.hidden &&
+          list.getClientRects().length
+        ) {
+          backlogScroll = list.scrollTop;
+        }
+      }
+
+      function restorePoolScroll() {
+        const list = $('backlog-list');
+
+        if (
+          !backlogCollapsed &&
+          list &&
+          !list.hidden &&
+          list.getClientRects().length
+        ) {
+          list.scrollTop = backlogScroll;
+        }
+      }
+
+      function toggleBacklog() {
+        if (
+          drag ||
+          holdTimer ||
+          anyDialogOpen() ||
+          Date.now() < suppressClickUntil
+        ) {
+          return;
+        }
+
+        rememberPoolScroll();
+        backlogCollapsed = !backlogCollapsed;
+        savePoolPreferences(true);
+        render();
+
+        const control = $('backlog-toggle');
+
+        if (control) {
+          control.focus({
+            preventScroll: true
+          });
+        }
+      }
+
+      function make(tag, text, className) {
+        const element = document.createElement(tag);
+
+        if (text !== undefined && text !== null) {
+          element.textContent = text;
+        }
+
+        if (className) {
+          element.className = className;
+        }
+
+        return element;
+      }
+
+      function icon(name) {
+        const namespace = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(namespace, 'svg');
+        const use = document.createElementNS(namespace, 'use');
+
+        svg.setAttribute('class', 'ui-icon');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        use.setAttribute('href', '#icon-' + name);
+        svg.appendChild(use);
+
+        return svg;
+      }
+
+      function button(text, handler, className) {
+        const control = make(
+          'button',
+          text,
+          'btn' + (className ? ' ' + className : '')
+        );
+
+        control.type = 'button';
+        control.addEventListener('click', handler);
+        return control;
+      }
+
+      function notify(text, error, detail, kind) {
+        if (
+          text &&
+          !error &&
+          messageKind === 'read' &&
+          !$('message').hidden &&
+          client &&
+          client.lastReadError
+        ) {
+          return;
+        }
+
+        if (messageTimer) {
+          clearTimeout(messageTimer);
+          messageTimer = null;
+        }
+
+        messageKind = kind || '';
+        $('message-text').textContent = text || '';
+        $('message').className = 'notice' + (error ? ' error' : '');
+        $('message').hidden = !text;
+        $('message-detail-body').textContent = detail || '';
+        $('message-details').hidden = !detail;
+        $('message-details').open = false;
+
+        if (text && !error) {
+          messageTimer = setTimeout(function () {
+            $('message').hidden = true;
+            messageKind = '';
+          }, 3500);
+        }
+      }
+
+      function japanDate() {
+        return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      }
+
+      function dateShift(value, days) {
+        const date = new Date(value + 'T12:00:00Z');
+        date.setUTCDate(date.getUTCDate() + days);
+        return date.toISOString().slice(0, 10);
+      }
+
+      function monthShift(value, months) {
+        const date = new Date(value + '-01T12:00:00Z');
+        date.setUTCMonth(date.getUTCMonth() + months);
+        return date.toISOString().slice(0, 7);
+      }
+
+      function dateLabel(value) {
+        return Number(value.slice(0, 4)) + '年' +
+          Number(value.slice(5, 7)) + '月' +
+          Number(value.slice(8, 10)) + '日';
+      }
+
+      function shortDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          return value;
+        }
+
+        const year = value.slice(0, 4);
+        const date = Number(value.slice(5, 7)) + '/' +
+          Number(value.slice(8, 10));
+
+        return year === japanDate().slice(0, 4)
+          ? date
+          : Number(year) + '/' + date;
+      }
+
+      function timeLabel(value) {
+        const time = Date.parse(value || '');
+
+        return Number.isFinite(time)
+          ? new Date(time + 9 * 3600000)
+            .toISOString()
+            .slice(0, 19)
+            .replace('T', ' ')
+          : '未取得';
+      }
+
+      function hourLabel(hour) {
+        return hour == null ? '時間未定' : hour + '時';
+      }
+
+      function dueRuleLabel(value) {
+        const rule = value || {
+          type: 'none'
+        };
+
+        switch (rule.type) {
+          case 'offset':
+            return rule.days === 0
+              ? '基準日当日'
+              : '基準日から' + rule.days + '日後';
+          case 'weekly':
+            return '毎週' + '日月火水木金土'.charAt(rule.weekday) + '曜日';
+          case 'monthly':
+            return '毎月' + rule.day + '日';
+          case 'monthEnd':
+            return '毎月末';
+          default:
+            return '期限なし';
+        }
+      }
+
+      function features() {
+        return state.snapshot && state.snapshot.features || {};
+      }
+
+      function periodicSupported() {
+        return features().periodicDue === true;
+      }
+
+      function editingSupported() {
+        return client.latestSupported() &&
+          features().taskEditFields === true &&
+          features().taskEditProtocol === EDIT_PROTOCOL;
+      }
+
+      function planningSupported() {
+        return client.latestSupported() &&
+          features().planMove === true &&
+          features().planMoveProtocol === PLAN_PROTOCOL;
+      }
+
+      function onlineRequired() {
+        if (!navigator.onLine) {
+          notify('通信が必要です', true);
+          return false;
+        }
+
+        return true;
+      }
+
+      function anyDialogOpen() {
+        return $('editor').open ||
+          $('settings-dialog').open ||
+          $('task-filter-dialog').open ||
+          $('backlog-dialog').open;
+      }
+
+      function failed(text, error) {
+        notify(text, true, String(error.message || error));
+      }
+
+      function wishJobs() {
+        return wishes ? wishes.state.jobs : [];
+      }
+
+      function allPendingCount() {
+        return state.jobs.length + wishJobs().length;
+      }
+
+      function retryingRead(action) {
+        return client.readStatus.phase === 'retrying' &&
+          (!action || client.readStatus.action === action);
+      }
+
+      function updateReadLabels() {
+        const historyLabel = $('history-loading-label');
+
+        if (historyLabel) {
+          historyLabel.textContent = retryingRead('history')
+            ? '一覧を取り直しています…'
+            : '更新中…';
+        }
+
+        const periodicButton = $('periodic-today');
+
+        if (periodicButton && periodicAdding) {
+          periodicButton.textContent = retryingRead('preview')
+            ? '再確認中'
+            : '追加内容を確認中';
+        }
+
+        if (checking) {
+          $('check').textContent = retryingRead('check')
+            ? '再確認中'
+            : '動作確認中';
+        }
+      }
+
+      client = TaskCore.create({
+        onChange: function (meta) {
+          state = client.state;
+
+          if (
+            meta.kind === 'status' ||
+            meta.kind === 'read-state' ||
+            meta.kind === 'diagnostic'
+          ) {
+            renderStatus();
+            updateReadLabels();
+
+            if (
+              meta.kind === 'read-state' &&
+              client.readStatus.phase === 'success' &&
+              messageKind === 'read'
+            ) {
+              notify('');
+            }
+          } else {
+            render();
+          }
+
+          if (
+            meta.kind === 'committed' &&
+            ['done', 'undo', 'edit'].indexOf(meta.action) >= 0
+          ) {
+            scheduleHistoryRefresh();
+          }
+        },
+        onIssue: function (text, detail) {
+          notify(text, true, detail);
+        },
+        onSaved: function (job, result) {
+          if (client.lastReadError) {
+            return;
+          }
+
+          const outcome = result.result && result.result.latestOutcome;
+
+          if (outcome === 'superseded') {
+            notify('より新しい操作を反映しました');
+          } else if (outcome === 'baseline') {
+            notify('旧記録を保存先の内容に合わせました');
+          } else if (outcome === 'completed') {
+            notify('完了済みのため配置は変更しませんでした');
+          } else if (outcome === 'expired') {
+            notify('日付が変わった追加要求は実行していません');
+          } else if (outcome === 'merged') {
+            notify('他の新しい変更と合わせて反映しました');
+          } else if (
+            result.result &&
+            result.result.editLocation === 'completed'
+          ) {
+            notify('完了済みの内容を更新しました');
+          } else if (job.payload.action === 'planMove') {
+            notify(
+              job.payload.date
+                ? shortDate(job.payload.date) + 'の計画に反映しました'
+                : '実行日なしへ戻しました'
+            );
+          } else {
+            notify('保存しました');
+          }
+        }
+      });
+
+      wishes = WishClient.create({
+        transport: client,
+        onChange: function () {
+          if (page === 'wishes') {
+            render();
+          } else {
+            renderOutbox();
+            renderStatus();
+          }
+        },
+        onIssue: function (text, detail) {
+          notify(text, true, detail);
+        }
+      });
+
+      function renderStatus() {
+        const parts = [];
+
+        if (!client.ready) {
+          parts.push('準備中');
+        } else if (client.legacyCount) {
+          parts.push('旧画面の未送信があります');
+        } else {
+          if (!navigator.onLine) {
+            parts.push('通信なし');
+          }
+
+          if (!client.configured()) {
+            parts.push('接続先未設定');
+          }
+
+          if (retryingRead('load')) {
+            parts.push('一覧を取り直しています');
+          }
+
+          if (
+            page !== 'wishes' &&
+            state.snapshot &&
+            (
+              client.lastReadError ||
+              !navigator.onLine ||
+              !client.received
+            )
+          ) {
+            parts.push('前回の一覧を表示');
+          }
+
+          if (state.jobs.some(function (job) {
+            return job.state === 'sending' && job.shortRetry;
+          })) {
+            parts.push('保存結果を再確認中・端末に保存済み');
+          }
+        }
+
+        $('status').textContent = parts.join('／');
+        $('status').hidden = !parts.length;
+
+        $('add-label').textContent = page === 'wishes'
+          ? 'したいことを追加'
+          : 'タスクを追加';
+
+        $('add').disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          (page === 'wishes' && (!wishes || !wishes.ready)) ||
+          !!drag;
+
+        const loading = page === 'history'
+          ? historyLoading
+          : page === 'wishes'
+            ? wishLoading
+            : !!refreshPromise;
+
+        const busy = manualReloading || loading;
+
+        $('reload').disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          busy ||
+          !!drag;
+
+        $('reload').setAttribute('aria-busy', String(!!busy));
+
+        document.querySelectorAll('[data-act="done"]').forEach(function (control) {
+          control.disabled = control.dataset.locked === '1' || !!busy;
+        });
+        $('reload-label').textContent = busy ? '更新中' : '更新';
+        $('reload-icon').hidden = !!busy;
+        $('reload-spinner').hidden = !busy;
+        $('settings').disabled = !!drag;
+
+        if ($('settings-dialog').open) {
+          renderSettingsState();
+        }
+      }
+
+      function jobStateLabel(job) {
+        if (job.state === 'conflict') {
+          return '自動反映の準備待ち';
+        }
+
+        if (
+          job.state === 'blocked' ||
+          ['settings', 'authentication'].indexOf(job.errorStatus) >= 0
+        ) {
+          return '確認が必要';
+        }
+
+        if (job.state === 'sending') {
+          return job.shortRetry
+            ? '再確認中'
+            : job.serverReceipt
+              ? '処理後の一覧を確認中'
+              : '保存結果を確認中';
+        }
+
+        return job.state === 'unknown' ? '再確認待ち' : '送信待ち';
+      }
+
+      async function retrySending(source) {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        try {
+          await client.read({
+            action: 'load'
+          }, {
+            forceFull: true
+          });
+
+          if (source === 'wishes') {
+            await wishes.reloadLocal();
+            await wishes.pump(true);
+          } else {
+            await client.pump(true);
+          }
+        } catch (error) {
+          failed('送信を再開できませんでした', error);
+        }
+      }
+
+      function renderOutbox() {
+        const container = $('outbox-items');
+
+        const openDetails = new Set(
+          Array.from(container.querySelectorAll('details[data-job]'))
+            .filter(function (element) {
+              return element.open;
+            })
+            .map(function (element) {
+              return element.dataset.job;
+            })
+        );
+
+        container.replaceChildren();
+
+        const entries = state.jobs.map(function (job) {
+          return {
+            source: 'tasks',
+            job: job
+          };
+        }).concat(wishJobs().map(function (job) {
+          return {
+            source: 'wishes',
+            job: job
+          };
+        }));
+
+        const attention = entries.filter(function (entry) {
+          return entry.job.state === 'blocked' ||
+            entry.job.state === 'unknown' ||
+            ['settings', 'authentication'].indexOf(entry.job.errorStatus) >= 0;
+        });
+
+        const active = new Set(entries.map(function (entry) {
+          return entry.source + ':' + entry.job.id;
+        }));
+
+        Array.from(shownAttention).forEach(function (key) {
+          if (!active.has(key.split('|')[0])) {
+            shownAttention.delete(key);
+          }
+        });
+
+        let newAttention = false;
+
+        attention.forEach(function (entry) {
+          const key = entry.source + ':' + entry.job.id +
+            '|' + entry.job.state +
+            '|' + (entry.job.errorStatus || '');
+
+          if (!shownAttention.has(key)) {
+            shownAttention.add(key);
+            newAttention = true;
+          }
+        });
+
+        $('outbox').hidden = !entries.length;
+        $('outbox').classList.toggle('has-attention', attention.length > 0);
+        $('outbox-summary').textContent =
+          '送信待ち ' + entries.length + '件' +
+          (attention.length ? '・確認が必要 ' + attention.length + '件' : '');
+
+        entries.forEach(function (entry) {
+          const job = entry.job;
+          const row = make('div', null, 'job');
+          const heading = make('div', null, 'job-heading');
+          const needsCheck = attention.indexOf(entry) >= 0;
+
+          heading.append(
+            make('div', job.label || '未送信の操作', 'job-title'),
+            make(
+              'span',
+              jobStateLabel(job),
+              'badge job-state' + (needsCheck ? ' needs-check' : '')
+            )
+          );
+
+          row.appendChild(heading);
+
+          if (
+            ['settings', 'authentication'].indexOf(job.errorStatus) >= 0
+          ) {
+            row.appendChild(button('設定を確認', openSettings));
+          } else if (
+            job.state !== 'blocked' &&
+            job.state !== 'sending'
+          ) {
+            const send = button('今すぐ送信', function () {
+              retrySending(entry.source);
+            });
+
+            send.disabled = !navigator.onLine;
+            row.appendChild(send);
+          }
+
+          if (job.note && job.state !== 'conflict') {
+            const details = make('details');
+            const key = entry.source + ':' + job.id;
+            details.dataset.job = key;
+            details.open = openDetails.has(key);
+
+            details.append(
+              make('summary', '詳細'),
+              make('div', job.note, 'detail-text')
+            );
+
+            row.appendChild(details);
+          }
+
+          container.appendChild(row);
+        });
+
+        if (newAttention) {
+          $('outbox').open = true;
+        }
+      }
+
+      function capturePosition() {
+        const timeline = $('timeline');
+
+        if (
+          page !== 'plan' ||
+          !timeline ||
+          timeline.dataset.date !== selectedDate
+        ) {
+          return null;
+        }
+
+        const anchor = Array.from(timeline.querySelectorAll('.slot'))
+          .find(function (slot) {
+            return slot.getBoundingClientRect().bottom > 12;
+          });
+
+        return {
+          date: selectedDate,
+          x: window.scrollX,
+          y: window.scrollY,
+          hour: anchor ? anchor.dataset.hour : null,
+          top: anchor ? anchor.getBoundingClientRect().top : null
+        };
+      }
+
+      function restorePosition(position) {
+        if (
+          !position ||
+          page !== 'plan' ||
+          selectedDate !== position.date
+        ) {
+          return;
+        }
+
+        if (position.hour !== null && Number.isFinite(position.top)) {
+          const anchor = Array.from(
+            document.querySelectorAll('#timeline .slot')
+          ).find(function (slot) {
+            return slot.dataset.hour === position.hour;
+          });
+
+          if (anchor) {
+            window.scrollTo(
+              position.x,
+              window.scrollY +
+                anchor.getBoundingClientRect().top -
+                position.top
+            );
+            return;
+          }
+        }
+
+        window.scrollTo(position.x, position.y);
+      }
+
+      function render() {
+        const position = capturePosition();
+        const oldAchieved = $('wish-achieved');
+
+        if (oldAchieved) {
+          achievedOpen = oldAchieved.open;
+        }
+
+        rememberPoolScroll();
+        renderStatus();
+        renderOutbox();
+
+        if (
+          drag ||
+          holdTimer ||
+          $('task-filter-dialog').open ||
+          $('backlog-dialog').open
+        ) {
+          renderDeferred = true;
+          return;
+        }
+
+        renderDeferred = false;
+        $('main').classList.toggle('plan-wide', page === 'plan');
+
+        document.querySelectorAll('nav [data-page]').forEach(function (element) {
+          const active = element.dataset.page === page;
+          element.classList.toggle('active', active);
+
+          if (active) {
+            element.setAttribute('aria-current', 'page');
+          } else {
+            element.removeAttribute('aria-current');
+          }
+        });
+
+        const content = $('content');
+        content.replaceChildren();
+
+        if (page === 'history') {
+          renderHistory(content);
+          return;
+        }
+
+        if (page === 'wishes') {
+          renderWishes(content);
+          return;
+        }
+
+        const pendingAdds = state.jobs.some(function (job) {
+          return job.payload.action === 'add';
+        });
+
+        if (
+          !state.snapshot &&
+          (!pendingAdds || page === 'periodic')
+        ) {
+          content.appendChild(make(
+            'p',
+            client.configured()
+              ? refreshPromise ? '更新中…' : '一覧未取得'
+              : '接続先を設定してください'
+          ));
+          return;
+        }
+
+        if (!state.snapshot) {
+          content.appendChild(make('p', 'この端末の送信待ち', 'sub'));
+        }
+
+        if (page === 'plan') {
+          renderPlan(content);
+        } else if (page === 'tasks') {
+          renderTasks(content);
+        } else {
+          renderPeriodic(content);
+        }
+
+        restorePosition(position);
+        updatePoolHeight();
+        restorePoolScroll();
+      }
+
+      function completeButton(task) {
+        const control = button('', function () {
+          if (
+            task.localOnly ||
+            task.blocked ||
+            drag ||
+            Date.now() < suppressClickUntil ||
+            !confirm('「' + task.title + '」を完了にしますか。')
+          ) {
+            return;
+          }
+
+          const original = taskById(state.snapshot, task.taskId);
+
+          if (!original) {
+            notify('一覧が更新されています。更新してから操作してください');
+            return;
+          }
+
+          client.enqueue({
+            action: 'done',
+            taskId: task.taskId,
+            expectedTask: original.version
+          }, '完了：' + task.title).catch(function (error) {
+            failed('保存できませんでした', error);
+          });
+        }, 'hit');
+
+        control.dataset.act = 'done';
+
+        // 押せない理由（更新中以外）を覚えておき、更新が終わったら元に戻す
+        control.dataset.locked = (
+          !client.ready ||
+          !!client.legacyCount ||
+          !!task.localOnly ||
+          !!task.blocked
+        ) ? '1' : '0';
+
+        control.disabled = control.dataset.locked === '1' || !!refreshPromise;
+
+        control.setAttribute('aria-label', task.title + 'を完了');
+        control.appendChild(make('span', null, 'circle'));
+        return control;
+      }
+
+      function editButton(task, className) {
+        const control = button('編集', function () {
+          if (
+            task.localOnly ||
+            task.blocked ||
+            drag ||
+            Date.now() < suppressClickUntil
+          ) {
+            return;
+          }
+
+          if ($('backlog-dialog').open) {
+            $('backlog-dialog').close();
+
+            setTimeout(function () {
+              openTaskEditor(task.taskId);
+            }, 0);
+          } else {
+            openTaskEditor(task.taskId);
+          }
+        }, className || '');
+
+        control.dataset.act = 'edit';
+        control.disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          !navigator.onLine ||
+          !!task.localOnly ||
+          !!task.blocked;
+
+        control.setAttribute('aria-label', task.title + 'を編集');
+        return control;
+      }
+
+      function makeGrip(task) {
+        const grip = make('button', null, 'grip');
+        grip.type = 'button';
+        grip.dataset.act = 'grip';
+        grip.disabled = !!task.localOnly ||
+          !!task.blocked ||
+          !planningSupported();
+
+        grip.setAttribute('aria-label', task.title + 'を移動');
+        grip.appendChild(icon('grip'));
+        return grip;
+      }
+
+      /* ---------- 日付表示 ---------- */
+
+      function dateMark(kind, value, hour) {
+        const valid = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        const overdue = valid && value < japanDate();
+        const due = kind === 'due';
+
+        const item = make(
+          'div',
+          null,
+          'task-date-item date-' + kind +
+            (overdue ? ' is-overdue' : '')
+        );
+
+        const term = make('dt', due ? '期限' : '実行', 'date-label');
+        const detail = make('dd', null, 'date-value');
+        const date = make('time', shortDate(value));
+
+        if (valid) {
+          date.dateTime = value;
+          date.setAttribute('aria-label', dateLabel(value));
+          date.title = dateLabel(value);
+        }
+
+        detail.appendChild(date);
+
+        if (!due && hour != null) {
+          detail.appendChild(make('span', hourLabel(hour), 'date-hour'));
+        }
+
+        if (overdue) {
+          detail.appendChild(make(
+            'span',
+            due ? '期限切れ' : '実行日超過',
+            'date-state'
+          ));
+        }
+
+        item.append(term, detail);
+        return item;
+      }
+
+      function appendTaskDates(target, task, planOnly) {
+        const dates = make('dl', null, 'task-dates');
+
+        if (task.due) {
+          dates.appendChild(dateMark('due', task.due, null));
+        }
+
+        if (!planOnly && task.date) {
+          dates.appendChild(dateMark('run', task.date, task.hour));
+        }
+
+        if (dates.children.length) {
+          target.appendChild(dates);
+        }
+
+        if (!planOnly && !task.date && task.hour != null) {
+          target.appendChild(make(
+            'div',
+            '時間帯：' + hourLabel(task.hour),
+            'task-time-only'
+          ));
+        }
+      }
+
+      /* ---------- 計画と候補 ---------- */
+
+      function undatedTasks() {
+        return client.effectiveTasks().filter(function (task) {
+          return !task.date;
+        }).sort(function (a, b) {
+          if (a.due && !b.due) {
+            return -1;
+          }
+
+          if (!a.due && b.due) {
+            return 1;
+          }
+
+          return (a.due || '').localeCompare(b.due || '') ||
+            a.row - b.row;
+        });
+      }
+
+      function makePlanRow(task, placeholder) {
+        const row = make(
+          'li',
+          null,
+          'task' +
+            (task.localOnly ? ' pending-add' : '') +
+            (task.taskId === highlightId ? ' fresh-placement' : '') +
+            (placeholder ? ' drop-placeholder' : '')
+        );
+
+        row.dataset.id = task.taskId;
+        row.dataset.local = task.localOnly ? 'true' : 'false';
+        row.dataset.zone = 'plan';
+
+        const text = make('div', null, 'ttl');
+        text.appendChild(make('div', task.title));
+        appendTaskDates(text, task, true);
+
+        if (task.localOnly || task.pendingPlanning) {
+          text.appendChild(make(
+            'div',
+            task.pendingText || '送信待ち',
+            'pending-label'
+          ));
+        }
+
+        row.append(
+          completeButton(task),
+          text,
+          editButton(task, 'plan-edit'),
+          makeGrip(task)
+        );
+
+        if (placeholder) {
+          row.dataset.placeholder = 'true';
+          row.setAttribute('aria-hidden', 'true');
+
+          row.querySelectorAll('button').forEach(function (control) {
+            control.disabled = true;
+          });
+        }
+
+        return row;
+      }
+
+      function renderBacklog(container, dialogMode) {
+        container.replaceChildren();
+        const tasks = undatedTasks();
+
+        if (!tasks.length) {
+          container.appendChild(make(
+            'p',
+            '実行日なしのタスクはありません',
+            'empty-backlog'
+          ));
+          return;
+        }
+
+        const cards = make('div', null, 'cards');
+
+        tasks.forEach(function (task) {
+          const card = make(
+            'div',
+            null,
+            'card backlog-task' + (task.localOnly ? ' pending-add' : '')
+          );
+
+          card.dataset.id = task.taskId;
+          card.dataset.local = task.localOnly ? 'true' : 'false';
+          card.dataset.zone = 'pool';
+
+          const head = make('div', null, 'backlog-card-head');
+          const main = make('div', null, 'card-main backlog-main');
+
+          main.appendChild(make('div', task.title, 'card-title'));
+          appendTaskDates(main, task, false);
+
+          if (task.localOnly || task.pendingPlanning) {
+            main.appendChild(make(
+              'div',
+              task.pendingText || '送信待ち',
+              'pending-label'
+            ));
+          }
+
+          head.appendChild(main);
+
+          if (!dialogMode) {
+            head.appendChild(makeGrip(task));
+          }
+
+          const actions = make('div', null, 'backlog-actions');
+          const destinationDate = dialogMode
+            ? backlogDialogDate
+            : selectedDate;
+
+          const assign = button('追加', function () {
+            addFromBacklog(task.taskId, destinationDate);
+          }, 'backlog-assign');
+
+          assign.dataset.act = 'assign';
+          assign.setAttribute(
+            'aria-label',
+            task.title + 'を' + dateLabel(destinationDate) + 'の計画に追加'
+          );
+
+          assign.disabled =
+            !planningSupported() ||
+            task.localOnly ||
+            task.blocked ||
+            backlogAdding;
+
+          actions.append(
+            completeButton(task),
+            editButton(task),
+            assign
+          );
+
+          card.append(head, actions);
+          cards.appendChild(card);
+        });
+
+        container.appendChild(cards);
+      }
+
+      function renderPlan(content) {
+        const board = make(
+          'div',
+          null,
+          'plan-board' + (backlogCollapsed ? ' is-backlog-collapsed' : '')
+        );
+
+        const main = make('section', null, 'plan-main');
+        main.id = 'plan-main';
+
+        const heading = make('div', null, 'plan-heading');
+        heading.appendChild(make('h2', '1日の計画'));
+
+        const poolCount = undatedTasks().length;
+        const poolButton = button('', openBacklog, 'pool-open');
+
+        poolButton.append(
+          icon('inbox'),
+          make('span', '実行日なし ' + poolCount + '件')
+        );
+
+        heading.appendChild(poolButton);
+        main.appendChild(heading);
+
+        const tools = make('div', null, 'toolbar plan-tools');
+        const date = make('input', null, 'form-control plan-date');
+        date.type = 'date';
+        date.value = selectedDate;
+        date.setAttribute('aria-label', '計画の日付');
+
+        date.addEventListener('change', function () {
+          if (!drag && date.value) {
+            selectedDate = date.value;
+            render();
+          }
+        });
+
+        tools.append(
+          button('前日', function () {
+            if (!drag) {
+              selectedDate = dateShift(selectedDate, -1);
+              render();
+            }
+          }),
+          date,
+          button('今日', function () {
+            if (!drag) {
+              selectedDate = japanDate();
+              render();
+            }
+          }),
+          button('翌日', function () {
+            if (!drag) {
+              selectedDate = dateShift(selectedDate, 1);
+              render();
+            }
+          })
+        );
+
+        main.appendChild(tools);
+
+        if (state.snapshot && !planningSupported()) {
+          main.appendChild(make(
+            'p',
+            '移動を使うには、保存先のv4.12.1への更新が必要です。',
+            'form-error'
+          ));
+        }
+
+        const tasks = client.effectiveTasks().filter(function (task) {
+          return task.date === selectedDate;
+        }).sort(compareTasks);
+
+        main.appendChild(make('div', tasks.length + '件', 'sub'));
+
+        const timeline = make('div', null, 'timeline');
+        timeline.id = 'timeline';
+        timeline.dataset.date = selectedDate;
+
+        [null].concat(Array.from({
+          length: 15
+        }, function (_, index) {
+          return index + 8;
+        })).forEach(function (hour) {
+          const section = make('section', null, 'slot');
+          section.dataset.hour = hour === null ? '' : String(hour);
+          section.appendChild(make('div', hourLabel(hour), 'slot-label'));
+
+          const list = make('ul', null, 'slot-list');
+
+          tasks.filter(function (task) {
+            return task.hour === hour;
+          }).forEach(function (task) {
+            list.appendChild(makePlanRow(task, false));
+          });
+
+          section.appendChild(list);
+          timeline.appendChild(section);
+        });
+
+        timeline.appendChild(make('div', '23:00', 'timeline-end'));
+
+        const line = make('div', null, 'now-line');
+        line.id = 'now-line';
+        line.hidden = true;
+        line.appendChild(make('span'));
+        timeline.appendChild(line);
+        main.appendChild(timeline);
+
+        const pool = make(
+          'aside',
+          null,
+          'plan-backlog' + (backlogCollapsed ? ' is-collapsed' : '')
+        );
+
+        pool.id = 'plan-backlog';
+
+        const toggle = button(
+          '',
+          toggleBacklog,
+          backlogCollapsed ? 'backlog-reopen' : 'backlog-toggle'
+        );
+
+        toggle.id = 'backlog-toggle';
+        toggle.setAttribute('aria-controls', 'backlog-list');
+        toggle.setAttribute('aria-expanded', String(!backlogCollapsed));
+
+        const list = make('div', null, 'backlog-list');
+        list.id = 'backlog-list';
+        list.hidden = backlogCollapsed;
+
+        if (backlogCollapsed) {
+          toggle.setAttribute(
+            'aria-label',
+            '実行日なし ' + poolCount + '件を展開'
+          );
+
+          toggle.append(
+            icon('inbox'),
+            make('span', String(poolCount), 'backlog-count')
+          );
+
+          pool.append(toggle, list);
+        } else {
+          toggle.setAttribute('aria-label', '実行日なしを折りたたむ');
+          toggle.appendChild(icon('chevron-right'));
+
+          const poolHeading = make('div', null, 'backlog-heading');
+
+          poolHeading.append(
+            make('h3', '実行日なし'),
+            make('span', String(poolCount), 'backlog-count'),
+            toggle
+          );
+
+          renderBacklog(list, false);
+
+          list.addEventListener('scroll', function () {
+            if (
+              document.contains(list) &&
+              !backlogCollapsed &&
+              !list.hidden &&
+              list.getClientRects().length
+            ) {
+              backlogScroll = list.scrollTop;
+              savePoolPreferences(false);
+            }
+          }, {
+            passive: true
+          });
+
+          pool.append(poolHeading, list);
+        }
+
+        board.append(main, pool);
+        content.appendChild(board);
+        updatePoolHeight();
+        restorePoolScroll();
+        updateNow();
+      }
+
+      function updatePoolHeight() {
+        const pool = $('plan-backlog');
+
+        if (!pool || !pool.getClientRects().length) {
+          return;
+        }
+
+        if (backlogCollapsed) {
+          pool.style.removeProperty('max-height');
+          return;
+        }
+
+        const top = pool.getBoundingClientRect().top;
+        const height = Math.max(
+          180,
+          window.innerHeight - Math.max(12, top) - 12
+        );
+
+        const value = height + 'px';
+
+        if (pool.style.maxHeight !== value) {
+          pool.style.maxHeight = value;
+        }
+      }
+
+      function openBacklog() {
+        if (drag || anyDialogOpen()) {
+          return;
+        }
+
+        backlogDialogDate = selectedDate;
+        $('backlog-target-date').textContent = dateLabel(backlogDialogDate);
+
+        renderBacklog($('backlog-dialog-list'), true);
+        document.body.classList.add('sheet-open');
+        $('backlog-dialog').showModal();
+        $('backlog-dialog-list').scrollTop = backlogDialogScroll;
+      }
+
+      $('backlog-close').addEventListener('click', function () {
+        $('backlog-dialog').close();
+      });
+
+      $('backlog-dialog').addEventListener('close', function () {
+        backlogDialogScroll = $('backlog-dialog-list').scrollTop;
+        document.body.classList.remove('sheet-open');
+        render();
+      });
+
+      function planMovePayload(task, snapshot, date, hour, items) {
+        const original = taskById(snapshot, task.taskId);
+
+        if (!original) {
+          throw new Error(
+            '対象のタスクを確認できません。更新してから操作してください。'
+          );
+        }
+
+        return {
+          action: 'planMove',
+          planProtocol: PLAN_PROTOCOL,
+          taskId: task.taskId,
+          expectedTask: original.version,
+          expectedPlacement: {
+            date: task.date || '',
+            hour: task.hour
+          },
+          fromDate: task.date || '',
+          date: date,
+          hour: hour,
+          expectedFromDay: task.date ? dayVersion(snapshot, task.date) : '',
+          expectedDay: date ? dayVersion(snapshot, date) : '',
+          items: items
+        };
+      }
+
+      function highlightTask(id, scroll) {
+        highlightId = id;
+
+        if (highlightTimer) {
+          clearTimeout(highlightTimer);
+        }
+
+        render();
+
+        requestAnimationFrame(function () {
+          const row = Array.from(
+            document.querySelectorAll('#timeline .task[data-id]')
+          ).find(function (element) {
+            return element.dataset.id === id;
+          });
+
+          if (row && scroll) {
+            row.scrollIntoView({
+              block: 'nearest'
+            });
+          }
+
+          updatePoolHeight();
+        });
+
+        highlightTimer = setTimeout(function () {
+          highlightId = '';
+
+          document.querySelectorAll('.fresh-placement')
+            .forEach(function (row) {
+              row.classList.remove('fresh-placement');
+            });
+        }, 1600);
+      }
+
+      async function addFromBacklog(id, date) {
+        if (backlogAdding || !planningSupported()) {
+          return;
+        }
+
+        const tasks = client.effectiveTasks();
+        const task = tasks.find(function (entry) {
+          return entry.taskId === id;
+        });
+
+        if (!task || task.localOnly || task.blocked || task.date) {
+          notify('一覧が更新されています。表示を更新してください');
+          return;
+        }
+
+        const target = tasks.filter(function (entry) {
+          return entry.date === date && !entry.localOnly;
+        }).sort(compareTasks).map(function (entry) {
+          return {
+            id: entry.taskId,
+            hour: entry.hour
+          };
+        });
+
+        target.push({
+          id: task.taskId,
+          hour: task.hour
+        });
+
+        target.sort(function (a, b) {
+          return (a.hour === null ? 7 : a.hour) -
+            (b.hour === null ? 7 : b.hour);
+        });
+
+        const snapshot = clone(state.snapshot);
+        const payload = planMovePayload(
+          task,
+          snapshot,
+          date,
+          task.hour,
+          target
+        );
+
+        const captured = client.context(payload, snapshot);
+        backlogAdding = true;
+
+        $('backlog-dialog-list').querySelectorAll('button')
+          .forEach(function (control) {
+            control.disabled = true;
+          });
+
+        try {
+          await client.enqueue(
+            payload,
+            '計画へ配置：' + task.title + ' ／ ' + date,
+            captured
+          );
+
+          if ($('backlog-dialog').open) {
+            $('backlog-dialog').close();
+          }
+
+          selectedDate = date;
+          highlightTask(id, true);
+        } catch (error) {
+          failed('移動を端末に保存できませんでした', error);
+        } finally {
+          backlogAdding = false;
+
+          if ($('backlog-dialog').open) {
+            renderBacklog($('backlog-dialog-list'), true);
+          } else {
+            render();
+          }
+        }
+      }
+
+      function readPlanItems() {
+        return Array.from(
+          document.querySelectorAll(
+            '#timeline .task[data-local="false"]:not(.drag-origin)'
+          )
+        ).map(function (row) {
+          const slot = row.closest('.slot');
+          const value = slot.dataset.hour;
+
+          return {
+            id: row.dataset.id,
+            hour: value === '' ? null : Number(value)
+          };
+        });
+      }
+
+      function clearHold() {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+        }
+
+        holdTimer = null;
+        candidate = null;
+
+        if (renderDeferred && !drag) {
+          requestAnimationFrame(function () {
+            if (
+              renderDeferred &&
+              !drag &&
+              !holdTimer &&
+              !anyDialogOpen()
+            ) {
+              render();
+            }
+          });
+        }
+      }
+
+      function setPlanControlsDisabled(disabled) {
+        document.querySelectorAll(
+          '.plan-tools button, .plan-tools input, .pool-open, #backlog-toggle'
+        ).forEach(function (control) {
+          control.disabled = disabled;
+        });
+      }
+
+      function startDrag(row, id) {
+        if (
+          !planningSupported() ||
+          !state.snapshot ||
+          drag ||
+          !document.contains(row) ||
+          anyDialogOpen()
+        ) {
+          clearHold();
+          return;
+        }
+
+        const source = row.dataset.zone;
+        const task = client.effectiveTasks().find(function (entry) {
+          return entry.taskId === row.dataset.id;
+        });
+
+        if (
+          !task ||
+          task.localOnly ||
+          task.blocked ||
+          (source === 'pool' && task.date) ||
+          (source === 'plan' && task.date !== selectedDate)
+        ) {
+          clearHold();
+          render();
+          return;
+        }
+
+        const snapshot = clone(state.snapshot);
+        const beforeItems = readPlanItems();
+
+        const contextPayload = {
+          action: 'planMove',
+          taskId: task.taskId,
+          fromDate: task.date || '',
+          date: selectedDate
+        };
+
+        const context = client.context(contextPayload, snapshot);
+        const rect = row.getBoundingClientRect();
+        const placeholder = makePlanRow(task, true);
+        const ghost = make('div', null, 'drag-ghost');
+
+        ghost.appendChild(make('div', task.title, 'card-title'));
+        ghost.style.width =
+          Math.min(280, Math.max(180, rect.width)) + 'px';
+
+        clearHold();
+
+        drag = {
+          source: source,
+          origin: row,
+          task: clone(task),
+          snapshot: snapshot,
+          date: selectedDate,
+          beforeItems: beforeItems,
+          context: context,
+          placeholder: placeholder,
+          ghost: ghost,
+          target: source === 'plan' ? 'plan' : 'none'
+        };
+
+        pointerId = id;
+        row.classList.add('drag-origin');
+
+        if (source === 'plan') {
+          row.parentNode.insertBefore(placeholder, row.nextSibling);
+        }
+
+        document.body.appendChild(ghost);
+        document.body.classList.add('is-planning-drag');
+        setPlanControlsDisabled(true);
+
+        $('plan-return-zone').hidden = !(
+          source === 'plan' &&
+          (
+            backlogCollapsed ||
+            window.matchMedia('(max-width: 1100px)').matches
+          )
+        );
+
+        $('drag-announcement').textContent =
+          '移動中。時間枠へ置くと配置します。置けない場所で離すと変更しません。';
+
+        try {
+          $('content').setPointerCapture(id);
+        } catch (error) {
+          // 画面全体でも終了を受け取る。
+        }
+
+        updateGhost();
+        renderStatus();
+
+        if (navigator.vibrate) {
+          navigator.vibrate(15);
+        }
+      }
+
+      function updateGhost() {
+        if (!drag) {
+          return;
+        }
+
+        const width = drag.ghost.offsetWidth || 220;
+
+        drag.ghost.style.left = Math.max(
+          8,
+          Math.min(pointerX + 14, window.innerWidth - width - 8)
+        ) + 'px';
+
+        drag.ghost.style.top = Math.max(
+          8,
+          Math.min(pointerY + 14, window.innerHeight - 90)
+        ) + 'px';
+      }
+
+      function inElement(element, x, y) {
+        if (!element || !element.getClientRects().length) {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+
+        return x >= rect.left &&
+          x <= rect.right &&
+          y >= rect.top &&
+          y <= rect.bottom;
+      }
+
+      function clearDropHighlight() {
+        document.querySelectorAll('.is-drop-target')
+          .forEach(function (element) {
+            element.classList.remove('is-drop-target');
+          });
+      }
+
+      function placeDrag(x, y) {
+        if (!drag) {
+          return;
+        }
+
+        clearDropHighlight();
+
+        const pool = $('plan-backlog');
+        const returnZone = $('plan-return-zone');
+        const overPool = !backlogCollapsed && inElement(pool, x, y);
+        const overReturn = !returnZone.hidden &&
+          inElement(returnZone, x, y);
+
+        if (
+          drag.source === 'plan' &&
+          (overPool || overReturn)
+        ) {
+          drag.target = 'pool';
+          drag.placeholder.remove();
+
+          if (overPool) {
+            pool.classList.add('is-drop-target');
+          } else {
+            returnZone.classList.add('is-drop-target');
+          }
+
+          updateNow();
+          return;
+        }
+
+        const timeline = $('timeline');
+
+        if (!inElement(timeline, x, y)) {
+          drag.target = 'none';
+          drag.placeholder.remove();
+          updateNow();
+          return;
+        }
+
+        const slot = Array.from(timeline.querySelectorAll('.slot'))
+          .find(function (section) {
+            return inElement(section, x, y);
+          });
+
+        if (!slot) {
+          drag.target = 'none';
+          drag.placeholder.remove();
+          updateNow();
+          return;
+        }
+
+        const list = slot.querySelector('.slot-list');
+
+        const others = Array.from(
+          list.querySelectorAll('.task[data-local="false"]')
+        ).filter(function (entry) {
+          return entry !== drag.placeholder &&
+            !entry.classList.contains('drag-origin');
+        });
+
+        const before = others.find(function (entry) {
+          const rect = entry.getBoundingClientRect();
+          return y < rect.top + rect.height / 2;
+        }) || list.querySelector('.task[data-local="true"]');
+
+        if (
+          drag.placeholder.parentNode !== list ||
+          drag.placeholder.nextElementSibling !== before
+        ) {
+          list.insertBefore(drag.placeholder, before || null);
+        }
+
+        drag.target = 'plan';
+        slot.classList.add('is-drop-target');
+        updateNow();
+      }
+
+      function stopAuto() {
+        if (autoTimer) {
+          clearInterval(autoTimer);
+        }
+
+        autoTimer = null;
+        autoDirection = 0;
+      }
+
+      function autoScroll(y) {
+        if (!drag) {
+          stopAuto();
+          return;
+        }
+
+        const main = $('plan-main');
+        const rect = main ? main.getBoundingClientRect() : null;
+
+        if (
+          drag.target === 'pool' ||
+          !rect ||
+          pointerX < rect.left ||
+          pointerX > rect.right
+        ) {
+          stopAuto();
+          return;
+        }
+
+        autoDirection = y < 85
+          ? -10
+          : y > window.innerHeight - 100
+            ? 10
+            : 0;
+
+        if (!autoDirection) {
+          stopAuto();
+          return;
+        }
+
+        if (!autoTimer) {
+          autoTimer = setInterval(function () {
+            window.scrollBy(0, autoDirection);
+            updatePoolHeight();
+            placeDrag(pointerX, pointerY);
+          }, 16);
+        }
+      }
+
+      async function endDrag(cancelled) {
+        clearHold();
+
+        if (!drag) {
+          pointerId = null;
+          return;
+        }
+
+        const current = drag;
+        const id = pointerId;
+        const target = current.target;
+        let payload = null;
+        let label = '';
+        let preparationError = null;
+
+        try {
+          if (
+            !cancelled &&
+            target === 'plan' &&
+            current.placeholder.parentNode
+          ) {
+            const items = readPlanItems();
+            const slot = current.placeholder.closest('.slot');
+            const hour = slot.dataset.hour === ''
+              ? null
+              : Number(slot.dataset.hour);
+
+            if (current.source === 'pool') {
+              payload = planMovePayload(
+                current.task,
+                current.snapshot,
+                current.date,
+                hour,
+                items
+              );
+
+              label = '計画へ配置：' +
+                current.task.title + ' ／ ' + current.date;
+            } else if (
+              JSON.stringify(items) !== JSON.stringify(current.beforeItems)
+            ) {
+              payload = {
+                action: 'order',
+                date: current.date,
+                expectedDay: dayVersion(current.snapshot, current.date),
+                movedTaskId: current.task.taskId,
+                fromHour: current.task.hour,
+                items: items
+              };
+
+              label = current.date + ' の時間帯・並び順';
+            }
+          } else if (
+            !cancelled &&
+            target === 'pool' &&
+            current.source === 'plan'
+          ) {
+            payload = planMovePayload(
+              current.task,
+              current.snapshot,
+              '',
+              current.task.hour,
+              []
+            );
+
+            label = '実行日なしへ：' + current.task.title;
+          }
+        } catch (error) {
+          preparationError = error;
+        }
+
+        drag = null;
+        pointerId = null;
+        suppressClickUntil = Date.now() + 500;
+        stopAuto();
+        clearDropHighlight();
+
+        current.origin.classList.remove('drag-origin');
+        current.placeholder.remove();
+        current.ghost.remove();
+
+        document.body.classList.remove('is-planning-drag');
+        $('plan-return-zone').hidden = true;
+        setPlanControlsDisabled(false);
+
+        try {
+          if ($('content').hasPointerCapture(id)) {
+            $('content').releasePointerCapture(id);
+          }
+        } catch (error) {
+          // 指が離れた後は終了する。
+        }
+
+        if (preparationError) {
+          failed('移動内容を確認できませんでした', preparationError);
+          render();
+          return;
+        }
+
+        if (!payload) {
+          $('drag-announcement').textContent = '移動を終了しました。';
+          render();
+          return;
+        }
+
+        try {
+          await client.enqueue(payload, label, current.context);
+          $('drag-announcement').textContent = '移動を端末に保存しました。';
+          highlightTask(current.task.taskId, false);
+        } catch (error) {
+          failed('移動を端末に保存できませんでした', error);
+          render();
+        }
+      }
+
+      $('content').addEventListener('pointerdown', function (event) {
+        if (
+          page !== 'plan' ||
+          event.isPrimary === false ||
+          anyDialogOpen() ||
+          (event.pointerType === 'mouse' && event.button !== 0)
+        ) {
+          return;
+        }
+
+        const row = event.target.closest(
+          '.task[data-zone], .backlog-task[data-zone]'
+        );
+
+        if (
+          !row ||
+          row.dataset.local === 'true' ||
+          event.target.closest(
+            '[data-act="done"], [data-act="edit"], [data-act="assign"]'
+          )
+        ) {
+          return;
+        }
+
+        if (
+          row.dataset.zone === 'pool' &&
+          window.matchMedia('(max-width: 1100px)').matches
+        ) {
+          return;
+        }
+
+        clearHold();
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startY = event.clientY;
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+
+        if (event.target.closest('[data-act="grip"]')) {
+          event.preventDefault();
+          startDrag(row, event.pointerId);
+          return;
+        }
+
+        if (!event.target.closest('.ttl, .backlog-main')) {
+          pointerId = null;
+          return;
+        }
+
+        candidate = row;
+        const heldId = event.pointerId;
+
+        holdTimer = setTimeout(function () {
+          if (candidate === row) {
+            startDrag(row, heldId);
+          }
+        }, 600);
+      });
+
+      document.addEventListener('pointermove', function (event) {
+        if (pointerId !== null && event.pointerId !== pointerId) {
+          return;
+        }
+
+        if (!drag) {
+          if (
+            holdTimer &&
+            (
+              Math.abs(event.clientX - startX) > 8 ||
+              Math.abs(event.clientY - startY) > 8
+            )
+          ) {
+            clearHold();
+          }
+
+          return;
+        }
+
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+        updateGhost();
+        placeDrag(pointerX, pointerY);
+        autoScroll(pointerY);
+      }, {
+        passive: false
+      });
+
+      document.addEventListener('touchmove', function (event) {
+        if (drag && event.cancelable) {
+          event.preventDefault();
+        }
+      }, {
+        passive: false
+      });
+
+      document.addEventListener('pointerup', function (event) {
+        if (pointerId === null || pointerId === event.pointerId) {
+          if (drag) {
+            pointerX = event.clientX;
+            pointerY = event.clientY;
+            placeDrag(pointerX, pointerY);
+          }
+
+          endDrag(false).catch(function (error) {
+            failed('移動を終了できませんでした', error);
+          });
+        }
+      });
+
+      document.addEventListener('pointercancel', function (event) {
+        if (pointerId === null || pointerId === event.pointerId) {
+          endDrag(true);
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && (drag || holdTimer)) {
+          event.preventDefault();
+          endDrag(true);
+        }
+      });
+
+      function updateNow() {
+        const line = $('now-line');
+        const timeline = $('timeline');
+
+        if (!line || !timeline) {
+          return;
+        }
+
+        const now = new Date(Date.now() + 9 * 3600000);
+        const hour = now.getUTCHours();
+        const minute = now.getUTCMinutes();
+        const slot = timeline.querySelector(
+          '.slot[data-hour="' + hour + '"]'
+        );
+
+        if (
+          timeline.dataset.date !== now.toISOString().slice(0, 10) ||
+          hour < 8 ||
+          hour >= 23 ||
+          !slot
+        ) {
+          line.hidden = true;
+          return;
+        }
+
+        line.style.top =
+          slot.offsetTop + slot.offsetHeight * minute / 60 + 'px';
+
+        line.firstElementChild.textContent =
+          String(hour).padStart(2, '0') + ':' +
+          String(minute).padStart(2, '0');
+
+        line.hidden = false;
+      }
+
+      /* ---------- 絞り込み ---------- */
+
+      function filterLabel() {
+        const labels = {
+          today: '実行日：今日',
+          week: '実行日：今週',
+          runoverdue: '実行日：昨日以前',
+          hasdue: '期限あり',
+          overdue: '期限切れ',
+          nodue: '期限なし',
+          nodate: '実行日なし',
+          noboth: '期限・実行日なし'
+        };
+
+        if (taskFilter === 'date') {
+          return '実行日：' +
+            (filterDate ? shortDate(filterDate) : '日付を指定');
+        }
+
+        return labels[taskFilter] || 'すべて';
+      }
+
+      function positionTaskFilter() {
+        const dialog = $('task-filter-dialog');
+
+        if (!dialog.open) {
+          return;
+        }
+
+        if (window.matchMedia('(max-width: 700px)').matches) {
+          dialog.style.removeProperty('left');
+          dialog.style.removeProperty('top');
+          dialog.style.removeProperty('max-height');
+          return;
+        }
+
+        const trigger = $('task-filter-trigger');
+
+        if (!trigger) {
+          return;
+        }
+
+        const rect = trigger.getBoundingClientRect();
+        const margin = 12;
+        const viewportHeight = window.innerHeight;
+
+        dialog.style.maxHeight =
+          Math.max(120, viewportHeight - 24) + 'px';
+
+        const size = dialog.getBoundingClientRect();
+        const below = viewportHeight - rect.bottom - 8 - margin;
+        let top;
+        let available;
+
+        if (below >= 220 || below >= rect.top - 8 - margin) {
+          top = Math.max(margin, rect.bottom + 8);
+          available = viewportHeight - top - margin;
+        } else {
+          available = Math.max(120, rect.top - 8 - margin);
+          top = Math.max(
+            margin,
+            rect.top - 8 - Math.min(size.height, available)
+          );
+        }
+
+        dialog.style.left = Math.max(
+          margin,
+          Math.min(rect.left, window.innerWidth - size.width - margin)
+        ) + 'px';
+
+        dialog.style.top = top + 'px';
+        dialog.style.maxHeight = Math.max(120, available) + 'px';
+      }
+
+      function openTaskFilter() {
+        if (anyDialogOpen()) {
+          return;
+        }
+
+        const options = $('task-filter-options');
+        options.replaceChildren();
+        filterFocusDate = false;
+
+        FILTER_GROUPS.forEach(function (group, index) {
+          const section = make('div', null, 'filter-group');
+          const heading = make('h3', group.label, 'filter-group-title');
+          heading.id = 'task-filter-group-' + index;
+
+          section.setAttribute('role', 'group');
+          section.setAttribute('aria-labelledby', heading.id);
+          section.appendChild(heading);
+
+          group.items.forEach(function (entry) {
+            const selected = taskFilter === entry[0];
+            const option = make('button', null, 'filter-option');
+
+            option.classList.toggle('is-selected', selected);
+            option.type = 'button';
+            option.dataset.filter = entry[0];
+            option.setAttribute('role', 'menuitemradio');
+            option.setAttribute('aria-checked', String(selected));
+            option.tabIndex = selected ? 0 : -1;
+
+            const check = make('span', null, 'filter-option-check');
+
+            if (selected) {
+              check.appendChild(icon('check'));
+            }
+
+            option.append(
+              make('span', entry[1], 'filter-option-label'),
+              check
+            );
+
+            option.addEventListener('click', function () {
+              taskFilter = entry[0];
+              filterFocusDate = taskFilter === 'date';
+              $('task-filter-dialog').close();
+            });
+
+            section.appendChild(option);
+          });
+
+          options.appendChild(section);
+        });
+
+        $('task-filter-trigger').setAttribute('aria-expanded', 'true');
+        document.body.classList.add('filter-open');
+        $('task-filter-dialog').showModal();
+        positionTaskFilter();
+
+        const selected = options.querySelector('[aria-checked="true"]');
+
+        if (selected) {
+          selected.focus({
+            preventScroll: true
+          });
+
+          selected.scrollIntoView({
+            block: 'nearest'
+          });
+        }
+      }
+
+      $('task-filter-close').addEventListener('click', function () {
+        $('task-filter-dialog').close();
+      });
+
+      $('task-filter-dialog').addEventListener('click', function (event) {
+        const dialog = $('task-filter-dialog');
+
+        if (event.target !== dialog) {
+          return;
+        }
+
+        const rect = dialog.getBoundingClientRect();
+
+        if (
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        ) {
+          dialog.close();
+        }
+      });
+
+      $('task-filter-dialog').addEventListener('close', function () {
+        document.body.classList.remove('filter-open');
+        render();
+
+        const target = filterFocusDate
+          ? $('task-filter-date')
+          : $('task-filter-trigger');
+
+        filterFocusDate = false;
+
+        if (target) {
+          target.focus({
+            preventScroll: true
+          });
+        }
+      });
+
+      $('task-filter-options').addEventListener('keydown', function (event) {
+        if (
+          ['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0
+        ) {
+          return;
+        }
+
+        const options = Array.from(
+          $('task-filter-options').querySelectorAll('[role="menuitemradio"]')
+        );
+
+        if (!options.length) {
+          return;
+        }
+
+        event.preventDefault();
+        const current = options.indexOf(document.activeElement);
+        let next;
+
+        if (event.key === 'Home') {
+          next = 0;
+        } else if (event.key === 'End') {
+          next = options.length - 1;
+        } else {
+          next = (
+            current +
+            (event.key === 'ArrowDown' ? 1 : -1) +
+            options.length
+          ) % options.length;
+        }
+
+        options.forEach(function (option, index) {
+          option.tabIndex = index === next ? 0 : -1;
+        });
+
+        options[next].focus();
+      });
+
+      /* ---------- タスク一覧・カレンダー ---------- */
+
+      function filterTask(task) {
+        const today = japanDate();
+        const date = new Date(today + 'T12:00:00Z');
+        const weekEnd = dateShift(today, (7 - date.getUTCDay()) % 7);
+
+        switch (taskFilter) {
+          case 'today':
+            return task.date === today;
+          case 'date':
+            return !!filterDate && task.date === filterDate;
+          case 'week':
+            return !!task.date && task.date >= today && task.date <= weekEnd;
+          case 'runoverdue':
+            return !!task.date && task.date < today;
+          case 'hasdue':
+            return !!task.due;
+          case 'overdue':
+            return !!task.due && task.due < today;
+          case 'nodue':
+            return !task.due;
+          case 'nodate':
+            return !task.date;
+          case 'noboth':
+            return !task.date && !task.due;
+          default:
+            return true;
+        }
+      }
+
+      function renderTaskCards(content, tasks) {
+        if (!tasks.length) {
+          content.appendChild(make('p', 'タスクなし', 'sub'));
+          return;
+        }
+
+        const cards = make('div', null, 'cards');
+
+        tasks.forEach(function (task) {
+          const card = make(
+            'div',
+            null,
+            'card' + (task.localOnly ? ' pending-add' : '')
+          );
+
+          const main = make('div', null, 'card-main');
+          main.appendChild(make('div', task.title, 'card-title'));
+          appendTaskDates(main, task, false);
+
+          if (task.localOnly || task.pendingPlanning) {
+            main.appendChild(make(
+              'div',
+              task.pendingText || '送信待ち',
+              'pending-label'
+            ));
+          }
+
+          card.append(completeButton(task), main, editButton(task));
+          cards.appendChild(card);
+        });
+
+        content.appendChild(cards);
+      }
+
+      function renderTasks(content) {
+        content.appendChild(make('h2', 'タスク一覧'));
+
+        const switcher = make('div', null, 'view-switch');
+        switcher.setAttribute('role', 'group');
+        switcher.setAttribute('aria-label', '一覧の表示方法');
+
+        [
+          ['list', '一覧'],
+          ['calendar', 'カレンダー']
+        ].forEach(function (entry) {
+          const control = button(entry[1], function () {
+            taskView = entry[0];
+            render();
+          }, taskView === entry[0] ? 'active' : '');
+
+          control.setAttribute(
+            'aria-pressed',
+            String(taskView === entry[0])
+          );
+
+          switcher.appendChild(control);
+        });
+
+        content.appendChild(switcher);
+
+        if (taskView === 'calendar') {
+          renderCalendar(content);
+        } else {
+          renderTaskList(content);
+        }
+      }
+
+      function renderTaskList(content) {
+        const tools = make('div', null, 'toolbar task-filters');
+        const field = make('div', null, 'filter-field');
+        const label = make('span', '絞り込み');
+        label.id = 'task-filter-caption';
+
+        const trigger = button(
+          '',
+          openTaskFilter,
+          'filter-trigger' + (taskFilter !== 'all' ? ' is-filtered' : '')
+        );
+
+        trigger.id = 'task-filter-trigger';
+        trigger.setAttribute('aria-haspopup', 'dialog');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.setAttribute('aria-controls', 'task-filter-dialog');
+
+        const value = make('span', filterLabel(), 'filter-trigger-value');
+        value.id = 'task-filter-value';
+
+        trigger.setAttribute(
+          'aria-labelledby',
+          'task-filter-caption task-filter-value'
+        );
+
+        const arrow = make('span', null, 'filter-trigger-arrow');
+        arrow.appendChild(icon('chevron-down'));
+
+        trigger.append(value, arrow);
+        field.append(label, trigger);
+        tools.appendChild(field);
+
+        if (taskFilter === 'date') {
+          const dateField = make('label', null, 'filter-field');
+          const input = make('input', null, 'form-control');
+
+          input.id = 'task-filter-date';
+          input.type = 'date';
+          input.value = filterDate;
+
+          input.addEventListener('change', function () {
+            filterDate = input.value;
+            render();
+          });
+
+          dateField.append(make('span', '実行日'), input);
+          tools.appendChild(dateField);
+        }
+
+        content.appendChild(tools);
+
+        const tasks = client.effectiveTasks().filter(filterTask);
+        let orderLabel = '';
+
+        if (taskFilter === 'hasdue') {
+          tasks.sort(function (a, b) {
+            return a.due.localeCompare(b.due) || a.row - b.row;
+          });
+
+          orderLabel = '期限が近い順';
+        } else if (taskFilter === 'runoverdue') {
+          tasks.sort(function (a, b) {
+            return a.date.localeCompare(b.date) || compareTasks(a, b);
+          });
+
+          orderLabel = '実行日が古い順';
+        }
+
+        content.appendChild(make(
+          'p',
+          tasks.length + '件' + (orderLabel ? '・' + orderLabel : ''),
+          'sub'
+        ));
+
+        renderTaskCards(content, tasks);
+      }
+
+      function moveCalendarMonth(amount) {
+        calendarMonth = monthShift(calendarMonth, amount);
+        calendarDate = calendarMonth + '-01';
+        calendarUndated = false;
+        render();
+      }
+
+      function renderCalendar(content) {
+        const tasks = client.effectiveTasks();
+        const counts = new Map();
+        let undatedCount = 0;
+
+        tasks.forEach(function (task) {
+          if (task.date) {
+            counts.set(task.date, (counts.get(task.date) || 0) + 1);
+          } else {
+            undatedCount++;
+          }
+        });
+
+        const calendar = make('section', null, 'calendar');
+        const tools = make('div', null, 'toolbar calendar-tools');
+
+        const monthText = Number(calendarMonth.slice(0, 4)) + '年' +
+          Number(calendarMonth.slice(5, 7)) + '月';
+
+        tools.append(
+          button('前月', function () {
+            moveCalendarMonth(-1);
+          }),
+          make('h3', monthText, 'calendar-month'),
+          button('今月', function () {
+            calendarDate = japanDate();
+            calendarMonth = calendarDate.slice(0, 7);
+            calendarUndated = false;
+            render();
+          }),
+          button('翌月', function () {
+            moveCalendarMonth(1);
+          })
+        );
+
+        calendar.appendChild(tools);
+
+        const grid = make('div', null, 'calendar-grid');
+        grid.setAttribute('role', 'group');
+        grid.setAttribute('aria-label', monthText + 'のタスク数');
+
+        ['日', '月', '火', '水', '木', '金', '土']
+          .forEach(function (weekday) {
+            grid.appendChild(make('div', weekday, 'calendar-weekday'));
+          });
+
+        const first = new Date(calendarMonth + '-01T12:00:00Z');
+        const firstWeekday = first.getUTCDay();
+        const last = new Date(first);
+
+        last.setUTCMonth(last.getUTCMonth() + 1);
+        last.setUTCDate(0);
+
+        const daysInMonth = last.getUTCDate();
+        const today = japanDate();
+
+        for (let index = 0; index < firstWeekday; index++) {
+          grid.appendChild(make('div'));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = calendarMonth + '-' + String(day).padStart(2, '0');
+          const count = counts.get(date) || 0;
+          const selected = !calendarUndated && calendarDate === date;
+
+          const cell = button('', function () {
+            calendarDate = date;
+            calendarUndated = false;
+            render();
+          }, 'calendar-day');
+
+          cell.classList.toggle('is-selected', selected);
+          cell.classList.toggle('is-today', date === today);
+          cell.setAttribute('aria-pressed', String(selected));
+          cell.setAttribute(
+            'aria-label',
+            dateLabel(date) + '、' + (count ? count + '件' : 'タスクなし')
+          );
+
+          if (date === today) {
+            cell.setAttribute('aria-current', 'date');
+          }
+
+          cell.append(
+            make('span', String(day), 'calendar-day-number'),
+            make('span', count ? count + '件' : '', 'calendar-count')
+          );
+
+          grid.appendChild(cell);
+        }
+
+        const trailing = (7 - (firstWeekday + daysInMonth) % 7) % 7;
+
+        for (let index = 0; index < trailing; index++) {
+          grid.appendChild(make('div'));
+        }
+
+        calendar.appendChild(grid);
+
+        const undated = button(
+          '実行日なし ' + undatedCount + '件',
+          function () {
+            calendarUndated = true;
+            render();
+          },
+          'calendar-undated' + (calendarUndated ? ' is-selected' : '')
+        );
+
+        undated.setAttribute('aria-pressed', String(calendarUndated));
+        calendar.appendChild(undated);
+        content.appendChild(calendar);
+
+        const details = make('section', null, 'calendar-details');
+
+        details.appendChild(make(
+          'h3',
+          calendarUndated ? '実行日なし' : dateLabel(calendarDate)
+        ));
+
+        const shown = tasks.filter(function (task) {
+          return calendarUndated ? !task.date : task.date === calendarDate;
+        });
+
+        if (!calendarUndated) {
+          shown.sort(compareTasks);
+        }
+
+        renderTaskCards(details, shown);
+        content.appendChild(details);
+      }
+
+      /* ---------- 追加・編集 ---------- */
+
+      function field(name, label, type, value, required) {
+        const wrapper = make('label', null, 'field');
+        wrapper.appendChild(make('span', label, 'form-label'));
+
+        const input = make('input', null, 'form-control');
+        input.name = name;
+        input.type = type;
+        input.value = value == null ? '' : String(value);
+        input.required = !!required;
+
+        if (type === 'text') {
+          input.maxLength = 200;
+        }
+
+        wrapper.appendChild(input);
+        $('editor-fields').appendChild(wrapper);
+        return input;
+      }
+
+      function selectField(name, label, options, value) {
+        const wrapper = make('label', null, 'field');
+        wrapper.appendChild(make('span', label, 'form-label'));
+        const select = make('select', null, 'form-select');
+        select.name = name;
+
+        options.forEach(function (entry) {
+          const option = make('option', entry[1]);
+          option.value = String(entry[0]);
+          select.appendChild(option);
+        });
+
+        select.value = String(value);
+        wrapper.appendChild(select);
+        $('editor-fields').appendChild(wrapper);
+        return select;
+      }
+
+      function showEditor(title, handler, submitLabel) {
+        editorPosition = capturePosition();
+        editorHandler = handler;
+        editorSaving = false;
+        $('editor-title').textContent = title;
+        $('editor-fields').replaceChildren();
+        $('editor-note').textContent = '';
+        $('editor-note').hidden = true;
+        $('editor-submit').textContent = submitLabel || '保存';
+        $('editor-submit').disabled = false;
+        $('editor-cancel').disabled = false;
+        $('editor').showModal();
+      }
+
+      function openAdd() {
+        showEditor(
+          'タスクを追加',
+          async function (form) {
+            const title = String(form.get('title') || '').trim();
+            const due = String(form.get('due') || '');
+            const date = String(form.get('date') || '');
+
+            if (!title || title.length > 200) {
+              throw new Error('件名は1～200文字で入力してください。');
+            }
+
+            await client.enqueue({
+              action: 'add',
+              title: title,
+              due: due,
+              date: date
+            }, '追加：' + title +
+              ' ／ ' + (date ? '実行日：' + date : '実行日なし') +
+              (due ? ' ／ 期限：' + due : '')
+            );
+
+            notify('端末に保存しました');
+          },
+          '追加'
+        );
+
+        field('title', '件名＊', 'text', '', true).focus();
+        field('due', '期限', 'date', '', false);
+        field('date', '実行日', 'date', '', false);
+      }
+
+      function openTaskEditor(id) {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        if (!editingSupported()) {
+          notify(
+            '保存先の更新が必要です',
+            true,
+            'コード.gsと変更順.gsのv4.12.1を反映し、一覧を更新してください。'
+          );
+          return;
+        }
+
+        const original = taskById(state.snapshot, id);
+        const visible = client.effectiveTasks().find(function (task) {
+          return task.taskId === id && !task.localOnly;
+        });
+
+        if (!original || !visible || visible.blocked) {
+          notify('タスクの状態を確認してください', true);
+          return;
+        }
+
+        const captured = clone(visible);
+
+        const payload = {
+          action: 'edit',
+          taskId: id,
+          expectedTask: original.version,
+          editProtocol: EDIT_PROTOCOL,
+          editBase: TaskCore.editValues(captured)
+        };
+
+        const context = client.context(payload);
+
+        showEditor('タスクを編集', async function (form) {
+          if (!navigator.onLine) {
+            throw new Error(
+              '通信が戻ってから保存してください。入力は残しています。'
+            );
+          }
+
+          const title = String(form.get('title') || '').trim();
+          const due = String(form.get('due') || '');
+          const date = String(form.get('date') || '');
+
+          if (!title || title.length > 200) {
+            throw new Error('件名は1～200文字で入力してください。');
+          }
+
+          if (
+            title === captured.title &&
+            due === captured.due &&
+            date === captured.date
+          ) {
+            notify('変更はありません');
+            return;
+          }
+
+          await client.enqueue(Object.assign({}, payload, {
+            title: title,
+            due: due,
+            date: date
+          }), '編集：' + title, context);
+
+          notify('端末に保存しました');
+        });
+
+        field('title', '件名＊', 'text', captured.title, true).focus();
+        field('due', '期限', 'date', captured.due, false);
+        field('date', '実行日', 'date', captured.date, false);
+      }
+
+      $('editor-form').addEventListener('compositionstart', function () {
+        editorComposing = true;
+      });
+
+      $('editor-form').addEventListener('compositionend', function () {
+        editorComposing = false;
+        editorImeUntil = performance.now() + 100;
+      });
+
+      $('editor-form').addEventListener('keydown', function (event) {
+        if (event.isComposing || event.keyCode === 229) {
+          editorImeUntil = performance.now() + 100;
+        }
+
+        if (event.key === 'Enter' && event.repeat) {
+          event.preventDefault();
+        }
+      });
+
+      $('editor-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        if (
+          !editorHandler ||
+          editorSaving ||
+          editorComposing ||
+          performance.now() < editorImeUntil
+        ) {
+          return;
+        }
+
+        const handler = editorHandler;
+        const form = new FormData($('editor-form'));
+
+        editorSaving = true;
+        $('editor-submit').disabled = true;
+        $('editor-cancel').disabled = true;
+        $('editor-note').hidden = true;
+
+        try {
+          await handler(form);
+          $('editor').close();
+        } catch (error) {
+          $('editor-note').textContent = String(error.message || error);
+          $('editor-note').hidden = false;
+        } finally {
+          editorSaving = false;
+          $('editor-submit').disabled = false;
+          $('editor-cancel').disabled = false;
+        }
+      });
+
+      $('editor-cancel').addEventListener('click', function () {
+        $('editor').close();
+      });
+
+      $('editor').addEventListener('cancel', function (event) {
+        if (editorSaving) {
+          event.preventDefault();
+        }
+      });
+
+      $('editor').addEventListener('close', function () {
+        const position = editorPosition;
+        editorHandler = null;
+        editorPosition = null;
+        editorComposing = false;
+        restorePosition(position);
+
+        requestAnimationFrame(function () {
+          restorePosition(position);
+        });
+      });
+
+      /* ---------- したいこと ---------- */
+
+      function loadWishes(background) {
+        if (wishReadPromise) {
+          return wishReadPromise;
+        }
+
+        if (!wishes.ready) {
+          wishLoading = true;
+          render();
+          return Promise.resolve(null);
+        }
+
+        if (!navigator.onLine || !client.configured()) {
+          wishLoading = false;
+          wishError = !navigator.onLine
+            ? '通信がありません。端末に保存した内容を表示しています。'
+            : '接続先と合い言葉を設定してください。';
+
+          render();
+          return Promise.resolve(null);
+        }
+
+        wishLoading = true;
+        wishError = '';
+        render();
+
+        wishReadPromise = wishes.read(!!background).catch(function (error) {
+          if (!client.paused) {
+            wishError = String(error.message || error);
+          }
+
+          return null;
+        }).finally(function () {
+          wishLoading = false;
+          wishReadPromise = null;
+          nextAutoRead = Date.now() + (wishError ? 60000 : 20000);
+          render();
+        });
+
+        return wishReadPromise;
+      }
+
+      function renderWishes(content) {
+        content.appendChild(make('h2', 'したいこと'));
+
+        if (wishLoading || !wishes.ready) {
+          const loading = make('p', '更新中…', 'loading');
+          loading.setAttribute('role', 'status');
+          content.appendChild(loading);
+        }
+
+        if (wishError) {
+          const box = make('div', null, 'notice error');
+
+          box.appendChild(make(
+            'p',
+            navigator.onLine ? '一覧を更新できませんでした' : '通信なし'
+          ));
+
+          const retry = button('再試行', function () {
+            loadWishes(false);
+          });
+
+          retry.disabled = !navigator.onLine || wishLoading;
+          box.appendChild(retry);
+
+          const details = make('details');
+          details.append(
+            make('summary', '詳細'),
+            make('div', wishError, 'detail-text')
+          );
+
+          box.appendChild(details);
+          content.appendChild(box);
+        }
+
+        const items = wishes.effectiveItems();
+
+        const active = items.filter(function (item) {
+          return !item.done;
+        }).sort(function (a, b) {
+          return a.row - b.row;
+        });
+
+        const completed = items.filter(function (item) {
+          return item.done;
+        }).sort(function (a, b) {
+          return b.doneAt - a.doneAt || b.row - a.row;
+        });
+
+        const list = make('div', null, 'cards wish-list');
+
+        active.forEach(function (item) {
+          list.appendChild(wishCard(item));
+        });
+
+        content.appendChild(list);
+
+        if (!active.length && !wishLoading && wishes.state.snapshot) {
+          content.appendChild(make('p', 'まだありません', 'sub'));
+        }
+
+        const achieved = make('details', null, 'wish-completed');
+        achieved.id = 'wish-achieved';
+        achieved.open = achievedOpen;
+        achieved.appendChild(
+          make('summary', '達成済み ' + completed.length + '件')
+        );
+
+        const doneList = make('div', null, 'cards');
+
+        completed.forEach(function (item) {
+          doneList.appendChild(wishCard(item));
+        });
+
+        achieved.appendChild(doneList);
+
+        achieved.addEventListener('toggle', function () {
+          if (document.contains(achieved)) {
+            achievedOpen = achieved.open;
+          }
+        });
+
+        content.appendChild(achieved);
+      }
+
+      function wishUnavailable(item) {
+        return !wishes.ready ||
+          !!client.legacyCount ||
+          !!item.localOnly ||
+          !!item.pendingAdd ||
+          !!item.needsCheck;
+      }
+
+      function wishCard(item) {
+        const row = make(
+          'div',
+          null,
+          'card' +
+            (item.done ? ' wish-achieved' : '') +
+            (item.pending ? ' pending-add' : '')
+        );
+
+        const main = make('div', null, 'card-main');
+        main.appendChild(make('div', item.title, 'card-title'));
+
+        if (item.pending) {
+          const job = wishes.state.jobs.find(function (entry) {
+            return entry.id === item.jobId;
+          });
+
+          main.appendChild(make(
+            'div',
+            job ? jobStateLabel(job) : '送信待ち',
+            'pending-label'
+          ));
+        }
+
+        const actions = make('div', null, 'card-actions');
+
+        const edit = button('編集', function () {
+          openWishEditor(item.wishId);
+        });
+
+        edit.disabled = wishUnavailable(item);
+        edit.setAttribute('aria-label', item.title + 'を編集');
+        actions.appendChild(edit);
+
+        if (item.done) {
+          const restore = button('戻す', function () {
+            changeWish(item, false);
+          });
+
+          restore.disabled = wishUnavailable(item);
+          actions.appendChild(restore);
+          row.append(main, actions);
+        } else {
+          const done = button('', function () {
+            changeWish(item, true);
+          }, 'hit');
+
+          done.setAttribute('aria-label', item.title + 'を達成済みにする');
+          done.disabled = wishUnavailable(item);
+          done.appendChild(make('span', null, 'circle'));
+          row.append(done, main, actions);
+        }
+
+        return row;
+      }
+
+      async function changeWish(item, done) {
+        if (wishUnavailable(item)) {
+          return;
+        }
+
+        if (!confirm(
+          '「' + item.title + '」を' +
+          (done ? '達成済みにしますか。' : 'したいことに戻しますか。')
+        )) {
+          return;
+        }
+
+        try {
+          await wishes.setDone(item, done);
+          notify('端末に保存しました');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      function openWishAdd() {
+        showEditor(
+          'したいことを追加',
+          async function (form) {
+            const title = String(form.get('title') || '').trim();
+
+            if (!title || title.length > 200) {
+              throw new Error('件名は1～200文字で入力してください。');
+            }
+
+            await wishes.add(title);
+            notify('端末に保存しました');
+          },
+          '追加'
+        );
+
+        field('title', '件名＊', 'text', '', true).focus();
+      }
+
+      function openWishEditor(id) {
+        const original = wishes.state.snapshot &&
+          wishes.state.snapshot.items.find(function (item) {
+            return item.wishId === id;
+          });
+
+        const visible = wishes.effectiveItems().find(function (item) {
+          return item.wishId === id;
+        });
+
+        if (!original || !visible || wishUnavailable(visible)) {
+          notify('先にこの項目の保存結果を確認してください', true);
+          return;
+        }
+
+        const version = original.version;
+        const captured = wishes.context(id);
+
+        showEditor('したいことを編集', async function (form) {
+          const title = String(form.get('title') || '').trim();
+
+          if (!title || title.length > 200) {
+            throw new Error('件名は1～200文字で入力してください。');
+          }
+
+          await wishes.edit(id, title, version, captured);
+          notify('端末に保存しました');
+        });
+
+        field('title', '件名＊', 'text', visible.title, true).focus();
+      }
+
+      /* ---------- 定期タスク ---------- */
+
+      function automaticJobs() {
+        return state.jobs.filter(function (job) {
+          return job.payload.action === 'automatic';
+        }).sort(function (a, b) {
+          return a.sequence - b.sequence;
+        });
+      }
+
+      function automaticControl(periodic, supported) {
+        const wrapper = make('div', null, 'automatic-control');
+        const label = make('span', '毎日の自動追加', 'automatic-label');
+        label.id = 'automatic-label';
+
+        const pending = automaticJobs();
+        const latest = pending.length ? pending[pending.length - 1] : null;
+
+        const control = button('', toggleAutomatic, 'auto-switch');
+        control.setAttribute('role', 'switch');
+        control.setAttribute('aria-checked', String(periodic.automatic));
+        control.setAttribute('aria-labelledby', 'automatic-label');
+        control.setAttribute('aria-describedby', 'automatic-status');
+
+        control.disabled =
+          !navigator.onLine ||
+          !supported ||
+          !!client.legacyCount ||
+          pending.length > 0;
+
+        control.setAttribute(
+          'aria-busy',
+          String(pending.some(function (job) {
+            return job.state === 'saved' || job.state === 'sending';
+          }))
+        );
+
+        const track = make('span', null, 'auto-switch-track');
+        track.setAttribute('aria-hidden', 'true');
+        track.appendChild(make('span', null, 'auto-switch-thumb'));
+        control.appendChild(track);
+
+        const current = make(
+          'span',
+          periodic.automatic ? 'ON' : 'OFF',
+          'automatic-state'
+        );
+
+        current.setAttribute('aria-hidden', 'true');
+
+        const status = make('span', '', 'automatic-status');
+        status.id = 'automatic-status';
+        status.setAttribute('aria-live', 'polite');
+
+        if (latest) {
+          const destination = latest.payload.enabled ? 'ON' : 'OFF';
+
+          const attention = pending.some(function (job) {
+            return job.state === 'blocked' || job.state === 'unknown';
+          });
+
+          status.textContent = attention
+            ? destination + 'への変更結果を確認しています'
+            : destination + 'へ変更中';
+
+          status.classList.toggle('has-error', attention);
+        }
+
+        status.hidden = !latest;
+        wrapper.append(label, control, current, status);
+        return wrapper;
+      }
+
+      function renderPeriodic(content) {
+        const periodic = state.snapshot.periodic;
+        const supported = periodicSupported();
+        content.appendChild(make('h2', '定期タスク'));
+
+        if (!supported) {
+          content.appendChild(make(
+            'p',
+            '保存先の更新が必要です',
+            'form-error'
+          ));
+        }
+
+        const tools = make('div', null, 'toolbar');
+
+        const add = button('定期タスクを追加', function () {
+          openPeriodicEditor(null);
+        });
+
+        const today = button(
+          periodicAdding
+            ? retryingRead('preview') ? '再確認中' : '追加内容を確認中'
+            : '今日の分を追加',
+          addTodayPeriodic
+        );
+
+        today.id = 'periodic-today';
+
+        [add, today].forEach(function (control) {
+          control.disabled =
+            !navigator.onLine ||
+            !supported ||
+            !!client.legacyCount;
+        });
+
+        today.disabled = today.disabled || periodicAdding;
+        tools.append(add, today, automaticControl(periodic, supported));
+        content.appendChild(tools);
+
+        const cards = make('div', null, 'cards');
+
+        periodic.items.forEach(function (item) {
+          const card = make('div', null, 'card');
+          const main = make('div', null, 'card-main');
+          const schedule = [item.freq || '不定期'];
+
+          if (item.next) {
+            schedule.push('次回 ' + item.next);
+          }
+
+          main.append(
+            make('div', item.name, 'card-title'),
+            make('div', schedule.join(' ／ '), 'sub')
+          );
+
+          if (item.dueRule && item.dueRule.type !== 'none') {
+            const deadline = ['期限 ' + dueRuleLabel(item.dueRule)];
+
+            if (item.nextDue) {
+              deadline.push('次回 ' + item.nextDue);
+            }
+
+            main.appendChild(make(
+              'div',
+              deadline.join(' ／ '),
+              'sub'
+            ));
+          }
+
+          const actions = make('div', null, 'card-actions');
+
+          const edit = button('編集', function () {
+            openPeriodicEditor(item);
+          });
+
+          const send = button('今すぐ1件追加', async function () {
+            if (!onlineRequired()) {
+              return;
+            }
+
+            if (!confirm(
+              '「' + item.name + '」を今日の時間未定に追加しますか。\n' +
+              '期限：' + dueRuleLabel(item.dueRule)
+            )) {
+              return;
+            }
+
+            try {
+              await client.enqueue({
+                action: 'periodicSend',
+                row: item.row,
+                periodicId: item.periodicId || '',
+                expectedPeriodic: periodic.version
+              }, '定期追加：' + item.name);
+            } catch (error) {
+              failed('保存できませんでした', error);
+            }
+          });
+
+          edit.disabled = send.disabled =
+            !navigator.onLine ||
+            !supported ||
+            !!client.legacyCount;
+
+          actions.append(edit, send);
+          card.append(main, actions);
+          cards.appendChild(card);
+        });
+
+        content.appendChild(cards);
+
+        if (!periodic.items.length) {
+          content.appendChild(make('p', '定期タスクなし', 'sub'));
+        }
+      }
+
+      async function addTodayPeriodic() {
+        if (
+          periodicAdding ||
+          !onlineRequired() ||
+          !periodicSupported()
+        ) {
+          return;
+        }
+
+        periodicAdding = true;
+        render();
+
+        try {
+          const result = await client.read({
+            action: 'preview'
+          });
+
+          if (!result) {
+            return;
+          }
+
+          const preview = result.preview;
+          const errors = preview.errors || [];
+
+          if (!preview.items.length) {
+            notify(
+              errors.length ? '設定の確認が必要です' : '追加対象はありません',
+              !!errors.length,
+              errors.join('\n')
+            );
+            return;
+          }
+
+          if (!confirm(
+            preview.items.length + '件を今日の時間未定に追加しますか。' +
+            (errors.length
+              ? '\n\n追加されない設定：\n' + errors.join('\n')
+              : '')
+          )) {
+            return;
+          }
+
+          await client.enqueue({
+            action: 'periodicRun',
+            expectedPeriodic: preview.version,
+            date: preview.date
+          }, '今日の定期タスク ' + preview.items.length + '件を追加');
+        } catch (error) {
+          failed('追加対象を確認できませんでした', error);
+        } finally {
+          periodicAdding = false;
+          render();
+        }
+      }
+
+      function addDueFields(value) {
+        const rule = value || {
+          type: 'none'
+        };
+
+        const type = selectField(
+          'dueType',
+          '期限',
+          [
+            ['none', 'なし'],
+            ['offset', '基準日から○日後'],
+            ['weekly', '毎週○曜日'],
+            ['monthly', '毎月○日'],
+            ['monthEnd', '毎月末']
+          ],
+          rule.type
+        );
+
+        const days = field(
+          'dueDays',
+          '何日後＊',
+          'number',
+          rule.days == null ? 0 : rule.days,
+          false
+        );
+
+        days.min = '0';
+        days.max = '3650';
+        days.step = '1';
+
+        const weekday = selectField(
+          'dueWeekday',
+          '曜日＊',
+          [
+            [1, '月曜日'],
+            [2, '火曜日'],
+            [3, '水曜日'],
+            [4, '木曜日'],
+            [5, '金曜日'],
+            [6, '土曜日'],
+            [0, '日曜日']
+          ],
+          rule.weekday == null ? 5 : rule.weekday
+        );
+
+        const day = field(
+          'dueDay',
+          '日＊',
+          'number',
+          rule.day == null ? 15 : rule.day,
+          false
+        );
+
+        day.min = '1';
+        day.max = '31';
+        day.step = '1';
+
+        function update() {
+          [
+            [days, 'offset'],
+            [weekday, 'weekly'],
+            [day, 'monthly']
+          ].forEach(function (entry) {
+            const active = type.value === entry[1];
+            entry[0].closest('.field').hidden = !active;
+            entry[0].disabled = !active;
+            entry[0].required = active;
+          });
+        }
+
+        type.addEventListener('change', update);
+        update();
+      }
+
+      function dueRuleFromForm(form) {
+        const type = String(form.get('dueType') || 'none');
+
+        function integer(name, minimum, maximum) {
+          const raw = String(
+            form.get(name) == null ? '' : form.get(name)
+          ).trim();
+
+          const value = Number(raw);
+
+          if (
+            !raw ||
+            !Number.isInteger(value) ||
+            value < minimum ||
+            value > maximum
+          ) {
+            throw new Error(
+              '期限は' + minimum + '～' + maximum +
+                'の整数で指定してください。'
+            );
+          }
+
+          return value;
+        }
+
+        switch (type) {
+          case 'none':
+            return {
+              type: 'none'
+            };
+          case 'offset':
+            return {
+              type: 'offset',
+              days: integer('dueDays', 0, 3650)
+            };
+          case 'weekly':
+            return {
+              type: 'weekly',
+              weekday: integer('dueWeekday', 0, 6)
+            };
+          case 'monthly':
+            return {
+              type: 'monthly',
+              day: integer('dueDay', 1, 31)
+            };
+          case 'monthEnd':
+            return {
+              type: 'monthEnd'
+            };
+          default:
+            throw new Error('期限を選び直してください。');
+        }
+      }
+
+      function openPeriodicEditor(item) {
+        if (!onlineRequired() || !periodicSupported()) {
+          return;
+        }
+
+        const value = item || {
+          row: 0,
+          periodicId: '',
+          name: '',
+          freq: '毎日',
+          next: japanDate(),
+          dueRule: {
+            type: 'none'
+          }
+        };
+
+        const payload = {
+          action: 'periodicSave',
+          row: value.row,
+          periodicId: value.periodicId || '',
+          expectedPeriodic: state.snapshot.periodic.version,
+          periodicBase: {
+            name: value.name,
+            freq: value.freq,
+            next: value.next,
+            dueRule: clone(value.dueRule || {
+              type: 'none'
+            })
+          }
+        };
+
+        const captured = client.context(payload);
+
+        showEditor(
+          item ? '定期タスクを編集' : '定期タスクを追加',
+          async function (form) {
+            if (!navigator.onLine) {
+              throw new Error('通信が戻ってから保存してください。');
+            }
+
+            const name = String(form.get('name') || '').trim();
+
+            if (!name || name.length > 200) {
+              throw new Error('タスク名は1～200文字で入力してください。');
+            }
+
+            await client.enqueue(Object.assign({}, payload, {
+              name: name,
+              freq: String(form.get('freq') || '').trim(),
+              next: String(form.get('next') || ''),
+              dueRule: dueRuleFromForm(form)
+            }), '定期設定：' + name, captured);
+
+            notify('端末に保存しました');
+          }
+        );
+
+        field('name', 'タスク名＊', 'text', value.name, true);
+
+        const freq = field('freq', '頻度＊', 'text', value.freq, true);
+        freq.placeholder = '毎日・毎週月曜日・毎月15日';
+
+        const options = make('datalist');
+        options.id = 'frequency-options';
+
+        [
+          '毎日',
+          '毎週月曜日',
+          '毎週火曜日',
+          '毎週水曜日',
+          '毎週木曜日',
+          '毎週金曜日',
+          '毎週土曜日',
+          '毎週日曜日',
+          '毎月',
+          '不定期'
+        ].forEach(function (text) {
+          const option = make('option');
+          option.value = text;
+          options.appendChild(option);
+        });
+
+        freq.setAttribute('list', options.id);
+        $('editor-fields').appendChild(options);
+
+        const next = field(
+          'next',
+          '次回追加予定日',
+          'date',
+          value.next,
+          false
+        );
+
+        function updateRequired() {
+          const required = freq.value.trim() !== '不定期';
+          next.required = required;
+          next.closest('.field').querySelector('span').textContent =
+            '次回追加予定日' + (required ? '＊' : '');
+        }
+
+        freq.addEventListener('input', updateRequired);
+        updateRequired();
+        addDueFields(value.dueRule);
+      }
+
+      async function toggleAutomatic() {
+        if (!onlineRequired() || !state.snapshot) {
+          return;
+        }
+
+        if (automaticJobs().length) {
+          notify('自動追加の保存結果を確認中です');
+          return;
+        }
+
+        const periodic = state.snapshot.periodic;
+        const enabled = !periodic.automatic;
+
+        if (!confirm(
+          '毎日の自動追加を「' + (enabled ? 'ON' : 'OFF') +
+          '」にしますか。'
+        )) {
+          return;
+        }
+
+        try {
+          await client.enqueue({
+            action: 'automatic',
+            expectedPeriodic: periodic.version,
+            expectedAutomatic: periodic.automatic,
+            enabled: enabled
+          }, '毎日の自動追加を' + (enabled ? 'ON' : 'OFF') + 'にする');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      /* ---------- 完了済み ---------- */
+
+      function scheduleHistoryRefresh() {
+        if (page !== 'history') {
+          return;
+        }
+
+        if (historyLoading) {
+          historyAgain = true;
+          return;
+        }
+
+        if (historyRefreshTimer) {
+          clearTimeout(historyRefreshTimer);
+        }
+
+        historyRefreshTimer = setTimeout(function () {
+          historyRefreshTimer = null;
+
+          if (page === 'history') {
+            loadHistory(false);
+          }
+        }, 200);
+      }
+
+      function loadHistory(more, background) {
+        if (historyPromise) {
+          return historyPromise;
+        }
+
+        if (!client.ready) {
+          historyLoading = true;
+          render();
+          return Promise.resolve(null);
+        }
+
+        if (!navigator.onLine || !client.configured()) {
+          historyLoading = false;
+          historyError = navigator.onLine
+            ? '接続先と合い言葉を設定してください。'
+            : '通信がありません。通信が戻ると更新します。';
+
+          historyFailedMore = !!more;
+          render();
+          return Promise.resolve(null);
+        }
+
+        const offset = more ? historyData.items.length : 0;
+        historyLoading = true;
+        historyError = '';
+        historyFailedMore = !!more;
+        render();
+
+        historyPromise = client.read({
+          action: 'history',
+          offset: offset
+        }, {
+          background: !!background
+        }).then(function (result) {
+          if (!result) {
+            return null;
+          }
+
+          historyData = {
+            total: result.history.total,
+            items: more
+              ? historyData.items.concat(result.history.items)
+              : result.history.items,
+            loaded: true
+          };
+
+          historyError = '';
+          return result;
+        }).catch(function (error) {
+          if (!client.paused) {
+            historyError = String(error.message || error);
+          }
+
+          return null;
+        }).finally(function () {
+          historyLoading = false;
+          historyPromise = null;
+          nextAutoRead = Date.now() + (historyError ? 60000 : 20000);
+          render();
+
+          if (historyAgain) {
+            historyAgain = false;
+
+            if (page === 'history' && navigator.onLine) {
+              scheduleHistoryRefresh();
+            }
+          }
+        });
+
+        return historyPromise;
+      }
+
+      function renderHistory(content) {
+        content.appendChild(make('h2', '完了済み'));
+
+        const tools = make('div', null, 'toolbar');
+        const undo = button('直前の完了を戻す', undoDone);
+
+        const count = state.snapshot && state.snapshot.undo
+          ? state.snapshot.undo.count
+          : 0;
+
+        undo.disabled = !navigator.onLine || !count;
+
+        const reload = button(
+          historyLoading ? '更新中' : '更新',
+          function () {
+            loadHistory(false);
+          }
+        );
+
+        reload.disabled =
+          !navigator.onLine ||
+          !client.ready ||
+          historyLoading;
+
+        tools.append(undo, reload);
+        content.appendChild(tools);
+
+        if (historyLoading) {
+          const loading = make(
+            'p',
+            retryingRead('history') ? '一覧を取り直しています…' : '更新中…',
+            'loading'
+          );
+
+          loading.id = 'history-loading-label';
+          loading.setAttribute('role', 'status');
+          content.appendChild(loading);
+        }
+
+        const pending = state.jobs.filter(function (job) {
+          return job.payload.action === 'done' ||
+            job.payload.action === 'undo';
+        }).length;
+
+        if (pending) {
+          content.appendChild(make(
+            'p',
+            '完了・取り消しの反映待ち ' + pending + '件',
+            'status'
+          ));
+        }
+
+        if (historyError) {
+          const box = make('div', null, 'notice error');
+          box.appendChild(make('p', '完了済みを更新できませんでした'));
+
+          const retry = button('再試行', function () {
+            loadHistory(historyFailedMore);
+          });
+
+          retry.disabled = !navigator.onLine || historyLoading;
+          box.appendChild(retry);
+
+          const details = make('details');
+          details.append(
+            make('summary', '詳細'),
+            make('div', historyError, 'detail-text')
+          );
+
+          box.appendChild(details);
+          content.appendChild(box);
+        }
+
+        if (
+          historyData.loaded &&
+          !historyData.items.length &&
+          !historyLoading &&
+          !historyError
+        ) {
+          content.appendChild(make('p', '完了済みなし', 'sub'));
+        }
+
+        const cards = make('div', null, 'cards');
+
+        historyData.items.forEach(function (item) {
+          const card = make('div', null, 'card');
+          const mark = make('span', null, 'history-mark');
+          mark.appendChild(icon('check'));
+
+          const main = make('div', null, 'card-main');
+          main.appendChild(make('div', item.title, 'card-title'));
+
+          if (item.doneAt) {
+            main.appendChild(make('div', '完了 ' + item.doneAt, 'sub'));
+          }
+
+          card.append(mark, main);
+          cards.appendChild(card);
+        });
+
+        content.appendChild(cards);
+
+        if (historyData.items.length < historyData.total) {
+          const more = button('さらに表示', function () {
+            loadHistory(true);
+          });
+
+          more.disabled = !navigator.onLine || historyLoading;
+          content.appendChild(more);
+        }
+      }
+
+      async function undoDone() {
+        if (!onlineRequired()) {
+          return;
+        }
+
+        if (state.jobs.some(function (job) {
+          return job.payload.action === 'done' ||
+            job.payload.action === 'undo';
+        })) {
+          notify('直前の完了を確認中です。保存結果が分かってから戻せます');
+          return;
+        }
+
+        const undo = state.snapshot && state.snapshot.undo;
+
+        if (!undo || !undo.count) {
+          notify('戻せる完了はありません');
+          return;
+        }
+
+        if (
+          !Array.isArray(undo.targets) ||
+          !undo.targets.every(function (id) {
+            return typeof id === 'string' && !!id;
+          })
+        ) {
+          notify(
+            '保存先を更新し、「設定」の「動作確認」を実行してください',
+            true
+          );
+          return;
+        }
+
+        if (!confirm(
+          undo.count + '件を戻しますか。\n\n' + undo.titles.join('\n')
+        )) {
+          return;
+        }
+
+        try {
+          await client.enqueue({
+            action: 'undo',
+            expectedUndo: undo.version,
+            undoTargets: undo.targets.slice()
+          }, '直前の完了を戻す');
+        } catch (error) {
+          failed('保存できませんでした', error);
+        }
+      }
+
+      /* ---------- 設定・点検 ---------- */
+
+      function seconds(value) {
+        return Number.isFinite(value)
+          ? (value / 1000).toFixed(2) + '秒'
+          : '未取得';
+      }
+
+      function sendTiming() {
+        const info = state.lastSend;
+
+        if (!info) {
+          return '未取得';
+        }
+
+        return TaskCore.actionLabel(info.action) +
+          '\n処理結果 ' + TaskCore.outcomeLabel(info.outcome) +
+          '\n開始まで ' + seconds(info.waitMs) +
+          '\n確認完了まで ' + seconds(info.roundTripMs) +
+          '\n保存先処理 ' + seconds(info.serverMs);
+      }
+
+      function uiStyleVersion() {
+        return getComputedStyle(document.documentElement)
+          .getPropertyValue('--task-ui-version')
+          .trim() || '未読込';
+      }
+
+      function uiKitStatus() {
+        const link = $('tabler-style');
+
+        try {
+          return link && link.sheet && link.sheet.cssRules.length
+            ? 'Tabler ' + UI_KIT_VERSION + '（CSS読込済み）'
+            : '未読込';
+        } catch (error) {
+          return '確認できません';
+        }
+      }
+
+      function stateRows() {
+        return [
+          ['通信', navigator.onLine ? 'あり' : 'なし'],
+          ['タスクの未送信', state.jobs.length + '件'],
+          ['したいことの未送信', wishJobs().length + '件'],
+          [
+            '前回確認',
+            timeLabel(state.snapshot ? state.snapshot.fetchedAt : '') +
+              '（日本時間）'
+          ],
+          ['画面', VERSION],
+          ['UIスタイル', uiStyleVersion()],
+          ['UIキット', uiKitStatus()],
+          ['共通処理', TaskCore.BUILD],
+          [
+            '保存先の改修版',
+            state.snapshot ? state.snapshot.build || '未取得' : '未取得'
+          ],
+          [
+            '変更の自動反映',
+            client.latestSupported() ? '対応' : '保存先の更新が必要'
+          ],
+          [
+            '計画と実行日なしの移動',
+            planningSupported() ? '対応' : '保存先の更新が必要'
+          ],
+          ['操作時刻の補正', client.clockStatusLabel()],
+          ['オフライン機能の版', cacheVersion],
+          ['一覧の確認', client.readStatusLabel()],
+          ['異常な返答の記録', client.readDiagnostics.length + '件'],
+          ['読み取りの照合記録', client.readTraces.length + '件'],
+          ['送信の引き継ぎ', client.fastHandoff ? '自動' : '従来方式'],
+          [
+            '旧画面の送信記録',
+            client.legacyWaitUntil > Date.now()
+              ? '終了確認待ち'
+              : '待ちなし'
+          ],
+          ['直近のタスク送信', sendTiming()],
+          ['更新エラー', client.lastReadError || 'なし'],
+          ['したいこと更新エラー', wishError || 'なし']
+        ];
+      }
+
+      function renderSettingsState() {
+        const target = $('settings-state');
+        target.replaceChildren();
+
+        stateRows().forEach(function (row) {
+          target.append(make('dt', row[0]), make('dd', row[1]));
+        });
+
+        $('receipt-log').textContent = client.readDiagnosticText();
+      }
+
+      function workerVersion() {
+        return new Promise(function (resolve) {
+          if (
+            !navigator.serviceWorker ||
+            !navigator.serviceWorker.controller ||
+            !window.MessageChannel
+          ) {
+            resolve('確認できません');
+            return;
+          }
+
+          const channel = new MessageChannel();
+
+          const timer = setTimeout(function () {
+            channel.port1.close();
+            resolve('確認できません');
+          }, 2000);
+
+          channel.port1.onmessage = function (event) {
+            clearTimeout(timer);
+            channel.port1.close();
+            resolve(event.data.cacheName || '確認できません');
+          };
+
+          navigator.serviceWorker.controller.postMessage({
+            type: 'TASK_VERSION'
+          }, [channel.port2]);
+        });
+      }
+
+      async function openSettings() {
+        if (drag) {
+          return;
+        }
+
+        const config = client.config();
+        $('url').value = config.url;
+        $('token').value = config.token;
+        renderSettingsState();
+        $('settings-dialog').showModal();
+        cacheVersion = await workerVersion();
+        renderSettingsState();
+      }
+
+      $('settings-save').onclick = async function () {
+        const previous = client.config();
+        const url = $('url').value.trim();
+        const token = $('token').value.trim();
+
+        if (allPendingCount() && previous.url && previous.url !== url) {
+          alert('未送信があるため、接続先は変更できません。');
+          return;
+        }
+
+        if (
+          (url !== previous.url || token !== previous.token) &&
+          (
+            client.pumpPromise ||
+            wishes.pumpPromise ||
+            refreshPromise ||
+            historyPromise ||
+            wishReadPromise ||
+            checking
+          )
+        ) {
+          alert('通信が終わってから保存してください。');
+          return;
+        }
+
+        try {
+          localStorage.setItem(TaskCore.URL_KEY, url);
+          localStorage.setItem(TaskCore.TOKEN_KEY, token);
+          client.resetConnection();
+
+          if (url !== previous.url) {
+            historyData = {
+              items: [],
+              total: 0,
+              loaded: false
+            };
+
+            await client.mutate(function (saved) {
+              saved.snapshot = null;
+              saved.transitions = [];
+              saved.lastNetworkAt = 0;
+            });
+
+            if (wishes.ready) {
+              await wishes.mutate(function (saved) {
+                saved.snapshot = null;
+                saved.transitions = [];
+                saved.lastNetworkAt = 0;
+              });
+            }
+          }
+
+          $('settings-dialog').close();
+          notify('設定を保存しました');
+
+          await refresh();
+          await client.pump(true);
+
+          if (wishes.ready) {
+            await wishes.reloadLocal();
+            await wishes.pump(true);
+          }
+
+          if (page === 'wishes') {
+            await loadWishes(false);
+          }
+        } catch (error) {
+          failed('設定を保存できませんでした', error);
+        }
+      };
+
+      $('settings-close').onclick = function () {
+        $('settings-dialog').close();
+      };
+
+      $('check').onclick = async function () {
+        if (!onlineRequired() || checking) {
+          return;
+        }
+
+        checking = true;
+        $('check').disabled = true;
+        $('check').textContent = '動作確認中';
+
+        try {
+          const result = await client.read({
+            action: 'check'
+          }, {
+            forceFull: true
+          });
+
+          if (result) {
+            alert(
+              '改修版：' + (result.build || '未取得') +
+              '\n\n' + result.checks.join('\n')
+            );
+          }
+        } catch (error) {
+          alert(String(error.message || error));
+        } finally {
+          checking = false;
+          $('check').disabled = false;
+          $('check').textContent = '動作確認';
+        }
+      };
+
+      $('copy').onclick = async function () {
+        cacheVersion = await workerVersion();
+        renderSettingsState();
+
+        const text = stateRows().map(function (row) {
+          return row[0] + '：' + row[1];
+        }).join('\n') +
+          '\n\n【通信の点検記録】\n' +
+          client.readDiagnosticText();
+
+        try {
+          await navigator.clipboard.writeText(text);
+          alert('コピーしました。');
+        } catch (error) {
+          prompt('この内容をコピーしてください。', text);
+        }
+      };
+
+      /* ---------- 更新・復帰・起動 ---------- */
+
+      function refresh(background) {
+        if (refreshPromise) {
+          return refreshPromise;
+        }
+
+        if (
+          !client.ready ||
+          client.legacyCount ||
+          !client.configured() ||
+          !navigator.onLine ||
+          client.paused ||
+          drag
+        ) {
+          return Promise.resolve(false);
+        }
+
+        refreshPromise = client.read({
+          action: 'load'
+        }, {
+          background: !!background,
+          forceFull: !client.received
+        }).then(function (result) {
+          if (result && messageKind === 'read') {
+            notify('');
+          }
+
+          return !!result;
+        }).catch(function (error) {
+          if (client.paused) {
+            return false;
+          }
+
+          const details = [
+            String(error.message || error),
+            state.snapshot
+              ? '前回の一覧を表示しています。'
+              : '一覧はまだ取得できていません。'
+          ];
+
+          if (allPendingCount()) {
+            details.push('送信待ちの操作は端末に残しています。');
+          }
+
+          details.push(
+            '「設定」→「診断情報をコピー」で通信の記録を確認できます。'
+          );
+
+          notify(
+            '一覧を更新できませんでした',
+            true,
+            details.join('\n'),
+            'read'
+          );
+
+          return false;
+        }).finally(function () {
+          refreshPromise = null;
+          nextAutoRead = Date.now() +
+            (client.lastReadError ? 60000 : 20000);
+          renderStatus();
+        });
+
+        renderStatus();
+        return refreshPromise;
+      }
+
+      async function automaticRead() {
+        if (
+          autoBusy ||
+          document.hidden ||
+          !client.ready ||
+          !wishes.ready ||
+          client.paused ||
+          client.legacyCount ||
+          !client.configured() ||
+          !navigator.onLine ||
+          drag ||
+          holdTimer ||
+          anyDialogOpen() ||
+          refreshPromise ||
+          historyPromise ||
+          wishReadPromise ||
+          manualReloading ||
+          periodicAdding ||
+          resumePromise ||
+          allPendingCount() ||
+          Date.now() < nextAutoRead
+        ) {
+          return;
+        }
+
+        const active = document.activeElement;
+
+        if (
+          active &&
+          $('content').contains(active) &&
+          ['INPUT', 'SELECT', 'TEXTAREA'].indexOf(active.tagName) >= 0
+        ) {
+          return;
+        }
+
+        autoBusy = true;
+
+        try {
+          if (page === 'history') {
+            await loadHistory(false, true);
+          } else if (page === 'wishes') {
+            await loadWishes(true);
+          } else {
+            await refresh(true);
+          }
+        } finally {
+          autoBusy = false;
+        }
+      }
+
+      function resumeScreen() {
+        if (
+          resumePromise ||
+          document.hidden ||
+          !client.ready ||
+          !wishes.ready
+        ) {
+          return resumePromise || Promise.resolve();
+        }
+
+        resumePromise = (async function () {
+          const oldRefresh = refreshPromise;
+          const oldHistory = historyPromise;
+          const replaced = await client.resumeReads();
+
+          if (replaced) {
+            await Promise.all([
+              oldRefresh || Promise.resolve(),
+              oldHistory || Promise.resolve()
+            ]);
+          }
+
+          await client.reloadLocal();
+          await wishes.reloadLocal();
+          await client.pump(false);
+          await wishes.pump(false);
+
+          if (
+            document.hidden ||
+            client.paused ||
+            anyDialogOpen() ||
+            !navigator.onLine
+          ) {
+            return;
+          }
+
+          if (page === 'history') {
+            await loadHistory(false);
+          } else if (page === 'wishes') {
+            await loadWishes(false);
+          } else {
+            await refresh();
+          }
+        })().catch(function (error) {
+          failed('端末の記録を読み取れません', error);
+        }).finally(function () {
+          resumePromise = null;
+        });
+
+        return resumePromise;
+      }
+
+      document.querySelectorAll('nav [data-page]')
+        .forEach(function (control) {
+          control.addEventListener('click', function () {
+            if (drag) {
+              return;
+            }
+
+            rememberPoolScroll();
+            savePoolPreferences(true);
+            page = control.dataset.page;
+
+            if (page === 'history') {
+              loadHistory(false);
+            } else if (page === 'wishes') {
+              loadWishes(false);
+            } else {
+              render();
+            }
+          });
+        });
+
+      $('add').onclick = function () {
+        if (page === 'wishes') {
+          openWishAdd();
+        } else {
+          openAdd();
+        }
+      };
+
+      $('settings').onclick = openSettings;
+
+      $('message-close').onclick = function () {
+        notify('');
+        renderStatus();
+      };
+
+      $('reload').onclick = async function () {
+        if (manualReloading || !onlineRequired()) {
+          return;
+        }
+
+        manualReloading = true;
+        renderStatus();
+
+        try {
+          await client.read({
+            action: 'load'
+          }, {
+            forceFull: !client.received
+          });
+
+          await client.pump(true);
+          await wishes.reloadLocal();
+          await wishes.pump(true);
+
+          if (page === 'history') {
+            await loadHistory(false);
+          } else if (page === 'wishes') {
+            await loadWishes(false);
+          }
+
+          if (messageKind === 'read' && !client.lastReadError) {
+            notify('');
+          }
+        } catch (error) {
+          failed('更新できませんでした', error);
+        } finally {
+          manualReloading = false;
+          render();
+        }
+      };
+
+      window.addEventListener('online', function () {
+        resumeScreen();
+      });
+
+      window.addEventListener('offline', render);
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          rememberPoolScroll();
+          savePoolPreferences(true);
+
+          if (drag || holdTimer) {
+            endDrag(true);
+          }
+
+          return;
+        }
+
+        resumeScreen();
+      });
+
+      // 送信待ち・送信中・確認が必要な保存が残っているときだけ、閉じる前に警告する
+      window.addEventListener('beforeunload', function (event) {
+        if (allPendingCount() > 0) {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      });
+
+      window.addEventListener('pagehide', function () {
+        rememberPoolScroll();
+        savePoolPreferences(true);
+      });
+
+      window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+          setTimeout(resumeScreen, 0);
+        }
+      });
+
+      window.addEventListener('blur', function () {
+        if (drag || holdTimer) {
+          endDrag(true);
+        }
+      });
+
+      window.addEventListener('resize', function () {
+        if (drag) {
+          endDrag(true);
+        }
+
+        positionTaskFilter();
+        updatePoolHeight();
+        restorePoolScroll();
+        updateNow();
+      });
+
+      window.addEventListener('scroll', function () {
+        if (scrollFrame) {
+          return;
+        }
+
+        scrollFrame = requestAnimationFrame(function () {
+          scrollFrame = null;
+          positionTaskFilter();
+          updatePoolHeight();
+        });
+      }, {
+        passive: true
+      });
+
+      setInterval(automaticRead, 5000);
+
+      setInterval(function () {
+        updateNow();
+        const today = japanDate();
+
+        if (today !== lastDateSeen) {
+          lastDateSeen = today;
+
+          if (!drag && !anyDialogOpen()) {
+            render();
+          }
+        }
+      }, 60000);
+
+      if (window.SidePanel) {
+        SidePanel.mount({
+          id: 'nav',
+          root: document.documentElement,
+          panel: document.querySelector('.app-nav'),
+          host: document.querySelector('.app-nav'),
+          mode: 'rail',
+          minWidth: 701,
+          storageKey: TaskCore.SCOPE + 'task.panel.nav',
+          labels: { open: 'メニューを開く', close: 'メニューをたたむ' }
+        });
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js', {
+          updateViaCache: 'none'
+        }).then(function (registration) {
+          return registration.update();
+        }).catch(function (error) {
+          failed('画面の更新を確認できません', error);
+        });
+
+        navigator.serviceWorker.addEventListener(
+          'controllerchange',
+          function () {
+            workerVersion().then(function (version) {
+              cacheVersion = version;
+
+              if ($('settings-dialog').open) {
+                renderSettingsState();
+              }
+            });
+          }
+        );
+      }
+
+      (async function () {
+        try {
+          await client.start();
+          render();
+
+          if (
+            client.configured() &&
+            !client.legacyCount &&
+            navigator.onLine
+          ) {
+            await refresh();
+          }
+
+          await wishes.start();
+          render();
+          await client.pump(false);
+
+          if (page === 'history') {
+            await loadHistory(false);
+          } else if (page === 'wishes') {
+            await loadWishes(false);
+          }
+        } catch (error) {
+          failed('端末への保存を準備できません', error);
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
