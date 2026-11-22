@@ -1,8 +1,8 @@
-/* File: sw.js — task-v4.17.0-1 */
+/* File: sw.js — task-v4.17.1-1 */
 'use strict';
 
 // 確認用（/preview/）は本番とキャッシュ名を分ける
-const CACHE = (self.registration.scope.indexOf('/preview/') >= 0 ? 'preview-' : '') + 'task-v4.17.0-1';
+const CACHE = (self.registration.scope.indexOf('/preview/') >= 0 ? 'preview-' : '') + 'task-v4.17.1-1';
 
 const INDEX = new URL('./index.html', self.registration.scope).href;
 const ROOT = new URL('./', self.registration.scope).href;
@@ -14,10 +14,10 @@ const REQUIRED_FILES = [
   './quick-add.html',
   './today.html',
   './tabler.css?v=1.0.0',
-  './task-ui.css?v=4.17.0',
-  './shared_side-panel.css?v=4.17.0',
-  './shared_side-panel.js?v=4.17.0',
-  './task-core.js?v=4.17.0',
+  './task-ui.css?v=4.17.1',
+  './shared_side-panel.css?v=4.17.1',
+  './shared_side-panel.js?v=4.17.1',
+  './task-core.js?v=4.17.1',
   './wish-client.js?v=4.10',
   './manifest.webmanifest',
   './icon-check-32.png',
@@ -52,7 +52,7 @@ async function checkedResponse(file) {
 
     if (
       file === './index.html' &&
-      text.indexOf("const VERSION = 'v4.17.0';") < 0
+      text.indexOf("const VERSION = 'v4.17.1';") < 0
     ) {
       throw new Error('画面の版が揃っていません。');
     }
@@ -66,7 +66,7 @@ async function checkedResponse(file) {
 
     if (
       file.indexOf('./task-ui.css') === 0 &&
-      text.indexOf('--task-ui-version: v4.17.0;') < 0
+      text.indexOf('--task-ui-version: v4.17.1;') < 0
     ) {
       throw new Error('UIスタイルの版が揃っていません。');
     }
