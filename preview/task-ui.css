@@ -1,7 +1,7 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.15.0
+ * UI build: v4.16.0
  *
  * Application-specific styles.
  * This license accompanies the separately distributed,
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.15.0;
+  --task-ui-version: v4.16.0;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -2543,4 +2543,84 @@ body.sheet-open {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 6px;
+}
+
+/* ---------- カレンダーへ実行日を振る（PC幅：左にタスク・右にカレンダー） ---------- */
+
+@media (min-width: 1101px) and (pointer: fine) {
+  .task-app .calendar-board {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 560px);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .task-app .calendar-board .calendar {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+  }
+
+  .task-app .calendar-board .calendar-details {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .task-app .calendar-details .card[data-local="false"] {
+    cursor: grab;
+    user-select: none;
+  }
+}
+
+.task-app .calendar-details .card.cal-drag-origin {
+  opacity: .35;
+}
+
+.task-app .calendar-day.is-drop-target {
+  border-color: #2563eb;
+  background: #e6efff;
+}
+
+/* 動かしている間だけ、そのタスクの期限の日を赤くする */
+.task-app .calendar-day.is-due-mark {
+  border-color: #d92d20;
+  color: #a2352b;
+  background: #fff0ed;
+}
+
+.task-app .calendar-day.is-due-mark.is-drop-target {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 2px rgba(217, 45, 32, .25);
+}
+
+/* キー操作で選んだタスク */
+.task-app .task.is-key-selected,
+.task-app .card.is-key-selected {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.task-app .keys-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 18px;
+  margin: 12px 0 18px;
+}
+
+.task-app .keys-list dt {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.task-app .keys-list dd {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .task-app .keys-button {
+    display: none;
+  }
 }

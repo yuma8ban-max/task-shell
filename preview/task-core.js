@@ -4276,7 +4276,70 @@
       !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   }
 
+  // 1日の計画の時間枠（先頭の null は「時間未定」）。計画の表示とキー操作の移動で共有する
+  const SLOT_HOURS = [null].concat(Array.from({ length: 15 }, function (_, index) {
+    return index + 8;
+  }));
+
+  // 時間枠を step 個ずらした先（範囲外・枠にない時刻は undefined）
+  function shiftSlot(hour, step) {
+    const index = SLOT_HOURS.indexOf(hour == null ? null : hour);
+    return index < 0 ? undefined : SLOT_HOURS[index + step];
+  }
+
+  // 画面内のキー操作。判定（keyCommand）と画面のキー一覧が同じ表を使う
+  const KEY_COMMANDS = [
+    { id: 'next', keys: ['arrowdown', 'j'], show: '↓ / J', text: '次のタスクを選ぶ' },
+    { id: 'prev', keys: ['arrowup', 'k'], show: '↑ / K', text: '前のタスクを選ぶ' },
+    { id: 'earlier', keys: ['arrowleft', 'h'], show: '← / H', text: '選んだタスクを前の時間枠へ（1日の計画）' },
+    { id: 'later', keys: ['arrowright', 'l'], show: '→ / L', text: '選んだタスクを後の時間枠へ（1日の計画）' },
+    { id: 'add', keys: ['n'], show: 'N', text: 'タスクの追加を開く' },
+    { id: 'help', keys: ['?'], show: '?', text: 'このキー一覧を開く' }
+  ];
+
+  // キーの押下から操作名を返す（反応しないときは空文字）。
+  // 入力欄の中・日本語変換中・修飾キー付きでは反応しない。全角半角・大文字小文字は揃えて判定する
+  function keyCommand(event) {
+    if (
+      event.isComposing ||
+      event.keyCode === 229 ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    ) {
+      return '';
+    }
+
+    const target = event.target;
+
+    if (target && target.nodeType === 1) {
+      if (
+        target.isContentEditable ||
+        /^(INPUT|TEXTAREA|SELECT)$/.test(String(target.tagName).toUpperCase())
+      ) {
+        return '';
+      }
+    }
+
+    const key = String(event.key || '').normalize('NFKC').toLowerCase();
+
+    // 矢印キーは Shift 付きでは扱わない（範囲選択などの標準の動きを残す）
+    if (event.shiftKey && key.length > 1) {
+      return '';
+    }
+
+    const found = KEY_COMMANDS.find(function (command) {
+      return command.keys.indexOf(key) >= 0;
+    });
+
+    return found ? found.id : '';
+  }
+
   window.TaskCore = {
+    SLOT_HOURS: SLOT_HOURS,
+    shiftSlot: shiftSlot,
+    KEY_COMMANDS: KEY_COMMANDS,
+    keyCommand: keyCommand,
     VERSION: VERSION,
     BUILD: BUILD,
     SCOPE: SCOPE,
