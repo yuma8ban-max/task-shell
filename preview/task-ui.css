@@ -1,7 +1,7 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.13.0
+ * UI build: v4.14.0
  *
  * Application-specific styles.
  * This license accompanies the separately distributed,
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.13.0;
+  --task-ui-version: v4.14.0;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -682,6 +682,7 @@ body.sheet-open {
 }
 
 .task-app .card-title {
+  white-space: pre-wrap;
   margin: 0 0 4px;
   color: #25354a;
   font-size: 16px;
@@ -950,6 +951,7 @@ body.sheet-open {
 }
 
 .task-app .ttl {
+  white-space: pre-wrap;
   flex: 1;
   min-width: 0;
   color: #25354a;

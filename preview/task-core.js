@@ -6,6 +6,9 @@
   const BUILD = 'v4.12.1';
   const SERVER_VERSION = 'v4.3';
 
+  // 件名の上限は保存先の1マスの上限（5万字）。保存先側は コード.js の TITLE_MAX（同じ値）
+  const TITLE_MAX_LENGTH = 50000;
+
   const SYNC_PROTOCOL = 'task-sync-v1';
   const TRACE_PROTOCOL = 'task-read-trace-v1';
   const EDIT_PROTOCOL = 'task-edit-fields-v1';
@@ -4198,6 +4201,33 @@
     }
   }
 
+  // 件名・名前の入力の問題を、利用者向けの文で返す（問題がなければ空文字）。text は前後の空白を除いた値
+  function titleProblem(text, label) {
+    if (!text) {
+      return label + 'を入力してください。';
+    }
+
+    if (text.length > TITLE_MAX_LENGTH) {
+      return label + 'が長すぎます。5万字以内にしてください（いま' +
+        text.length + '字）。';
+    }
+
+    return '';
+  }
+
+  // 件名の入力欄で Enter を保存の合図として扱うか。
+  // PC は Enter で保存・Shift+Enter で改行。スマホ（指で操作する端末）は Enter で改行。日本語変換中は扱わない
+  function titleEnterSaves(event) {
+    return event.key === 'Enter' &&
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      !event.isComposing &&
+      event.keyCode !== 229 &&
+      !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  }
+
   window.TaskCore = {
     VERSION: VERSION,
     BUILD: BUILD,
@@ -4219,6 +4249,8 @@
     editValues: editValues,
     editFields: editFieldsFor,
     actionLabel: actionLabel,
-    outcomeLabel: outcomeLabel
+    outcomeLabel: outcomeLabel,
+    titleProblem: titleProblem,
+    titleEnterSaves: titleEnterSaves
   };
 })();
