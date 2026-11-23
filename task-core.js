@@ -6,18 +6,35 @@
   const BUILD = 'v4.12.1';
   const SERVER_VERSION = 'v4.3';
 
+  // 件名の上限は保存先の1マスの上限（5万字）。保存先側は コード.js の TITLE_MAX（同じ値）
+  const TITLE_MAX_LENGTH = 50000;
+
   const SYNC_PROTOCOL = 'task-sync-v1';
   const TRACE_PROTOCOL = 'task-read-trace-v1';
   const EDIT_PROTOCOL = 'task-edit-fields-v1';
   const PLAN_PROTOCOL = 'task-plan-move-v1';
   const LATEST_PROTOCOL = 'task-latest-op-v1';
 
-  const DB_NAME = 'taskapp-unified';
-  const URL_KEY = 'gasUrl_v1';
-  const TOKEN_KEY = 'gasTok_v1';
-  const CHANNEL_NAME = 'task-unified-state';
-  const WISH_CHANNEL = 'task-wishes-v1';
-  const NETWORK_LOCK = 'taskapp-unified-remote-v1';
+  // 確認用（/preview/ 配下）は本番と同じ場所に開かれるため、保存名を分けて本番の未送信データを守る
+  const SCOPE = location.pathname.indexOf('/preview/') >= 0 ? 'preview.' : '';
+  const DB_NAME = SCOPE + 'taskapp-unified';
+
+  if (SCOPE) {
+    // 確認用であることを常に見せる
+    document.addEventListener('DOMContentLoaded', function () {
+      const band = document.createElement('div');
+      band.textContent = '確認用の画面です（本番のデータとは別に保存されます）';
+      band.setAttribute('role', 'status');
+      band.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;padding:4px 8px;' +
+        'background:#b45309;color:#fff;font:12px/1.4 sans-serif;text-align:center;pointer-events:none';
+      document.body.appendChild(band);
+    });
+  }
+  const URL_KEY = SCOPE + 'gasUrl_v1';
+  const TOKEN_KEY = SCOPE + 'gasTok_v1';
+  const CHANNEL_NAME = SCOPE + 'task-unified-state';
+  const WISH_CHANNEL = SCOPE + 'task-wishes-v1';
+  const NETWORK_LOCK = SCOPE + 'taskapp-unified-remote-v1';
 
   const DIAGNOSTIC_KEY = 'read-receipt-checks-v1';
   const TRACE_KEY = 'read-traces-v1';
@@ -50,7 +67,11 @@
     'periodicSave',
     'periodicSend',
     'periodicRun',
-    'automatic'
+    'automatic',
+    'runStart',
+    'runStop',
+    'runOrder',
+    'runProgress'
   ];
 
   const WISH_ACTIONS = [
@@ -306,6 +327,10 @@
       periodicSend: '定期追加',
       periodicRun: '今日の定期追加',
       automatic: '自動追加設定',
+      runStart: '実行中にする',
+      runStop: '実行中の解除',
+      runOrder: '実行中の順位',
+      runProgress: '進捗の保存',
       wishList: 'したいこと更新',
       wishAdd: 'したいこと追加',
       wishEdit: 'したいこと編集',
@@ -975,6 +1000,15 @@
       keys.push('undo');
     }
 
+    // 実行中の順位・進捗と完了は互いに影響するため、同じ資源として順に送る
+    if (
+      payload.action === 'done' ||
+      payload.action === 'undo' ||
+      payload.action.indexOf('run') === 0
+    ) {
+      keys.push('running');
+    }
+
     if (payload.action === 'undo' && Array.isArray(payload.undoTargets)) {
       payload.undoTargets.forEach(function (taskId) {
         keys.push('task:' + taskId);
@@ -1181,12 +1215,20 @@
       next.undo = patch.undo;
     }
 
+    if (patch.running) {
+      next.running = patch.running;
+    }
+
     next.addLinks = patch.addLinks || {};
     storeSnapshot(saved, next);
     return true;
   }
 
   async function oldPendingCount() {
+    if (SCOPE) {
+      return 0; // 確認用では旧データを引き継がない（本番の未送信分の二重送信を防ぐ）
+    }
+
     let fallback;
 
     try {
@@ -4180,9 +4222,166 @@
     }
   }
 
+  // 件名・名前の入力の問題を、利用者向けの文で返す（問題がなければ空文字）。text は前後の空白を除いた値
+  function titleProblem(text, label) {
+    if (!text) {
+      return label + 'を入力してください。';
+    }
+
+    if (text.length > TITLE_MAX_LENGTH) {
+      return label + 'が長すぎます。5万字以内にしてください（いま' +
+        text.length + '字）。';
+    }
+
+    return '';
+  }
+
+  // 進捗の上限は保存先の1マスの上限（5万字）。保存先側は 実行中.js の RUN_PROGRESS_MAX（同じ値）
+  const PROGRESS_MAX_LENGTH = 50000;
+
+  function progressProblem(text) {
+    return String(text || '').trim().length > PROGRESS_MAX_LENGTH
+      ? '進捗が長すぎます。5万字以内にしてください。'
+      : '';
+  }
+
+  // 実行中の一覧（順位順）。保存先が対応していなければ null
+  function runningItems(snapshot) {
+    return snapshot && snapshot.running && Array.isArray(snapshot.running.items)
+      ? snapshot.running.items
+      : null;
+  }
+
+  // タスクの実行中の情報（実行中でなければ null）。rank は 1 が先頭
+  function runningInfo(snapshot, taskId) {
+    const items = runningItems(snapshot);
+
+    return items
+      ? items.find(function (item) {
+        return item.taskId === taskId;
+      }) || null
+      : null;
+  }
+
+  // 件名の入力欄で Enter を保存の合図として扱うか。
+  // PC は Enter で保存・Shift+Enter で改行。スマホ（指で操作する端末）は Enter で改行。日本語変換中は扱わない
+  function titleEnterSaves(event) {
+    return event.key === 'Enter' &&
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      !event.isComposing &&
+      event.keyCode !== 229 &&
+      !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  }
+
+  // 1日の計画の時間枠（先頭の null は「時間未定」）。計画の表示とキー操作の移動で共有する
+  const SLOT_HOURS = [null].concat(Array.from({ length: 15 }, function (_, index) {
+    return index + 8;
+  }));
+
+  // 時間枠を step 個ずらした先（範囲外・枠にない時刻は undefined）
+  function shiftSlot(hour, step) {
+    const index = SLOT_HOURS.indexOf(hour == null ? null : hour);
+    return index < 0 ? undefined : SLOT_HOURS[index + step];
+  }
+
+  // 今日の並べ替え：items（{id, hour}、表示順）の from 番目を to 番目へ動かした新しい並びを返す。
+  // 計画は時間の早い順に並ぶため、動かしたタスクの時間が前後と食い違うときは、隣のタスクの時間に合わせる
+  function reorderDay(items, from, to) {
+    if (
+      !Array.isArray(items) ||
+      !Number.isInteger(from) ||
+      !Number.isInteger(to) ||
+      from < 0 || from >= items.length ||
+      to < 0 || to >= items.length
+    ) {
+      return items;
+    }
+
+    const next = items.map(function (item) {
+      return { id: item.id, hour: item.hour };
+    });
+
+    const moved = next.splice(from, 1)[0];
+    next.splice(to, 0, moved);
+
+    const rank = function (hour) {
+      return hour == null ? -1 : hour;
+    };
+
+    const before = to > 0 ? next[to - 1] : null;
+    const after = to < next.length - 1 ? next[to + 1] : null;
+
+    if (before && rank(moved.hour) < rank(before.hour)) {
+      moved.hour = before.hour;
+    } else if (after && rank(moved.hour) > rank(after.hour)) {
+      moved.hour = after.hour;
+    }
+
+    return next;
+  }
+
+  // 画面内のキー操作。判定（keyCommand）と画面のキー一覧が同じ表を使う
+  const KEY_COMMANDS = [
+    { id: 'next', keys: ['arrowdown', 'j'], show: '↓ / J', text: '次のタスクを選ぶ' },
+    { id: 'prev', keys: ['arrowup', 'k'], show: '↑ / K', text: '前のタスクを選ぶ' },
+    { id: 'earlier', keys: ['arrowleft', 'h'], show: '← / H', text: '選んだタスクを前の時間枠へ（1日の計画）' },
+    { id: 'later', keys: ['arrowright', 'l'], show: '→ / L', text: '選んだタスクを後の時間枠へ（1日の計画）' },
+    { id: 'add', keys: ['n'], show: 'N', text: 'タスクの追加を開く' },
+    { id: 'help', keys: ['?'], show: '?', text: 'このキー一覧を開く' }
+  ];
+
+  // キーの押下から操作名を返す（反応しないときは空文字）。
+  // 入力欄の中・日本語変換中・修飾キー付きでは反応しない。全角半角・大文字小文字は揃えて判定する
+  function keyCommand(event) {
+    if (
+      event.isComposing ||
+      event.keyCode === 229 ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    ) {
+      return '';
+    }
+
+    const target = event.target;
+
+    if (target && target.nodeType === 1) {
+      if (
+        target.isContentEditable ||
+        /^(INPUT|TEXTAREA|SELECT)$/.test(String(target.tagName).toUpperCase())
+      ) {
+        return '';
+      }
+    }
+
+    const key = String(event.key || '').normalize('NFKC').toLowerCase();
+
+    // 矢印キーは Shift 付きでは扱わない（範囲選択などの標準の動きを残す）
+    if (event.shiftKey && key.length > 1) {
+      return '';
+    }
+
+    const found = KEY_COMMANDS.find(function (command) {
+      return command.keys.indexOf(key) >= 0;
+    });
+
+    return found ? found.id : '';
+  }
+
   window.TaskCore = {
+    SLOT_HOURS: SLOT_HOURS,
+    shiftSlot: shiftSlot,
+    reorderDay: reorderDay,
+    KEY_COMMANDS: KEY_COMMANDS,
+    keyCommand: keyCommand,
     VERSION: VERSION,
     BUILD: BUILD,
+    SCOPE: SCOPE,
+    URL_KEY: URL_KEY,
+    TOKEN_KEY: TOKEN_KEY,
     EDIT_PROTOCOL: EDIT_PROTOCOL,
     PLAN_PROTOCOL: PLAN_PROTOCOL,
     LATEST_PROTOCOL: LATEST_PROTOCOL,
@@ -4198,6 +4397,11 @@
     editValues: editValues,
     editFields: editFieldsFor,
     actionLabel: actionLabel,
-    outcomeLabel: outcomeLabel
+    outcomeLabel: outcomeLabel,
+    progressProblem: progressProblem,
+    runningItems: runningItems,
+    runningInfo: runningInfo,
+    titleProblem: titleProblem,
+    titleEnterSaves: titleEnterSaves
   };
 })();

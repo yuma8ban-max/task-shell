@@ -16,7 +16,8 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-check-180.png">
   <link id="tabler-style" rel="stylesheet" href="./tabler.css?v=1.0.0">
-  <link rel="stylesheet" href="./task-ui.css?v=4.12.4">
+  <link rel="stylesheet" href="./task-ui.css?v=4.17.1">
+  <link rel="stylesheet" href="./shared_side-panel.css?v=4.17.1">
 </head>
 <body class="task-app">
   <svg
@@ -57,6 +58,9 @@
     <symbol id="icon-done" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9"></circle>
       <path d="M8 12l3 3 5-6"></path>
+    </symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24">
+      <path d="M8 5l11 7-11 7V5z"></path>
     </symbol>
     <symbol id="icon-wish" viewBox="0 0 24 24">
       <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3z"></path>
@@ -104,6 +108,12 @@
           </svg>
           <span>タスク一覧</span>
         </button>
+        <button type="button" data-page="running" class="nav-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-play"></use>
+          </svg>
+          <span>実行中</span>
+        </button>
         <button type="button" data-page="periodic" class="nav-link">
           <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <use href="#icon-repeat"></use>
@@ -129,7 +139,7 @@
       <header class="app-header">
         <div class="app-heading">
           <h1>タスク</h1>
-          <span class="badge version">v4.12.4</span>
+          <span class="badge version">v4.17.1</span>
         </div>
 
         <div class="header-actions">
@@ -153,6 +163,10 @@
               <use href="#icon-settings"></use>
             </svg>
             <span>設定</span>
+          </button>
+
+          <button id="keys" class="btn keys-button" type="button" aria-haspopup="dialog">
+            <span>キー操作</span>
           </button>
         </div>
       </header>
@@ -236,6 +250,17 @@
     </form>
   </dialog>
 
+  <dialog id="keys-dialog" aria-labelledby="keys-title">
+    <div class="dialog-heading">
+      <h2 id="keys-title">キー操作</h2>
+    </div>
+    <p class="sub">入力欄の中や、日本語の変換中は反応しません。</p>
+    <dl id="keys-list" class="keys-list"></dl>
+    <div class="dialog-actions">
+      <button id="keys-close" class="btn btn-primary primary" type="button">閉じる</button>
+    </div>
+  </dialog>
+
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <div class="dialog-heading">
       <span class="dialog-icon" aria-hidden="true">
@@ -309,18 +334,19 @@
     </div>
   </dialog>
 
-  <script src="./task-core.js?v=4.12.1"></script>
+  <script src="./task-core.js?v=4.17.1"></script>
   <script src="./wish-client.js?v=4.10"></script>
+  <script src="./shared_side-panel.js?v=4.17.1"></script>
   <script>
     (function () {
       'use strict';
 
-      const VERSION = 'v4.12.4';
+      const VERSION = 'v4.17.1';
       const REQUIRED_CORE_BUILD = 'v4.12.1';
       const UI_KIT_VERSION = '1.0.0';
       const EDIT_PROTOCOL = 'task-edit-fields-v1';
       const PLAN_PROTOCOL = 'task-plan-move-v1';
-      const POOL_PREF_KEY = 'task-plan-backlog-ui-v1';
+      const POOL_PREF_KEY = (window.TaskCore ? TaskCore.SCOPE : '') + 'task-plan-backlog-ui-v1';
 
       const FILTER_GROUPS = [
         {
@@ -387,6 +413,9 @@
       let calendarMonth = selectedDate.slice(0, 7);
       let calendarDate = selectedDate;
       let calendarUndated = false;
+      let calDrag = null;
+      let keySelectedId = '';
+      let keyBusy = false;
 
       let refreshPromise = null;
       let manualReloading = false;
@@ -722,6 +751,7 @@
       function anyDialogOpen() {
         return $('editor').open ||
           $('settings-dialog').open ||
+          $('keys-dialog').open ||
           $('task-filter-dialog').open ||
           $('backlog-dialog').open;
       }
@@ -916,6 +946,10 @@
           !!drag;
 
         $('reload').setAttribute('aria-busy', String(!!busy));
+
+        document.querySelectorAll('[data-act="done"]').forEach(function (control) {
+          control.disabled = control.dataset.locked === '1' || !!busy;
+        });
         $('reload-label').textContent = busy ? '更新中' : '更新';
         $('reload-icon').hidden = !!busy;
         $('reload-spinner').hidden = !busy;
@@ -1158,6 +1192,7 @@
 
         if (
           drag ||
+          calDrag ||
           holdTimer ||
           $('task-filter-dialog').open ||
           $('backlog-dialog').open
@@ -1216,6 +1251,8 @@
 
         if (page === 'plan') {
           renderPlan(content);
+        } else if (page === 'running') {
+          renderRunning(content);
         } else if (page === 'tasks') {
           renderTasks(content);
         } else {
@@ -1225,13 +1262,17 @@
         restorePosition(position);
         updatePoolHeight();
         restorePoolScroll();
+        applyKeySelection();
       }
 
-      function completeButton(task) {
+      function completeButton(task, finalProgress) {
+        const lockReason = runLockReason(task.taskId);
+
         const control = button('', function () {
           if (
             task.localOnly ||
             task.blocked ||
+            lockReason ||
             drag ||
             Date.now() < suppressClickUntil ||
             !confirm('「' + task.title + '」を完了にしますか。')
@@ -1246,25 +1287,290 @@
             return;
           }
 
-          client.enqueue({
+          const payload = {
             action: 'done',
             taskId: task.taskId,
             expectedTask: original.version
-          }, '完了：' + task.title).catch(function (error) {
+          };
+
+          // 実行中の画面で書いた最後の進捗を、完了といっしょに残す
+          if (finalProgress) {
+            const progress = finalProgress();
+            const problem = TaskCore.progressProblem(progress);
+
+            if (problem) {
+              notify(problem, true);
+              return;
+            }
+
+            payload.progress = progress;
+          }
+
+          client.enqueue(payload, '完了：' + task.title).catch(function (error) {
             failed('保存できませんでした', error);
           });
         }, 'hit');
 
         control.dataset.act = 'done';
-        control.disabled =
+
+        // 押せない理由（更新中以外）を覚えておき、更新が終わったら元に戻す
+        control.dataset.locked = (
           !client.ready ||
           !!client.legacyCount ||
           !!task.localOnly ||
-          !!task.blocked;
+          !!task.blocked ||
+          !!lockReason
+        ) ? '1' : '0';
+
+        control.disabled = control.dataset.locked === '1' || !!refreshPromise;
+
+        if (lockReason) {
+          control.title = lockReason;
+        }
 
         control.setAttribute('aria-label', task.title + 'を完了');
         control.appendChild(make('span', null, 'circle'));
         return control;
+      }
+
+      /* ---------- 実行中 ---------- */
+
+      const RUN_LOCK_REASON = '実行中の1位が終わるか、順位が変わるまで操作できません';
+      const progressDrafts = {};
+      let progressFocus = null;
+
+      function runningSupported() {
+        return !!(state.snapshot && TaskCore.runningItems(state.snapshot));
+      }
+
+      function runInfo(taskId) {
+        return TaskCore.runningInfo(state.snapshot, taskId);
+      }
+
+      // 完了・進捗の記入をロックする理由（ロックされていなければ空）
+      function runLockReason(taskId) {
+        const info = runInfo(taskId);
+        return info && info.rank > 1 ? RUN_LOCK_REASON : '';
+      }
+
+      function runPending() {
+        return state.jobs.some(function (job) {
+          return job.payload.action.indexOf('run') === 0;
+        });
+      }
+
+      function runSend(payload, label) {
+        client.enqueue(payload, label).catch(function (error) {
+          failed('保存できませんでした', error);
+        });
+      }
+
+      function runToggleButton(task) {
+        const info = runInfo(task.taskId);
+        const on = !!info;
+
+        const control = button(on ? '実行中を解除' : '実行中にする', function () {
+          if (drag || Date.now() < suppressClickUntil) {
+            return;
+          }
+
+          runSend({
+            action: on ? 'runStop' : 'runStart',
+            taskId: task.taskId
+          }, (on ? '実行中の解除：' : '実行中：') + task.title);
+        }, 'run-toggle' + (on ? ' is-running' : ''));
+
+        control.dataset.act = 'run';
+        control.disabled =
+          !client.ready ||
+          !!client.legacyCount ||
+          !navigator.onLine ||
+          !runningSupported() ||
+          !!task.localOnly ||
+          !!task.blocked ||
+          runPending();
+
+        return control;
+      }
+
+      function renderRunning(content) {
+        content.appendChild(make('h2', '実行中'));
+
+        if (!runningSupported()) {
+          content.appendChild(make(
+            'p',
+            '保存先の更新が必要です。コード.gsの最新版を反映し、一覧を更新してください。',
+            'sub'
+          ));
+          return;
+        }
+
+        const items = TaskCore.runningItems(state.snapshot);
+
+        const byId = new Map(client.effectiveTasks().map(function (task) {
+          return [task.taskId, task];
+        }));
+
+        const list = items.filter(function (item) {
+          return byId.has(item.taskId);
+        });
+
+        const pending = runPending();
+
+        if (pending) {
+          content.appendChild(make('p', '実行中の変更を反映しています…', 'status'));
+        }
+
+        if (!list.length) {
+          content.appendChild(make(
+            'p',
+            '実行中のタスクはありません。一覧の「実行中にする」から追加できます。',
+            'sub'
+          ));
+          return;
+        }
+
+        const online = client.ready && !client.legacyCount && navigator.onLine;
+        const cards = make('div', null, 'cards');
+
+        list.forEach(function (item, index) {
+          const task = byId.get(item.taskId);
+          const top = item.rank === 1;
+          const card = make('div', null, 'card run-card' + (top ? ' is-top' : ' is-locked'));
+          const main = make('div', null, 'card-main');
+
+          card.dataset.id = task.taskId;
+          card.dataset.local = task.localOnly ? 'true' : 'false';
+
+          main.appendChild(make('div', item.rank + '位', 'run-rank'));
+          main.appendChild(make('div', task.title, 'card-title'));
+          appendTaskDates(main, task, false);
+
+          let area = null;
+
+          if (top) {
+            area = make('textarea', null, 'form-control run-progress');
+            area.rows = 3;
+            area.placeholder = '進捗を書く';
+            area.setAttribute('aria-label', task.title + 'の進捗');
+
+            area.value = Object.prototype.hasOwnProperty.call(progressDrafts, item.taskId)
+              ? progressDrafts[item.taskId]
+              : item.progress;
+
+            const remember = function () {
+              progressDrafts[item.taskId] = area.value;
+
+              progressFocus = {
+                id: item.taskId,
+                start: area.selectionStart,
+                end: area.selectionEnd
+              };
+            };
+
+            area.addEventListener('input', remember);
+            area.addEventListener('keyup', remember);
+            area.addEventListener('focus', remember);
+
+            area.addEventListener('blur', function () {
+              if (area.isConnected && progressFocus && progressFocus.id === item.taskId) {
+                progressFocus = null;
+              }
+            });
+
+            main.appendChild(area);
+
+            if (progressFocus && progressFocus.id === item.taskId) {
+              const focus = progressFocus;
+
+              requestAnimationFrame(function () {
+                if (area.isConnected) {
+                  area.focus();
+                  area.setSelectionRange(focus.start, focus.end);
+                }
+              });
+            }
+          } else {
+            if (item.progress) {
+              main.appendChild(make('div', item.progress, 'run-progress-text'));
+            }
+
+            main.appendChild(make('div', RUN_LOCK_REASON, 'run-lock'));
+          }
+
+          const actions = make('div', null, 'run-actions');
+
+          if (top) {
+            const save = button('進捗を保存', function () {
+              const problem = TaskCore.progressProblem(area.value);
+
+              if (problem) {
+                notify(problem, true);
+                return;
+              }
+
+              const text = area.value;
+              delete progressDrafts[item.taskId];
+
+              runSend({
+                action: 'runProgress',
+                taskId: item.taskId,
+                progress: text
+              }, '進捗：' + task.title);
+            }, 'btn-primary');
+
+            save.disabled = !online || pending;
+            actions.appendChild(save);
+          }
+
+          const up = button('上へ', function () {
+            moveRunning(list, index, -1);
+          });
+
+          const down = button('下へ', function () {
+            moveRunning(list, index, 1);
+          });
+
+          up.disabled = !online || pending || index === 0;
+          down.disabled = !online || pending || index === list.length - 1;
+          up.setAttribute('aria-label', task.title + 'の順位を上げる');
+          down.setAttribute('aria-label', task.title + 'の順位を下げる');
+
+          actions.append(up, down, runToggleButton(task));
+          main.appendChild(actions);
+
+          card.append(
+            completeButton(task, top ? function () {
+              return area.value;
+            } : null),
+            main
+          );
+
+          cards.appendChild(card);
+        });
+
+        content.appendChild(cards);
+      }
+
+      function moveRunning(list, index, delta) {
+        const ids = list.map(function (item) {
+          return item.taskId;
+        });
+
+        const other = index + delta;
+
+        if (other < 0 || other >= ids.length) {
+          return;
+        }
+
+        const swap = ids[index];
+        ids[index] = ids[other];
+        ids[other] = swap;
+
+        runSend({
+          action: 'runOrder',
+          taskIds: ids
+        }, '実行中の順位');
       }
 
       function editButton(task, className) {
@@ -1428,6 +1734,7 @@
         row.append(
           completeButton(task),
           text,
+          runToggleButton(task),
           editButton(task, 'plan-edit'),
           makeGrip(task)
         );
@@ -1513,6 +1820,7 @@
 
           actions.append(
             completeButton(task),
+            runToggleButton(task),
             editButton(task),
             assign
           );
@@ -1603,11 +1911,7 @@
         timeline.id = 'timeline';
         timeline.dataset.date = selectedDate;
 
-        [null].concat(Array.from({
-          length: 15
-        }, function (_, index) {
-          return index + 8;
-        })).forEach(function (hour) {
+        TaskCore.SLOT_HOURS.forEach(function (hour) {
           const section = make('section', null, 'slot');
           section.dataset.hour = hour === null ? '' : String(hour);
           section.appendChild(make('div', hourLabel(hour), 'slot-label'));
@@ -2439,7 +2743,468 @@
         if (event.key === 'Escape' && (drag || holdTimer)) {
           event.preventDefault();
           endDrag(true);
+          return;
         }
+
+        if (event.key === 'Escape' && calDrag) {
+          event.preventDefault();
+          endCalDrag(true);
+          return;
+        }
+
+        handleKeyCommand(event);
+      });
+
+      /* ---------- カレンダーへのドラッグ（実行日を振る） ---------- */
+
+      const CAL_DRAG_MEDIA = '(min-width: 1101px) and (pointer: fine)';
+
+      $('content').addEventListener('pointerdown', function (event) {
+        if (
+          page !== 'tasks' ||
+          taskView !== 'calendar' ||
+          calDrag ||
+          anyDialogOpen() ||
+          event.isPrimary === false ||
+          (event.pointerType === 'mouse' && event.button !== 0) ||
+          !window.matchMedia(CAL_DRAG_MEDIA).matches
+        ) {
+          return;
+        }
+
+        const card = event.target.closest('.calendar-details .card[data-id]');
+
+        if (
+          !card ||
+          card.dataset.local === 'true' ||
+          event.target.closest('button, input, textarea, select, a')
+        ) {
+          return;
+        }
+
+        calDrag = {
+          id: card.dataset.id,
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          started: false,
+          ghost: null,
+          overDate: ''
+        };
+      });
+
+      function startCalDrag() {
+        const task = client.effectiveTasks().find(function (entry) {
+          return entry.taskId === calDrag.id;
+        });
+
+        if (!task || task.localOnly || task.blocked) {
+          calDrag = null;
+          return false;
+        }
+
+        const ghost = make('div', null, 'drag-ghost');
+        ghost.appendChild(make('div', task.title, 'card-title'));
+        ghost.style.width = '240px';
+        document.body.appendChild(ghost);
+        document.body.classList.add('is-planning-drag');
+
+        calDrag.started = true;
+        calDrag.ghost = ghost;
+        calDrag.due = task.due || '';
+
+        const origin = document.querySelector(
+          '.calendar-details .card[data-id="' + calDrag.id + '"]'
+        );
+
+        if (origin) {
+          origin.classList.add('cal-drag-origin');
+        }
+
+        // 動かしている間だけ、このタスクの期限の日を赤くする（期限なしは何もしない）
+        if (calDrag.due) {
+          document.querySelectorAll('.calendar-day[data-date="' + calDrag.due + '"]')
+            .forEach(function (cell) {
+              cell.classList.add('is-due-mark');
+            });
+        }
+
+        const selection = window.getSelection && window.getSelection();
+
+        if (selection) {
+          selection.removeAllRanges();
+        }
+
+        $('drag-announcement').textContent =
+          '移動中。カレンダーの日付へ置くと実行日になります。Escで取り消します。';
+
+        return true;
+      }
+
+      function moveCalDrag(event) {
+        const ghost = calDrag.ghost;
+
+        ghost.style.left = Math.max(8, Math.min(
+          event.clientX + 14,
+          window.innerWidth - ghost.offsetWidth - 8
+        )) + 'px';
+
+        ghost.style.top = Math.max(8, Math.min(
+          event.clientY + 14,
+          window.innerHeight - 90
+        )) + 'px';
+
+        document.querySelectorAll('.calendar-day.is-drop-target')
+          .forEach(function (cell) {
+            cell.classList.remove('is-drop-target');
+          });
+
+        const over = document.elementFromPoint(event.clientX, event.clientY);
+        const cell = over && over.closest('.calendar-day[data-date]');
+
+        calDrag.overDate = cell ? cell.dataset.date : '';
+
+        if (cell) {
+          cell.classList.add('is-drop-target');
+        }
+      }
+
+      async function endCalDrag(cancelled) {
+        const current = calDrag;
+
+        if (!current) {
+          return;
+        }
+
+        calDrag = null;
+
+        if (current.ghost) {
+          current.ghost.remove();
+        }
+
+        document.body.classList.remove('is-planning-drag');
+
+        document.querySelectorAll(
+          '.cal-drag-origin, .is-due-mark, .calendar-day.is-drop-target'
+        ).forEach(function (element) {
+          element.classList.remove(
+            'cal-drag-origin',
+            'is-due-mark',
+            'is-drop-target'
+          );
+        });
+
+        if (!current.started) {
+          return;
+        }
+
+        suppressClickUntil = Date.now() + 500;
+
+        const date = cancelled ? '' : current.overDate;
+        const task = date && client.effectiveTasks().find(function (entry) {
+          return entry.taskId === current.id;
+        });
+
+        if (!task || task.date === date) {
+          $('drag-announcement').textContent = '移動を終了しました。';
+
+          if (renderDeferred) {
+            render();
+          }
+
+          return;
+        }
+
+        const base = editBase(current.id);
+
+        if (!base) {
+          if (renderDeferred) {
+            render();
+          }
+
+          return;
+        }
+
+        try {
+          await client.enqueue(Object.assign({}, base.payload, {
+            title: base.captured.title,
+            due: base.captured.due,
+            date: date
+          }), '実行日：' + base.captured.title + ' ／ ' + date, base.context);
+
+          $('drag-announcement').textContent = '実行日を端末に保存しました。';
+          notify('端末に保存しました');
+        } catch (error) {
+          failed('実行日を端末に保存できませんでした', error);
+        }
+
+        if (renderDeferred) {
+          render();
+        }
+      }
+
+      document.addEventListener('pointermove', function (event) {
+        if (!calDrag || event.pointerId !== calDrag.pointerId) {
+          return;
+        }
+
+        if (!calDrag.started) {
+          if (
+            Math.abs(event.clientX - calDrag.startX) <= 6 &&
+            Math.abs(event.clientY - calDrag.startY) <= 6
+          ) {
+            return;
+          }
+
+          if (!startCalDrag()) {
+            return;
+          }
+        }
+
+        moveCalDrag(event);
+      });
+
+      document.addEventListener('pointerup', function (event) {
+        if (calDrag && event.pointerId === calDrag.pointerId) {
+          if (calDrag.started) {
+            moveCalDrag(event);
+          }
+
+          endCalDrag(false);
+        }
+      });
+
+      document.addEventListener('pointercancel', function (event) {
+        if (calDrag && event.pointerId === calDrag.pointerId) {
+          endCalDrag(true);
+        }
+      });
+
+      window.addEventListener('blur', function () {
+        endCalDrag(true);
+      });
+
+      document.addEventListener('selectstart', function (event) {
+        if (calDrag && calDrag.started) {
+          event.preventDefault();
+        }
+      });
+
+      /* ---------- 画面内のキー操作 ---------- */
+
+      function keyRows() {
+        const selector = page === 'plan'
+          ? '#timeline .task[data-local="false"]'
+          : '#content .cards .card[data-id][data-local="false"]';
+
+        return Array.from(document.querySelectorAll(selector))
+          .filter(function (row) {
+            return !row.classList.contains('drag-origin') &&
+              row.dataset.placeholder !== 'true' &&
+              row.getClientRects().length > 0;
+          });
+      }
+
+      function applyKeySelection() {
+        document.querySelectorAll('.is-key-selected')
+          .forEach(function (row) {
+            row.classList.remove('is-key-selected');
+          });
+
+        if (!keySelectedId) {
+          return;
+        }
+
+        const row = keyRows().find(function (entry) {
+          return entry.dataset.id === keySelectedId;
+        });
+
+        if (row) {
+          row.classList.add('is-key-selected');
+        }
+      }
+
+      function selectByKey(step) {
+        const rows = keyRows();
+
+        if (!rows.length) {
+          return false;
+        }
+
+        const index = rows.findIndex(function (row) {
+          return row.dataset.id === keySelectedId;
+        });
+
+        const next = index < 0
+          ? (step > 0 ? 0 : rows.length - 1)
+          : Math.max(0, Math.min(rows.length - 1, index + step));
+
+        keySelectedId = rows[next].dataset.id;
+        applyKeySelection();
+        rows[next].scrollIntoView({ block: 'nearest' });
+
+        $('drag-announcement').textContent =
+          (rows[next].querySelector('.ttl > div, .card-title') || rows[next])
+            .textContent.slice(0, 60) + ' を選択';
+
+        return true;
+      }
+
+      // 選んだタスクを前後の時間枠へ移す（1日の計画）
+      async function moveSelectedSlot(step) {
+        if (
+          page !== 'plan' ||
+          keyBusy ||
+          drag ||
+          !state.snapshot ||
+          !planningSupported()
+        ) {
+          return;
+        }
+
+        const task = client.effectiveTasks().find(function (entry) {
+          return entry.taskId === keySelectedId;
+        });
+
+        if (!task) {
+          notify('動かすタスクを↑↓キーで選んでください');
+          return;
+        }
+
+        if (task.localOnly || task.blocked || task.date !== selectedDate) {
+          return;
+        }
+
+        const hour = TaskCore.shiftSlot(task.hour, step);
+
+        if (hour === undefined) {
+          return;
+        }
+
+        const slotOf = function (value) {
+          return TaskCore.SLOT_HOURS.indexOf(value);
+        };
+
+        const items = readPlanItems().filter(function (item) {
+          return item.id !== task.taskId;
+        });
+
+        // 移動先の枠の最後に入れる
+        let at = items.findIndex(function (item) {
+          return slotOf(item.hour) > slotOf(hour);
+        });
+
+        if (at < 0) {
+          at = items.length;
+        }
+
+        items.splice(at, 0, {
+          id: task.taskId,
+          hour: hour
+        });
+
+        const snapshot = clone(state.snapshot);
+
+        const payload = {
+          action: 'order',
+          date: selectedDate,
+          expectedDay: dayVersion(snapshot, selectedDate),
+          movedTaskId: task.taskId,
+          fromHour: task.hour,
+          items: items
+        };
+
+        const context = client.context({
+          action: 'planMove',
+          taskId: task.taskId,
+          fromDate: task.date || '',
+          date: selectedDate
+        }, snapshot);
+
+        keyBusy = true;
+
+        try {
+          await client.enqueue(
+            payload,
+            '時間帯：' + task.title + ' → ' + hourLabel(hour),
+            context
+          );
+
+          $('drag-announcement').textContent =
+            hourLabel(hour) + ' へ移動しました。';
+
+          highlightTask(task.taskId, false);
+        } catch (error) {
+          failed('移動を端末に保存できませんでした', error);
+        } finally {
+          keyBusy = false;
+        }
+      }
+
+      function openKeys() {
+        const list = $('keys-list');
+
+        if (!list.children.length) {
+          TaskCore.KEY_COMMANDS.forEach(function (command) {
+            list.append(
+              make('dt', command.show),
+              make('dd', command.text)
+            );
+          });
+        }
+
+        $('keys-dialog').showModal();
+      }
+
+      function handleKeyCommand(event) {
+        if (
+          drag ||
+          calDrag ||
+          holdTimer ||
+          anyDialogOpen() ||
+          event.defaultPrevented
+        ) {
+          return;
+        }
+
+        const command = TaskCore.keyCommand(event);
+
+        if (!command) {
+          return;
+        }
+
+        const planOnly = command === 'earlier' || command === 'later';
+
+        if (planOnly && page !== 'plan') {
+          return;
+        }
+
+        if (event.repeat && command !== 'next' && command !== 'prev') {
+          return;
+        }
+
+        if (command === 'next' || command === 'prev') {
+          if (selectByKey(command === 'next' ? 1 : -1)) {
+            event.preventDefault();
+          }
+        } else if (command === 'earlier' || command === 'later') {
+          event.preventDefault();
+          moveSelectedSlot(command === 'later' ? 1 : -1);
+        } else if (command === 'add') {
+          if (!$('add').disabled) {
+            event.preventDefault();
+            $('add').click();
+          }
+        } else if (command === 'help') {
+          event.preventDefault();
+          openKeys();
+        }
+      }
+
+      $('keys').addEventListener('click', openKeys);
+
+      $('keys-close').addEventListener('click', function () {
+        $('keys-dialog').close();
       });
 
       function updateNow() {
@@ -2757,7 +3522,15 @@
             ));
           }
 
-          card.append(completeButton(task), main, editButton(task));
+          card.dataset.id = task.taskId;
+          card.dataset.local = task.localOnly ? 'true' : 'false';
+
+          card.append(
+            completeButton(task),
+            main,
+            runToggleButton(task),
+            editButton(task)
+          );
           cards.appendChild(card);
         });
 
@@ -2952,6 +3725,7 @@
             render();
           }, 'calendar-day');
 
+          cell.dataset.date = date;
           cell.classList.toggle('is-selected', selected);
           cell.classList.toggle('is-today', date === today);
           cell.setAttribute('aria-pressed', String(selected));
@@ -2991,7 +3765,11 @@
 
         undated.setAttribute('aria-pressed', String(calendarUndated));
         calendar.appendChild(undated);
-        content.appendChild(calendar);
+
+        // PC幅では、左にタスク・右にカレンダー（並びはCSSで決める）
+        const board = make('div', null, 'calendar-board');
+        board.appendChild(calendar);
+        content.appendChild(board);
 
         const details = make('section', null, 'calendar-details');
 
@@ -3009,7 +3787,7 @@
         }
 
         renderTaskCards(details, shown);
-        content.appendChild(details);
+        board.appendChild(details);
       }
 
       /* ---------- 追加・編集 ---------- */
@@ -3018,15 +3796,20 @@
         const wrapper = make('label', null, 'field');
         wrapper.appendChild(make('span', label, 'form-label'));
 
-        const input = make('input', null, 'form-control');
+        // 件名は複数行で入力する（textarea）。それ以外は1行
+        const input = type === 'textarea'
+          ? make('textarea', null, 'form-control')
+          : make('input', null, 'form-control');
         input.name = name;
-        input.type = type;
+
+        if (type === 'textarea') {
+          input.rows = 2;
+        } else {
+          input.type = type;
+        }
+
         input.value = value == null ? '' : String(value);
         input.required = !!required;
-
-        if (type === 'text') {
-          input.maxLength = 200;
-        }
 
         wrapper.appendChild(input);
         $('editor-fields').appendChild(wrapper);
@@ -3073,8 +3856,10 @@
             const due = String(form.get('due') || '');
             const date = String(form.get('date') || '');
 
-            if (!title || title.length > 200) {
-              throw new Error('件名は1～200文字で入力してください。');
+            const problem = TaskCore.titleProblem(title, '件名');
+
+            if (problem) {
+              throw new Error(problem);
             }
 
             await client.enqueue({
@@ -3092,14 +3877,15 @@
           '追加'
         );
 
-        field('title', '件名＊', 'text', '', true).focus();
+        field('title', '件名＊', 'textarea', '', true).focus();
         field('due', '期限', 'date', '', false);
         field('date', '実行日', 'date', '', false);
       }
 
-      function openTaskEditor(id) {
+      // 編集の土台（編集画面とカレンダーへのドラッグが共有）。確認できなければ通知して null
+      function editBase(id) {
         if (!onlineRequired()) {
-          return;
+          return null;
         }
 
         if (!editingSupported()) {
@@ -3108,7 +3894,7 @@
             true,
             'コード.gsと変更順.gsのv4.12.1を反映し、一覧を更新してください。'
           );
-          return;
+          return null;
         }
 
         const original = taskById(state.snapshot, id);
@@ -3118,7 +3904,7 @@
 
         if (!original || !visible || visible.blocked) {
           notify('タスクの状態を確認してください', true);
-          return;
+          return null;
         }
 
         const captured = clone(visible);
@@ -3131,7 +3917,23 @@
           editBase: TaskCore.editValues(captured)
         };
 
-        const context = client.context(payload);
+        return {
+          captured: captured,
+          payload: payload,
+          context: client.context(payload)
+        };
+      }
+
+      function openTaskEditor(id) {
+        const base = editBase(id);
+
+        if (!base) {
+          return;
+        }
+
+        const captured = base.captured;
+        const payload = base.payload;
+        const context = base.context;
 
         showEditor('タスクを編集', async function (form) {
           if (!navigator.onLine) {
@@ -3144,8 +3946,10 @@
           const due = String(form.get('due') || '');
           const date = String(form.get('date') || '');
 
-          if (!title || title.length > 200) {
-            throw new Error('件名は1～200文字で入力してください。');
+          const problem = TaskCore.titleProblem(title, '件名');
+
+          if (problem) {
+            throw new Error(problem);
           }
 
           if (
@@ -3166,7 +3970,7 @@
           notify('端末に保存しました');
         });
 
-        field('title', '件名＊', 'text', captured.title, true).focus();
+        field('title', '件名＊', 'textarea', captured.title, true).focus();
         field('due', '期限', 'date', captured.due, false);
         field('date', '実行日', 'date', captured.date, false);
       }
@@ -3187,6 +3991,16 @@
 
         if (event.key === 'Enter' && event.repeat) {
           event.preventDefault();
+          return;
+        }
+
+        // 件名（複数行）は Enter で保存、Shift+Enter で改行（スマホは Enter で改行）
+        if (
+          event.target.tagName === 'TEXTAREA' &&
+          TaskCore.titleEnterSaves(event)
+        ) {
+          event.preventDefault();
+          $('editor-form').requestSubmit();
         }
       });
 
@@ -3462,8 +4276,10 @@
           async function (form) {
             const title = String(form.get('title') || '').trim();
 
-            if (!title || title.length > 200) {
-              throw new Error('件名は1～200文字で入力してください。');
+            const problem = TaskCore.titleProblem(title, '件名');
+
+            if (problem) {
+              throw new Error(problem);
             }
 
             await wishes.add(title);
@@ -3496,8 +4312,10 @@
         showEditor('したいことを編集', async function (form) {
           const title = String(form.get('title') || '').trim();
 
-          if (!title || title.length > 200) {
-            throw new Error('件名は1～200文字で入力してください。');
+          const problem = TaskCore.titleProblem(title, '件名');
+
+          if (problem) {
+            throw new Error(problem);
           }
 
           await wishes.edit(id, title, version, captured);
@@ -3921,8 +4739,10 @@
 
             const name = String(form.get('name') || '').trim();
 
-            if (!name || name.length > 200) {
-              throw new Error('タスク名は1～200文字で入力してください。');
+            const problem = TaskCore.titleProblem(name, 'タスク名');
+
+            if (problem) {
+              throw new Error(problem);
             }
 
             await client.enqueue(Object.assign({}, payload, {
@@ -4209,6 +5029,10 @@
             main.appendChild(make('div', '完了 ' + item.doneAt, 'sub'));
           }
 
+          if (item.progress) {
+            main.appendChild(make('div', item.progress, 'run-progress-text'));
+          }
+
           card.append(mark, main);
           cards.appendChild(card);
         });
@@ -4440,8 +5264,8 @@
         }
 
         try {
-          localStorage.setItem('gasUrl_v1', url);
-          localStorage.setItem('gasTok_v1', token);
+          localStorage.setItem(TaskCore.URL_KEY, url);
+          localStorage.setItem(TaskCore.TOKEN_KEY, token);
           client.resetConnection();
 
           if (url !== previous.url) {
@@ -4801,6 +5625,14 @@
         resumeScreen();
       });
 
+      // 送信待ち・送信中・確認が必要な保存が残っているときだけ、閉じる前に警告する
+      window.addEventListener('beforeunload', function (event) {
+        if (allPendingCount() > 0) {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      });
+
       window.addEventListener('pagehide', function () {
         rememberPoolScroll();
         savePoolPreferences(true);
@@ -4857,6 +5689,19 @@
           }
         }
       }, 60000);
+
+      if (window.SidePanel) {
+        SidePanel.mount({
+          id: 'nav',
+          root: document.documentElement,
+          panel: document.querySelector('.app-nav'),
+          host: document.querySelector('.app-nav'),
+          mode: 'rail',
+          minWidth: 701,
+          storageKey: TaskCore.SCOPE + 'task.panel.nav',
+          labels: { open: 'メニューを開く', close: 'メニューをたたむ' }
+        });
+      }
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js', {

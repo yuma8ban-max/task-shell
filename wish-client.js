@@ -4,7 +4,7 @@
 
   const VERSION = 'v4.10';
   const STORAGE_KEY = 'wishes-v1';
-  const CHANNEL_NAME = 'task-wishes-v1';
+  const CHANNEL_NAME = (window.TaskCore ? window.TaskCore.SCOPE : '') + 'task-wishes-v1';
 
   function uuid() {
     if (window.crypto && window.crypto.randomUUID) {

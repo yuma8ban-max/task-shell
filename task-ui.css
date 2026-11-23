@@ -1,7 +1,7 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.12.4
+ * UI build: v4.17.1
  *
  * Application-specific styles.
  * This license accompanies the separately distributed,
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.12.4;
+  --task-ui-version: v4.17.1;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -682,6 +682,7 @@ body.sheet-open {
 }
 
 .task-app .card-title {
+  white-space: pre-wrap;
   margin: 0 0 4px;
   color: #25354a;
   font-size: 16px;
@@ -950,6 +951,7 @@ body.sheet-open {
 }
 
 .task-app .ttl {
+  white-space: pre-wrap;
   flex: 1;
   min-width: 0;
   color: #25354a;
@@ -1985,6 +1987,45 @@ body.sheet-open {
   }
 }
 
+/* 左メニューを細くする（PC幅だけ。スマホの下部メニューは変えない） */
+@media (min-width: 701px) {
+  :root[data-panel-nav="collapsed"] .task-app .app {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  :root[data-panel-nav="collapsed"] .task-app .app-nav {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  :root[data-panel-nav="collapsed"] .task-app .nav-brand {
+    justify-content: center;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  :root[data-panel-nav="collapsed"] .task-app .nav-brand > span:last-child,
+  :root[data-panel-nav="collapsed"] .task-app .app-nav .nav-link > span {
+    display: none;
+  }
+
+  :root[data-panel-nav="collapsed"] .task-app .app-nav .nav-link {
+    justify-content: center;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .task-app .app-nav .sp-toggle {
+    margin-top: auto;
+    align-self: flex-end;
+    color: #526176;
+  }
+
+  :root[data-panel-nav="collapsed"] .task-app .app-nav .sp-toggle {
+    align-self: center;
+  }
+}
+
 @media (min-width: 701px) and (max-width: 1000px) {
   .task-app .app {
     grid-template-columns: 185px minmax(0, 1fr);
@@ -2066,7 +2107,7 @@ body.sheet-open {
 
   .task-app .nav-items {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 2px;
   }
 
@@ -2454,5 +2495,132 @@ body.sheet-open {
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* 実行中（TSK-04〜06） */
+.task-app .run-toggle {
+  flex: none;
+  white-space: nowrap;
+}
+
+.task-app .run-toggle.is-running {
+  border-color: #7da5f6;
+  color: #1d4ed8;
+}
+
+.task-app .run-rank {
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-app .run-card.is-locked {
+  opacity: .85;
+}
+
+.task-app .run-progress {
+  margin: 8px 0;
+  resize: vertical;
+}
+
+.task-app .run-progress-text {
+  margin: 6px 0;
+  color: #44546a;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.task-app .run-lock {
+  margin: 6px 0;
+  color: #8a5a00;
+  font-size: 13px;
+}
+
+.task-app .run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* ---------- カレンダーへ実行日を振る（PC幅：左にタスク・右にカレンダー） ---------- */
+
+@media (min-width: 1101px) and (pointer: fine) {
+  .task-app .calendar-board {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 560px);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .task-app .calendar-board .calendar {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+  }
+
+  .task-app .calendar-board .calendar-details {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .task-app .calendar-details .card[data-local="false"] {
+    cursor: grab;
+    user-select: none;
+  }
+}
+
+.task-app .calendar-details .card.cal-drag-origin {
+  opacity: .35;
+}
+
+.task-app .calendar-day.is-drop-target {
+  border-color: #2563eb;
+  background: #e6efff;
+}
+
+/* 動かしている間だけ、そのタスクの期限の日を赤くする */
+.task-app .calendar-day.is-due-mark {
+  border-color: #d92d20;
+  color: #a2352b;
+  background: #fff0ed;
+}
+
+.task-app .calendar-day.is-due-mark.is-drop-target {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 2px rgba(217, 45, 32, .25);
+}
+
+/* キー操作で選んだタスク */
+.task-app .task.is-key-selected,
+.task-app .card.is-key-selected {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.task-app .keys-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 18px;
+  margin: 12px 0 18px;
+}
+
+.task-app .keys-list dt {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.task-app .keys-list dd {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .task-app .keys-button {
+    display: none;
   }
 }
