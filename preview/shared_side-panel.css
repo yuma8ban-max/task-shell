@@ -1,0 +1,19 @@
+/* 左パネルの開閉ボタン（幅の変更はアプリ側の CSS が data-panel-<id> を見て行う） */
+.sp-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.sp-toggle[hidden] { display: none; }
+.sp-toggle::before { content: '\2039'; font-size: 22px; line-height: 1; }
+.sp-toggle[aria-expanded="false"]::before { content: '\203A'; }
+.sp-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
