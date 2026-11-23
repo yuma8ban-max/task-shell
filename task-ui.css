@@ -1,7 +1,7 @@
 /* File: task-ui.css */
 
 /*
- * UI build: v4.17.1
+ * UI build: v4.18.0
  *
  * Application-specific styles.
  * This license accompanies the separately distributed,
@@ -34,7 +34,7 @@
 
 :root {
   color-scheme: light;
-  --task-ui-version: v4.17.1;
+  --task-ui-version: v4.18.0;
   --accent: #2563eb;
   --accent-dark: #1d4ed8;
   --accent-soft: #edf4ff;
@@ -410,20 +410,6 @@ body.sheet-open {
   min-width: 160px;
 }
 
-.task-app .version {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 8px;
-  border: 1px solid #dce5ee;
-  border-radius: 7px;
-  color: #526176;
-  background: #edf2f7;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.3;
-  letter-spacing: 0;
-}
-
 .task-app .header-actions {
   display: flex;
   align-items: center;
@@ -446,7 +432,7 @@ body.sheet-open {
 
 .task-app .sub {
   color: var(--secondary);
-  font-size: 14px;
+  font-size: inherit;
   line-height: 1.65;
 }
 
@@ -876,34 +862,6 @@ body.sheet-open {
   display: none;
 }
 
-.task-app .timeline {
-  position: relative;
-  margin-top: 20px;
-}
-
-.task-app .slot {
-  display: grid;
-  grid-template-columns: var(--time-gutter) minmax(0, 1fr);
-  min-height: 44px;
-  border-top: 1px solid var(--line);
-  transition: background-color .12s ease;
-}
-
-.task-app .slot-label {
-  padding: 14px 5px 0 0;
-  color: #56657a;
-  font-size: 13px;
-  font-weight: 550;
-  line-height: 1.4;
-}
-
-.task-app .slot-list {
-  min-height: 44px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .task-app .task {
   position: relative;
   display: flex;
@@ -972,74 +930,6 @@ body.sheet-open {
   font-size: 13px;
   font-weight: 550;
   touch-action: manipulation;
-}
-
-.task-app .grip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 36px;
-  min-height: 44px;
-  margin: -8px 0;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  color: #7c8ca2;
-  background: transparent;
-  box-shadow: none;
-  line-height: 1;
-  cursor: grab;
-  touch-action: none;
-}
-
-.task-app .grip .ui-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.task-app .timeline-end {
-  min-height: 30px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-  color: #56657a;
-  font-size: 13px;
-  font-weight: 550;
-  line-height: 1.4;
-}
-
-.task-app .now-line {
-  position: absolute;
-  right: 0;
-  left: var(--time-gutter);
-  z-index: 8;
-  height: 0;
-  border-top: 2px solid #e25353;
-  pointer-events: none;
-}
-
-.task-app .now-line::before {
-  position: absolute;
-  top: -4px;
-  left: -2px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #e25353;
-  content: "";
-}
-
-.task-app .now-line span {
-  position: absolute;
-  top: -10px;
-  left: calc(-1 * var(--time-gutter));
-  width: calc(var(--time-gutter) - 5px);
-  padding: 1px 0;
-  color: #be3535;
-  background: var(--surface);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
 }
 
 /* ---------- 実行日なし ---------- */
@@ -1152,11 +1042,6 @@ body.sheet-open {
   gap: 6px;
 }
 
-.task-app .backlog-card-head .grip {
-  width: 30px;
-  margin: -5px -3px 0 0;
-}
-
 .task-app .backlog-task .card-title {
   font-size: 15px;
 }
@@ -1195,35 +1080,6 @@ body.sheet-open {
   line-height: 1.7;
 }
 
-.task-app .task.drag-origin {
-  display: none;
-}
-
-.task-app .backlog-task.drag-origin {
-  opacity: .3;
-}
-
-.task-app .drop-placeholder {
-  border: 1px dashed #4b80e8;
-  background: #edf4ff;
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .1);
-  pointer-events: none;
-}
-
-.task-app .drop-placeholder button {
-  visibility: hidden;
-}
-
-.task-app .slot.is-drop-target {
-  background: #f1f6ff;
-}
-
-.task-app .plan-backlog.is-drop-target {
-  border-color: #6e9aee;
-  background: #edf4ff;
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .12);
-}
-
 .task-app .drag-ghost {
   position: fixed;
   z-index: 2000;
@@ -1246,43 +1102,10 @@ body.sheet-open {
   -webkit-box-orient: vertical;
 }
 
-.task-app.is-planning-drag,
-.task-app.is-planning-drag * {
-  cursor: grabbing;
-}
-
 .task-app .fresh-placement {
   border-color: #6f9cf0;
   background: #edf4ff;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, .1);
-}
-
-.task-app .plan-return-zone {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  width: min(560px, calc(100vw - 32px));
-  min-height: 58px;
-  padding: 12px;
-  border: 1px dashed #729cf0;
-  border-radius: 13px;
-  color: #2458b4;
-  background: #f3f7ff;
-  box-shadow: 0 8px 26px rgba(31, 63, 111, .15);
-  font-size: 15px;
-  font-weight: 600;
-  transform: translateX(-50%);
-}
-
-.task-app .plan-return-zone.is-drop-target {
-  border-style: solid;
-  border-color: #2563eb;
-  background: #e6efff;
 }
 
 /* ---------- カレンダー ---------- */
@@ -1935,19 +1758,12 @@ body.sheet-open {
 
   .task-app .card:hover {
     border-color: #cbd9e9;
-  }
-
-  .task-app .hit:not(:disabled):hover,
-  .task-app .grip:not(:disabled):hover {
+  }.task-app .hit:not(:disabled):hover {
     background: #f0f5ff;
   }
 
   .task-app .hit:not(:disabled):hover .circle {
     border-color: #729cf0;
-  }
-
-  .task-app .grip:not(:disabled):hover {
-    color: #4777c8;
   }
 
   .task-app .notice-close:hover,
@@ -2265,15 +2081,6 @@ body.sheet-open {
     gap: 9px 12px;
   }
 
-  .task-app .timeline {
-    margin-top: 17px;
-  }
-
-  .task-app .slot-label {
-    padding-right: 4px;
-    font-size: 12px;
-  }
-
   .task-app .task {
     gap: 6px;
     padding-right: 7px;
@@ -2285,19 +2092,6 @@ body.sheet-open {
     width: 36px;
     min-width: 36px;
     margin-left: -3px;
-  }
-
-  .task-app .task .plan-edit {
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .task-app .task .grip {
-    width: 32px;
-  }
-
-  .task-app .plan-return-zone {
-    bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
   .task-app .calendar-grid {
@@ -2473,12 +2267,10 @@ body.sheet-open {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .task-app .btn,
-  .task-app .slot,
-  .task-app .plan-backlog,
-  .task-app .auto-switch-track,
-  .task-app .auto-switch-thumb {
+@media (prefers-reduced-motion: reduce) {.task-app .btn,
+.task-app .plan-backlog,
+.task-app .auto-switch-track,
+.task-app .auto-switch-thumb {
     transition: none;
   }
 
@@ -2509,16 +2301,6 @@ body.sheet-open {
   color: #1d4ed8;
 }
 
-.task-app .run-rank {
-  color: #1d4ed8;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.task-app .run-card.is-locked {
-  opacity: .85;
-}
-
 .task-app .run-progress {
   margin: 8px 0;
   resize: vertical;
@@ -2530,12 +2312,6 @@ body.sheet-open {
   font-size: 14px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.task-app .run-lock {
-  margin: 6px 0;
-  color: #8a5a00;
-  font-size: 13px;
 }
 
 .task-app .run-actions {
@@ -2623,4 +2399,28 @@ body.sheet-open {
   .task-app .keys-button {
     display: none;
   }
+}
+
+/* 今日の順番・実行中の行（並べ替えの部品 order-list.js の中身） */
+.task-app .plan-row,
+.task-app .run-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-app .plan-row .ttl,
+.task-app .run-row .card-main {
+  flex: 1 1 14em;
+  min-width: 0;
+}
+
+.task-app .run-row {
+  align-items: flex-start;
+}
+
+.task-app .run-wait:disabled {
+  opacity: 1;
+  color: var(--secondary);
 }

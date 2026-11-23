@@ -12,7 +12,8 @@
   const SYNC_PROTOCOL = 'task-sync-v1';
   const TRACE_PROTOCOL = 'task-read-trace-v1';
   const EDIT_PROTOCOL = 'task-edit-fields-v1';
-  const PLAN_PROTOCOL = 'task-plan-move-v1';
+  const PLAN_PROTOCOL = 'task-plan-move-v2';
+  const DAY_ORDER_PROTOCOL = 'task-day-order-v1';
   const LATEST_PROTOCOL = 'task-latest-op-v1';
 
   // 確認用（/preview/ 配下）は本番と同じ場所に開かれるため、保存名を分けて本番の未送信データを守る
@@ -70,7 +71,6 @@
     'automatic',
     'runStart',
     'runStop',
-    'runOrder',
     'runProgress'
   ];
 
@@ -318,8 +318,8 @@
       preview: '定期タスクの対象確認',
       check: '動作確認',
       add: '追加',
-      order: '配置',
-      planMove: '計画への移動',
+      order: '順番',
+      planMove: '今日の順番への移動',
       edit: '編集',
       done: '完了',
       undo: '取り消し',
@@ -329,7 +329,6 @@
       automatic: '自動追加設定',
       runStart: '実行中にする',
       runStop: '実行中の解除',
-      runOrder: '実行中の順位',
       runProgress: '進捗の保存',
       wishList: 'したいこと更新',
       wishAdd: 'したいこと追加',
@@ -891,18 +890,42 @@
     return EDIT_FIELDS.slice();
   }
 
+  // 日の中の並び：優先順（空は最後）→行。判定はここだけ（時間帯は並びに使わない）
   function compareTasks(a, b) {
-    const hourA = a.hour == null ? 7 : a.hour;
-    const hourB = b.hour == null ? 7 : b.hour;
-
-    if (hourA !== hourB) {
-      return hourA - hourB;
-    }
-
     const orderA = a.order == null ? Infinity : a.order;
     const orderB = b.order == null ? Infinity : b.order;
 
     return orderA - orderB || a.row - b.row;
+  }
+
+  // 送られた ID（その日の一部でもよい）を、今の並びの中でそれぞれが占める位置へ、送られた順で入れ直す
+  function dayReorder(currentIds, requestedIds) {
+    const present = new Set(currentIds);
+    const seen = new Set();
+
+    const requested = requestedIds.filter(function (id) {
+      if (!present.has(id) || seen.has(id)) {
+        return false;
+      }
+
+      seen.add(id);
+      return true;
+    });
+
+    let next = 0;
+
+    return currentIds.map(function (id) {
+      return seen.has(id) ? requested[next++] : id;
+    });
+  }
+
+  // tasks のうち date の日のタスクを、並び順に 1,2,3… へ振り直す（保存待ちの反映用）
+  function renumberDay(tasks, date) {
+    tasks.filter(function (task) {
+      return task.date === date && !task.localOnly;
+    }).sort(compareTasks).forEach(function (task, index) {
+      task.order = index + 1;
+    });
   }
 
   function taskById(snapshot, id) {
@@ -915,53 +938,6 @@
 
   function dayVersion(snapshot, date) {
     return snapshot.days[date] || snapshot.emptyDay;
-  }
-
-  function mergePlan(items, tasks, date) {
-    const available = tasks.filter(function (task) {
-      return task.date === date && !task.localOnly;
-    }).sort(compareTasks);
-
-    const byId = new Map(available.map(function (task) {
-      return [task.taskId, task];
-    }));
-
-    const used = new Set();
-    const output = [];
-
-    (items || []).forEach(function (item) {
-      if (byId.has(item.id) && !used.has(item.id)) {
-        used.add(item.id);
-
-        output.push({
-          id: item.id,
-          hour: item.hour
-        });
-      }
-    });
-
-    available.forEach(function (task) {
-      if (!used.has(task.taskId)) {
-        output.push({
-          id: task.taskId,
-          hour: task.hour
-        });
-      }
-    });
-
-    return output.map(function (item, index) {
-      return {
-        item: item,
-        index: index
-      };
-    }).sort(function (a, b) {
-      const first = a.item.hour == null ? 7 : a.item.hour;
-      const second = b.item.hour == null ? 7 : b.item.hour;
-
-      return first - second || a.index - b.index;
-    }).map(function (entry) {
-      return entry.item;
-    });
   }
 
   function resources(payload, snapshot) {
@@ -977,6 +953,11 @@
 
     if (payload.action === 'planMove' && payload.fromDate) {
       keys.push('day:' + payload.fromDate);
+    }
+
+    // 実行中にするは、今日の順番の先頭へ入れる（今日と元の日の並びを変える）
+    if (payload.action === 'runStart' && snapshot) {
+      keys.push('day:' + snapshot.today);
     }
 
     if (id) {
@@ -3716,18 +3697,6 @@
           return;
         }
 
-        if (
-          !current.frozen &&
-          current.payload.action === 'order' &&
-          saved.snapshot
-        ) {
-          current.payload.items = mergePlan(
-            current.payload.items,
-            saved.snapshot.tasks,
-            current.payload.date
-          );
-        }
-
         current.frozen = true;
         current.state = 'sending';
         current.note = '';
@@ -4031,8 +4000,10 @@
     }
 
     effectiveTasks() {
-      let tasks = this.state.snapshot
-        ? clone(this.state.snapshot.tasks)
+      const snapshot = this.state.snapshot;
+
+      let tasks = snapshot
+        ? clone(snapshot.tasks)
         : [];
 
       const links = this.state.snapshot
@@ -4114,11 +4085,6 @@
           if (task) {
             const previousDate = task.date;
             task.date = payload.date;
-
-            if (payload.date) {
-              task.hour = payload.hour;
-            }
-
             task.pendingPlanning = true;
             task.blocked = task.blocked || job.state === 'blocked';
             task.pendingText = job.state === 'blocked'
@@ -4128,31 +4094,14 @@
                 : '送信待ち';
 
             if (previousDate && previousDate !== task.date) {
-              tasks.filter(function (entry) {
-                return entry.date === previousDate && !entry.localOnly;
-              }).sort(compareTasks).forEach(function (entry, index) {
-                entry.order = index + 1;
-              });
+              renumberDay(tasks, previousDate);
             }
 
             if (payload.date) {
-              const current = new Map(tasks.map(function (entry) {
-                return [entry.taskId, entry];
-              }));
-
-              const items = (payload.items || []).map(function (item) {
-                const actual = current.get(item.id);
-
-                return {
-                  id: item.id,
-                  hour: item.id === task.taskId
-                    ? task.hour
-                    : actual ? actual.hour : item.hour
-                };
-              });
-
-              mergePlan(items, tasks, payload.date).forEach(function (item, index) {
-                const actual = current.get(item.id);
+              (payload.ids || []).forEach(function (id, index) {
+                const actual = tasks.find(function (entry) {
+                  return entry.taskId === id;
+                });
 
                 if (actual) {
                   actual.order = index + 1;
@@ -4163,58 +4112,39 @@
         }
 
         if (payload.action === 'order') {
-          const byId = new Map(tasks.map(function (task) {
-            return [task.taskId, task];
-          }));
+          const ids = tasks.filter(function (task) {
+            return task.date === payload.date && !task.localOnly;
+          }).sort(compareTasks).map(function (task) {
+            return task.taskId;
+          });
 
-          const moving = payload.movedTaskId
-            ? byId.get(payload.movedTaskId)
-            : null;
-
-          if (moving && moving.date === payload.date) {
-            const desired = (payload.items || []).find(function (item) {
-              return item.id === moving.taskId;
+          dayReorder(ids, payload.ids || []).forEach(function (id, index) {
+            const task = tasks.find(function (entry) {
+              return entry.taskId === id;
             });
 
-            if (
-              desired &&
-              (
-                !Object.prototype.hasOwnProperty.call(payload, 'fromHour') ||
-                desired.hour !== payload.fromHour
-              )
-            ) {
-              moving.hour = desired.hour;
-            }
-
-            moving.pendingPlanning = true;
-            moving.blocked = moving.blocked || job.state === 'blocked';
-            moving.pendingText = job.state === 'sending'
-              ? '保存結果を確認中'
-              : '送信待ち';
-          }
-
-          const items = payload.movedTaskId
-            ? (payload.items || []).map(function (item) {
-              const actual = byId.get(item.id);
-
-              return {
-                id: item.id,
-                hour: actual ? actual.hour : item.hour
-              };
-            })
-            : payload.items;
-
-          mergePlan(items, tasks, payload.date).forEach(function (item, index) {
-            const task = byId.get(item.id);
-
             if (task) {
-              if (!payload.movedTaskId) {
-                task.hour = item.hour;
-              }
-
               task.order = index + 1;
             }
           });
+        }
+
+        // 実行中にする：実行日を今日にして、今日の順番の先頭へ
+        if (payload.action === 'runStart' && snapshot) {
+          const task = tasks.find(function (entry) {
+            return entry.taskId === payload.taskId;
+          });
+
+          if (task && !task.localOnly) {
+            const previousDate = task.date;
+            task.date = snapshot.today;
+            task.order = -1;
+            renumberDay(tasks, snapshot.today);
+
+            if (previousDate && previousDate !== task.date) {
+              renumberDay(tasks, previousDate);
+            }
+          }
         }
       });
 
@@ -4276,61 +4206,15 @@
       !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   }
 
-  // 1日の計画の時間枠（先頭の null は「時間未定」）。計画の表示とキー操作の移動で共有する
-  const SLOT_HOURS = [null].concat(Array.from({ length: 15 }, function (_, index) {
-    return index + 8;
-  }));
-
-  // 時間枠を step 個ずらした先（範囲外・枠にない時刻は undefined）
-  function shiftSlot(hour, step) {
-    const index = SLOT_HOURS.indexOf(hour == null ? null : hour);
-    return index < 0 ? undefined : SLOT_HOURS[index + step];
-  }
-
-  // 今日の並べ替え：items（{id, hour}、表示順）の from 番目を to 番目へ動かした新しい並びを返す。
-  // 計画は時間の早い順に並ぶため、動かしたタスクの時間が前後と食い違うときは、隣のタスクの時間に合わせる
-  function reorderDay(items, from, to) {
-    if (
-      !Array.isArray(items) ||
-      !Number.isInteger(from) ||
-      !Number.isInteger(to) ||
-      from < 0 || from >= items.length ||
-      to < 0 || to >= items.length
-    ) {
-      return items;
-    }
-
-    const next = items.map(function (item) {
-      return { id: item.id, hour: item.hour };
-    });
-
-    const moved = next.splice(from, 1)[0];
-    next.splice(to, 0, moved);
-
-    const rank = function (hour) {
-      return hour == null ? -1 : hour;
-    };
-
-    const before = to > 0 ? next[to - 1] : null;
-    const after = to < next.length - 1 ? next[to + 1] : null;
-
-    if (before && rank(moved.hour) < rank(before.hour)) {
-      moved.hour = before.hour;
-    } else if (after && rank(moved.hour) > rank(after.hour)) {
-      moved.hour = after.hour;
-    }
-
-    return next;
-  }
-
   // 画面内のキー操作。判定（keyCommand）と画面のキー一覧が同じ表を使う
   const KEY_COMMANDS = [
     { id: 'next', keys: ['arrowdown', 'j'], show: '↓ / J', text: '次のタスクを選ぶ' },
     { id: 'prev', keys: ['arrowup', 'k'], show: '↑ / K', text: '前のタスクを選ぶ' },
-    { id: 'earlier', keys: ['arrowleft', 'h'], show: '← / H', text: '選んだタスクを前の時間枠へ（1日の計画）' },
-    { id: 'later', keys: ['arrowright', 'l'], show: '→ / L', text: '選んだタスクを後の時間枠へ（1日の計画）' },
     { id: 'add', keys: ['n'], show: 'N', text: 'タスクの追加を開く' },
-    { id: 'help', keys: ['?'], show: '?', text: 'このキー一覧を開く' }
+    { id: 'help', keys: ['?'], show: '?', text: 'このキー一覧を開く' },
+    // 並べ替えの部品（order-list.js）が判定する。この表は画面のキー一覧のためだけに持つ
+    { id: 'move', keys: [], show: 'Alt + ↑ / ↓', text: '並べ替えで、選んだタスクを上下へ動かす' },
+    { id: 'save', keys: [], show: 'Enter', text: '並べ替えを保存する' }
   ];
 
   // キーの押下から操作名を返す（反応しないときは空文字）。
@@ -4372,9 +4256,6 @@
   }
 
   window.TaskCore = {
-    SLOT_HOURS: SLOT_HOURS,
-    shiftSlot: shiftSlot,
-    reorderDay: reorderDay,
     KEY_COMMANDS: KEY_COMMANDS,
     keyCommand: keyCommand,
     VERSION: VERSION,
@@ -4384,6 +4265,7 @@
     TOKEN_KEY: TOKEN_KEY,
     EDIT_PROTOCOL: EDIT_PROTOCOL,
     PLAN_PROTOCOL: PLAN_PROTOCOL,
+    DAY_ORDER_PROTOCOL: DAY_ORDER_PROTOCOL,
     LATEST_PROTOCOL: LATEST_PROTOCOL,
     create: function (options) {
       return new TaskClient(options);
@@ -4393,7 +4275,7 @@
     compareTasks: compareTasks,
     taskById: taskById,
     dayVersion: dayVersion,
-    mergePlan: mergePlan,
+    dayReorder: dayReorder,
     editValues: editValues,
     editFields: editFieldsFor,
     actionLabel: actionLabel,

@@ -326,7 +326,8 @@
     </details>
   </footer>
 
-  <script src="./task-core.js?v=4.17.1"></script>
+  <script src="./task-core.js?v=4.18.0"></script>
+  <script src="./order-list.js?v=4.18.0"></script>
   <script>
     (function () {
       'use strict';
@@ -657,6 +658,62 @@
         }
 
         saveForm();
+      });
+
+      // Esc で小窓を閉じる（拡張機能の小窓のときだけ。日本語変換中は閉じない）。入力があれば先に聞く
+      function hasInput() {
+        return !!($('title').value || $('due').value || $('date').value);
+      }
+
+      function closeWindow() {
+        window.postMessage({
+          channel: 'task-quick-page-v1',
+          type: 'close',
+          requestId: 'close-' + Date.now()
+        }, window.location.origin);
+      }
+
+      document.addEventListener('keydown', async function (event) {
+        if (
+          event.key !== 'Escape' ||
+          event.isComposing ||
+          event.keyCode === 229 ||
+          composing ||
+          performance.now() < imeUntil ||
+          event.ctrlKey ||
+          event.altKey ||
+          event.metaKey ||
+          document.querySelector('dialog[open]')
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (hasInput()) {
+          const answer = await OrderList.askLeave({
+            save: '保存して閉じる',
+            discard: '捨てて閉じる',
+            stay: '続ける'
+          }, {
+            save: async function () {
+              await saveForm();
+              return !hasInput();
+            },
+            discard: function () {
+              $('title').value = '';
+              $('due').value = '';
+              $('date').value = '';
+            }
+          });
+
+          if (answer === 'stay') {
+            focusTitle();
+            return;
+          }
+        }
+
+        closeWindow();
       });
 
       $('send').onclick = function () {
